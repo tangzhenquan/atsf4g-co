@@ -29,8 +29,8 @@ static int app_handle_on_send_fail(atapp::app &app, atapp::app::app_id_t src_pd,
         stop_at = m.body.forward->router.back();
     }
 
-    WLOGERROR("send data from 0x%llx to 0x%llx failed, stop at 0x%llx, msg sequence: %u", static_cast<unsigned long long>(src_pd),
-              static_cast<unsigned long long>(dst_pd), static_cast<unsigned long long>(stop_at), m.head.sequence);
+    WLOGERROR("send data from 0x%llx to 0x%llx failed, stop at 0x%llx, msg sequence: %llu", static_cast<unsigned long long>(src_pd),
+              static_cast<unsigned long long>(dst_pd), static_cast<unsigned long long>(stop_at), static_cast<unsigned long long>(m.head.sequence));
     return 0;
 }
 
@@ -90,16 +90,16 @@ public:
         ++gw_mgr_.get_conf().version;
 
         // load init cluster member from configure
-        gw_mgr_.get_conf().limits.total_recv_bytes = 0;
-        gw_mgr_.get_conf().limits.total_send_bytes = 0;
-        gw_mgr_.get_conf().limits.hour_recv_bytes = 0;
-        gw_mgr_.get_conf().limits.hour_send_bytes = 0;
+        gw_mgr_.get_conf().limits.total_recv_bytes  = 0;
+        gw_mgr_.get_conf().limits.total_send_bytes  = 0;
+        gw_mgr_.get_conf().limits.hour_recv_bytes   = 0;
+        gw_mgr_.get_conf().limits.hour_send_bytes   = 0;
         gw_mgr_.get_conf().limits.minute_recv_bytes = 0;
         gw_mgr_.get_conf().limits.minute_send_bytes = 0;
-        gw_mgr_.get_conf().limits.total_recv_times = 0;
-        gw_mgr_.get_conf().limits.total_send_times = 0;
-        gw_mgr_.get_conf().limits.hour_recv_times = 0;
-        gw_mgr_.get_conf().limits.hour_send_times = 0;
+        gw_mgr_.get_conf().limits.total_recv_times  = 0;
+        gw_mgr_.get_conf().limits.total_send_times  = 0;
+        gw_mgr_.get_conf().limits.hour_recv_times   = 0;
+        gw_mgr_.get_conf().limits.hour_send_times   = 0;
         gw_mgr_.get_conf().limits.minute_recv_times = 0;
         gw_mgr_.get_conf().limits.minute_send_times = 0;
         gw_mgr_.get_conf().limits.max_client_number = 65536;
@@ -108,9 +108,9 @@ public:
         gw_mgr_.get_conf().listen.type.clear();
         gw_mgr_.get_conf().listen.backlog = 1024;
 
-        gw_mgr_.get_conf().reconnect_timeout = 180;    // 60s
-        gw_mgr_.get_conf().send_buffer_size = 1048576; // 1MB
-        gw_mgr_.get_conf().default_router = 0;
+        gw_mgr_.get_conf().reconnect_timeout  = 180;     // 60s
+        gw_mgr_.get_conf().send_buffer_size   = 1048576; // 1MB
+        gw_mgr_.get_conf().default_router     = 0;
         gw_mgr_.get_conf().first_idle_timeout = 10; // 10s
 
         util::config::ini_loader &cfg = get_app()->get_configure();
@@ -146,7 +146,7 @@ public:
         crypt_conf.update_interval = 300; // 5min
         crypt_conf.type.clear();
         crypt_conf.switch_secret_type = ::atframe::gw::inner::v1::switch_secret_t_EN_SST_DIRECT;
-        crypt_conf.client_mode = false;
+        crypt_conf.client_mode        = false;
 
         // crypt_conf.rsa_sign_type = ::atframe::gw::inner::v1::rsa_sign_t_EN_RST_PKCS1;
         // crypt_conf.hash_id =
@@ -214,7 +214,7 @@ public:
 
     virtual int tick() UTIL_CONFIG_OVERRIDE { return gw_mgr_.tick(); }
 
-    inline ::atframe::gateway::session_manager &get_session_manager() { return gw_mgr_; }
+    inline ::atframe::gateway::session_manager &      get_session_manager() { return gw_mgr_; }
     inline const ::atframe::gateway::session_manager &get_session_manager() const { return gw_mgr_; }
 
 private:
@@ -236,7 +236,7 @@ private:
         if (NULL == sess) {
             if (NULL != buf) {
                 buf->base = NULL;
-                buf->len = 0;
+                buf->len  = 0;
             }
             return;
         }
@@ -343,7 +343,7 @@ private:
             void *real_buffer = ::atbus::detail::fn::buffer_next(buffer, proto->get_write_header_offset());
             sz -= proto->get_write_header_offset();
             uv_write_t *req = reinterpret_cast<uv_write_t *>(buffer);
-            req->data = proto->get_private_data();
+            req->data       = proto->get_private_data();
             assert(sizeof(uv_write_t) <= proto->get_write_header_offset());
 
             uv_buf_t bufs[1] = {uv_buf_init(reinterpret_cast<char *>(real_buffer), static_cast<unsigned int>(sz))};
@@ -585,7 +585,7 @@ public:
     }
 
 private:
-    ::atframe::gateway::session_manager gw_mgr_;
+    ::atframe::gateway::session_manager               gw_mgr_;
     ::atframe::gateway::proto_base::proto_callbacks_t proto_callbacks_;
 };
 
@@ -689,7 +689,7 @@ struct app_handle_on_recv {
 };
 
 int main(int argc, char *argv[]) {
-    atapp::app app;
+    atapp::app                      app;
     std::shared_ptr<gateway_module> gw_mod = std::make_shared<gateway_module>();
     if (!gw_mod) {
         fprintf(stderr, "create gateway module failed\n");

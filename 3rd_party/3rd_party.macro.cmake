@@ -64,6 +64,13 @@ else()
     message(FATAL_ERROR "must at least have one of openssl,libressl or mbedtls.")
 endif()
 
+if (NOT CRYPTO_DISABLED)
+    find_package(Libsodium)
+    if (Libsodium_FOUND)
+        list(APPEND 3RD_PARTY_CRYPT_LINK_NAME ${Libsodium_LIBRARIES})
+    endif()
+endif()
+
 if (MINGW)
     EchoWithColor(COLOR GREEN "-- MinGW: custom add lib gdi32")
     list(APPEND 3RD_PARTY_CRYPT_LINK_NAME gdi32)
