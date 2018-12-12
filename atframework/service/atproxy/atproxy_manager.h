@@ -9,42 +9,43 @@
 #include <string>
 #include <vector>
 
-
 #include <atframe/atapp.h>
+#include <atframe/atapp_module_impl.h>
+
+#include <modules/etcd_module.h>
 
 namespace atframe {
     namespace proxy {
-        class atproxy_manager {
+        class atproxy_manager : public ::atapp::module_impl {
         public:
-            struct node_action_t {
-                enum type {
-                    EN_NAT_UNKNOWN = 0,
-                    EN_NAT_PUT,
-                    EN_NAT_DELETE,
-                };
-            };
+            typedef atframe::component::etcd_module::node_action_t node_action_t;
             struct node_info_t {
-                ::atapp::app::app_id_t id;
-                std::list<std::string> listens;
-
-                node_action_t::type action;
-                time_t next_action_time;
+                atframe::component::etcd_module::node_info_t etcd_node;
+                time_t                                       next_action_time;
             };
 
             struct node_list_t {
                 std::list<node_info_t> nodes;
             };
 
+            typedef std::shared_ptr<atframe::component::etcd_module> etcd_mod_ptr;
+
         private:
             typedef struct {
-                time_t timeout_sec;
+                time_t                 timeout_sec;
                 ::atapp::app::app_id_t proxy_id;
             } check_info_t;
 
         public:
-            int tick(const ::atapp::app &app);
+            atproxy_manager(etcd_mod_ptr etcd_mod);
 
-            int set(node_info_t &proxy_info);
+            virtual int init() UTIL_CONFIG_OVERRIDE;
+
+            virtual int tick() UTIL_CONFIG_OVERRIDE;
+
+            virtual const char *name() const UTIL_CONFIG_OVERRIDE;
+
+            int set(atframe::component::etcd_module::node_info_t &proxy_info);
 
             int remove(::atapp::app::app_id_t id);
 
@@ -56,11 +57,13 @@ namespace atframe {
 
         private:
             void swap(node_info_t &l, node_info_t &r);
+            void on_watcher_notify(atframe::component::etcd_module::watcher_sender_one_t &sender);
 
         private:
-            std::list<check_info_t> check_list_;
+            std::list<check_info_t>                                check_list_;
             typedef std::map< ::atapp::app::app_id_t, node_info_t> proxy_set_t;
-            proxy_set_t proxy_set_;
+            proxy_set_t                                            proxy_set_;
+            etcd_mod_ptr                                           binded_etcd_mod_;
         };
     } // namespace proxy
 } // namespace atframe

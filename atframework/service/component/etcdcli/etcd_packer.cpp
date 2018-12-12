@@ -173,7 +173,7 @@ namespace atframe {
 
         void etcd_packer::pack_key_range(rapidjson::Value &json_val, const std::string &key, std::string range_end, rapidjson::Document &doc) {
             if ("+1" == range_end) {
-                range_end = key;
+                range_end      = key;
                 bool need_plus = true;
                 while (!range_end.empty() && need_plus) {
                     char c = range_end[range_end.size() - 1];
@@ -181,7 +181,7 @@ namespace atframe {
                         range_end.pop_back();
                     } else {
                         range_end[range_end.size() - 1] = c + 1;
-                        need_plus = false;
+                        need_plus                       = false;
                     }
                 }
 
@@ -197,6 +197,14 @@ namespace atframe {
             if (!range_end.empty()) {
                 pack_base64(json_val, "range_end", range_end, doc);
             }
+        }
+
+        void etcd_packer::pack_string(rapidjson::Value &json_val, const char *key, const char *val, rapidjson::Document &doc) {
+            rapidjson::Value k;
+            rapidjson::Value v;
+            k.SetString(key, doc.GetAllocator());
+            v.SetString(val, doc.GetAllocator());
+            json_val.AddMember(k, v, doc.GetAllocator());
         }
 
         void etcd_packer::pack_base64(rapidjson::Value &json_val, const char *key, const std::string &val, rapidjson::Document &doc) {
@@ -216,8 +224,8 @@ namespace atframe {
                 return false;
             }
 
-            const char *base64_val = iter->value.GetString();
-            size_t base64_val_sz = strlen(base64_val);
+            const char *base64_val    = iter->value.GetString();
+            size_t      base64_val_sz = strlen(base64_val);
 
             return 0 == util::base64_decode(val, reinterpret_cast<const unsigned char *>(base64_val), base64_val_sz);
         }
@@ -262,8 +270,8 @@ namespace atframe {
                 } else if (iter->value.IsInt64()) {
                     out = 0 != iter->value.GetInt64();
                 } else {
-                    const char *val = iter->value.GetString();
-                    int outint = 1;
+                    const char *val    = iter->value.GetString();
+                    int         outint = 1;
                     ::util::string::str2int(outint, val);
                     out = 0 != outint;
                 }

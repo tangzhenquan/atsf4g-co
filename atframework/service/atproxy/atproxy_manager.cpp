@@ -3,10 +3,42 @@
 #include "atproxy_manager.h"
 #include <time/time_utility.h>
 
+static void next_listen_address(std::list<std::string> &listens) {
+    size_t sz = listens.size();
+    if (sz <= 1) {
+        return;
+    }
+
+    if (sz == 2) {
+        listens.front().swap(listens.back());
+    } else if (sz > 2) {
+        listens.push_back(listens.front());
+        listens.pop_front();
+    }
+}
 
 namespace atframe {
     namespace proxy {
-        int atproxy_manager::tick(const ::atapp::app &app) {
+        atproxy_manager::atproxy_manager(etcd_mod_ptr etcd_mod) : binded_etcd_mod_(etcd_mod) {}
+
+        int atproxy_manager::init() {
+            if (!binded_etcd_mod_) {
+                WLOGERROR("etcd mod not found");
+                return -1;
+            }
+
+            int ret = binded_etcd_mod_->add_watcher_by_type_name(binded_etcd_mod_->get_by_type_name_watcher_path(get_app()->get_type_name()),
+                                                                 std::bind(&atproxy_manager::on_watcher_notify, this, std::placeholders::_1));
+
+            if (ret < 0) {
+                WLOGERROR("add watcher by type name %s failed, res: %d", get_app()->get_type_name().c_str(), ret);
+                return ret;
+            }
+
+            return 0;
+        }
+
+        int atproxy_manager::tick() {
             time_t now = util::time::time_utility::get_now();
 
             int ret = 0;
@@ -22,7 +54,7 @@ namespace atframe {
                 check_list_.pop_front();
 
                 // skip self
-                if (ci.proxy_id == app.get_id()) {
+                if (ci.proxy_id == get_app()->get_id()) {
                     continue;
                 }
 
@@ -33,7 +65,7 @@ namespace atframe {
                 }
 
                 // if has no listen addrs, skip
-                if (iter->second.listens.empty()) {
+                if (iter->second.etcd_node.listens.empty()) {
                     continue;
                 }
 
@@ -42,26 +74,35 @@ namespace atframe {
                     continue;
                 }
 
-                if (app.get_bus_node()) {
+                if (get_app()->get_bus_node()) {
                     // set next_action_time first
                     iter->second.next_action_time = 0;
 
                     // already connected, skip
-                    if (NULL != app.get_bus_node()->get_endpoint(ci.proxy_id)) {
+                    if (NULL != get_app()->get_bus_node()->get_endpoint(ci.proxy_id)) {
                         continue;
                     }
 
+                    {
+                        size_t check_size = iter->second.etcd_node.listens.size();
+                        for (size_t i = 0; i < check_size; ++i) {
+                            if (!get_app()->is_remote_address_available(iter->second.etcd_node.hostname, iter->second.etcd_node.listens.front())) {
+                                next_listen_address(iter->second.etcd_node.listens);
+                            }
+                        }
+                    }
+
                     // try to connect to brother proxy
-                    int res = app.get_bus_node()->connect(iter->second.listens.front().c_str());
+                    int res = get_app()->get_bus_node()->connect(iter->second.etcd_node.listens.front().c_str());
                     if (res >= 0) {
                         ++ret;
                     } else {
-                        WLOGERROR("try to connect to proxy: %llx, address: %s failed, res: %d", static_cast<unsigned long long>(iter->second.id),
-                                  iter->second.listens.front().c_str(), res);
+                        WLOGERROR("try to connect to proxy: %llx, address: %s failed, res: %d", static_cast<unsigned long long>(iter->second.etcd_node.id),
+                                  iter->second.etcd_node.listens.front().c_str(), res);
                     }
 
                     // recheck some time later
-                    ci.timeout_sec = now + app.get_bus_node()->get_conf().retry_interval;
+                    ci.timeout_sec = now + get_app()->get_bus_node()->get_conf().retry_interval;
                     if (ci.timeout_sec <= now) {
                         ci.timeout_sec = now + 1;
                     }
@@ -70,12 +111,7 @@ namespace atframe {
                     check_list_.push_back(ci);
 
                     // if failed and there is more than one listen address, use next address next time.
-                    if (iter->second.listens.size() == 2) {
-                        iter->second.listens.front().swap(iter->second.listens.back());
-                    } else if (iter->second.listens.size() > 2) {
-                        iter->second.listens.push_back(iter->second.listens.front());
-                        iter->second.listens.pop_front();
-                    }
+                    next_listen_address(iter->second.etcd_node.listens);
                 } else {
                     ci.timeout_sec = now + 1;
                     // try to reconnect later
@@ -88,12 +124,14 @@ namespace atframe {
             return ret;
         }
 
-        int atproxy_manager::set(node_info_t &proxy_info) {
+        const char *atproxy_manager::name() const { return "atproxy manager"; }
+
+        int atproxy_manager::set(atframe::component::etcd_module::node_info_t &etcd_node) {
             check_info_t ci;
             ci.timeout_sec = util::time::time_utility::get_now();
-            ci.proxy_id = proxy_info.id;
+            ci.proxy_id    = etcd_node.id;
 
-            proxy_set_t::iterator iter = proxy_set_.find(proxy_info.id);
+            proxy_set_t::iterator iter = proxy_set_.find(etcd_node.id);
             if (iter != proxy_set_.end()) {
                 // already has pending action, just skipped
                 if (iter->second.next_action_time >= ci.timeout_sec) {
@@ -102,8 +140,9 @@ namespace atframe {
                     iter->second.next_action_time = ci.timeout_sec;
                 }
             } else {
+                node_info_t &proxy_info     = proxy_set_[etcd_node.id];
                 proxy_info.next_action_time = ci.timeout_sec;
-                proxy_set_[proxy_info.id] = proxy_info;
+                proxy_info.etcd_node        = etcd_node;
             }
 
             // push front and check it on next loop
@@ -123,13 +162,13 @@ namespace atframe {
             for (std::list<node_info_t>::iterator iter = all_proxys.nodes.begin(); iter != all_proxys.nodes.end(); ++iter) {
 
                 // skip all empty
-                if (iter->listens.empty()) {
+                if (iter->etcd_node.listens.empty()) {
                     continue;
                 }
 
                 check_info_t ci;
-                ci.timeout_sec = util::time::time_utility::get_now();
-                ci.proxy_id = iter->id;
+                ci.timeout_sec           = util::time::time_utility::get_now();
+                ci.proxy_id              = iter->etcd_node.id;
                 (*iter).next_action_time = ci.timeout_sec;
 
                 // copy proxy info
@@ -162,7 +201,7 @@ namespace atframe {
 
                 if (iter->second.next_action_time < ci.timeout_sec) {
                     iter->second.next_action_time = ci.timeout_sec;
-                    ci.proxy_id = id;
+                    ci.proxy_id                   = id;
                     check_list_.push_back(ci);
                 }
             }
@@ -172,10 +211,26 @@ namespace atframe {
 
         void atproxy_manager::swap(node_info_t &l, node_info_t &r) {
             using std::swap;
-            swap(l.action, r.action);
-            swap(l.id, r.id);
-            swap(l.listens, r.listens);
+            swap(l.etcd_node.id, r.etcd_node.id);
+            swap(l.etcd_node.name, r.etcd_node.name);
+            swap(l.etcd_node.hostname, r.etcd_node.hostname);
+            swap(l.etcd_node.listens, r.etcd_node.listens);
+            swap(l.etcd_node.hash_code, r.etcd_node.hash_code);
+            swap(l.etcd_node.type_id, r.etcd_node.type_id);
+            swap(l.etcd_node.type_name, r.etcd_node.type_name);
+            swap(l.etcd_node.action, r.etcd_node.action);
+
             swap(l.next_action_time, r.next_action_time);
+        }
+
+        void atproxy_manager::on_watcher_notify(atframe::component::etcd_module::watcher_sender_one_t &sender) {
+            if (sender.node.get().action == node_action_t::EN_NAT_DELETE) {
+                // trigger manager
+                remove(sender.node.get().id);
+            } else {
+                // trigger manager
+                set(sender.node);
+            }
         }
     } // namespace proxy
 } // namespace atframe

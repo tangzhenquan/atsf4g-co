@@ -294,6 +294,10 @@ def get_server_name():
     global server_name
     return server_name
 
+def get_server_type_id():
+    if not global_opts.has_option('atservice', get_server_name()):
+        return 0
+    return int(get_global_option('atservice', get_server_name(), 0))
 
 def get_server_option(key, default_val, env_name=None):
     return get_global_option('server.{0}'.format(get_server_name()), key, default_val, env_name)
@@ -305,6 +309,26 @@ def get_server_list(key, default_val, env_name=None):
 
 def get_server_list_to_hosts(key, default_val, env_name=None):
     return get_global_list_to_hosts('server.{0}'.format(get_server_name()), key, default_val, env_name)
+
+
+def get_server_or_global_option(section, key, default_val, env_name=None):
+    ret = get_server_option('{0}.{1}'.format(section, key), None, env_name)
+    if ret is None:
+        return get_global_option(section, key, default_val, env_name)
+    return ret
+
+def get_server_or_global_list(section, key, default_val, env_name=None):
+    ret = get_server_list('{0}.{1}'.format(section, key), None, env_name)
+    if ret is None or len(ret) == 0:
+        return get_global_list(section, key, default_val, env_name)
+    return ret
+
+
+def get_server_or_global_list_to_hosts(section, key, default_val, env_name=None):
+    ret = get_server_list_to_hosts('{0}.{1}'.format(section, key), None, env_name)
+    if ret is None or len(ret) == 0:
+        return get_global_list_to_hosts(section, key, default_val, env_name)
+    return ret
 
 
 def get_server_index():
@@ -396,7 +420,7 @@ def get_calc_listen_port(server_name=None, server_index=None, base_port='port'):
     port_offset = int(get_global_option('global', 'port_offset', 0, 'SYSTEM_MACRO_GLOBAL_PORT_OFFSET'))
     if ret == 0:
         base_port = int(get_global_option(
-            'atsystem', 'listen_port', 23000, 'SYSTEM_MACRO_CUSTOM_BASE_PORT'))
+            'atsystem', 'listen_port', 12000, 'SYSTEM_MACRO_CUSTOM_BASE_PORT'))
         type_step = int(get_global_option('global', 'type_step', 0x100))
         type_id = int(get_global_option('atservice', server_name, 0))
         return base_port + type_step * server_index + type_id + port_offset
