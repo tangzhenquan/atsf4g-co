@@ -130,10 +130,10 @@ int main(int argc, char *argv[]) {
     util::cli::cmd_option_ci::ptr_type cmd_opts = util::cli::cmd_option_ci::create();
 
     cmd_opts->bind_cmd("-h, --help, help", &prog_option_handler_help, cmd_opts.get())
-        ->set_help_msg("-h. --help, help                       show this help message.");
-    cmd_opts->bind_cmd("-u, --url", util::cli::phoenix::assign(etcd_host))->set_help_msg("                                       set base address.");
+        ->set_help_msg("-h. --help, help                        show this help message.");
+    cmd_opts->bind_cmd("-u, --url", util::cli::phoenix::assign(etcd_host))->set_help_msg("-u, --url [base url with prefix]        set base address.");
     {
-        std::string msg = "                                       set ls prefix(default: ";
+        std::string msg = "-p, --prefix [prefix]                   set ls prefix(default: ";
         msg += prefix;
         msg += ", available: ";
         msg += ETCD_MODULE_BY_ID_DIR;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
         cmd_opts->bind_cmd("-p, --prefix", util::cli::phoenix::assign(prefix))->set_help_msg(msg.c_str());
     }
     cmd_opts->bind_cmd("-a, --authorization", util::cli::phoenix::assign(authorization))
-        ->set_help_msg("                                       set authorization(username:password).");
+        ->set_help_msg("-a, --authorization [username:password] set authorization().");
 
 
     cmd_opts->start(argc - 1, argv + 1);
