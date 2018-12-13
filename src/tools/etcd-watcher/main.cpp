@@ -12,8 +12,8 @@
 #include <etcdcli/etcd_watcher.h>
 
 
-static bool is_run = true;
-static int wait_for_close = 0;
+static bool is_run         = true;
+static int  wait_for_close = 0;
 static void tick_timer_callback(uv_timer_t *handle) {
     util::time::time_utility::update();
 
@@ -52,8 +52,8 @@ struct check_keepalive_data_callback {
 };
 
 /**
-./etcd-watcher http://127.0.0.1:2379 /atapp/proxy/services /atapp/proxy/services/123456 123456
-./etcd-watcher http://127.0.0.1:2379 /atapp/proxy/services /atapp/proxy/services/456789 456789
+./etcd-watcher http://127.0.0.1:2379 /atapp/services/by_id /atapp/services/by_id/123456 123456
+./etcd-watcher http://127.0.0.1:2379 /atapp/services/by_id /atapp/services/by_id/456789 456789
 curl http://127.0.0.1:2379/v3alpha/watch -XPOST -d '{"create_request":  {"key": "L2F0YXBwL3Byb3h5L3NlcnZpY2Vz", "range_end": "L2F0YXBwL3Byb3h5L3NlcnZpY2V0",
 "prev_kv": true} }'
 **/
@@ -61,7 +61,7 @@ curl http://127.0.0.1:2379/v3alpha/watch -XPOST -d '{"create_request":  {"key": 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         printf("Usage: %s <init host> <watch path> <keepalive path> <keepalive value>\n", argv[0]);
-        printf("  Example: %s http://127.0.0.1:2379 /atapp/proxy/services /atapp/proxy/services/123456 \"{}\"\n", argv[0]);
+        printf("  Example: %s http://127.0.0.1:2379 /atapp/services/by_id /atapp/services/by_id/123456 \"{}\"\n", argv[0]);
         return 0;
     }
 

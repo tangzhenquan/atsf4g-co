@@ -138,9 +138,8 @@ namespace atframe {
 
             // 如果lease不存在（没有TTL）则启动创建流程
             rapidjson::Document doc;
-            doc.Parse(http_content.c_str());
 
-            if (doc.IsObject()) {
+            if (::atframe::component::etcd_packer::parse_object(doc, http_content.c_str())) {
                 rapidjson::Value root = doc.GetObject();
 
                 // Run check function

@@ -137,7 +137,13 @@ namespace atframe {
             WLOGTRACE("Etcd watcher %p got range http response: %s", self, http_content.c_str());
 
             rapidjson::Document doc;
-            doc.Parse(http_content.c_str(), http_content.size());
+            if (false == ::atframe::component::etcd_packer::parse_object(doc, http_content.c_str())) {
+                WLOGERROR("Etcd watcher %p got range response parse failed: %s", self, http_content.c_str());
+
+                self->rpc_.watcher_next_request_time = util::time::time_utility::now() + self->rpc_.retry_interval;
+                self->active();
+                return 0;
+            }
 
             // unpack header
             etcd_response_header header;
@@ -177,13 +183,15 @@ namespace atframe {
                     }
                     response.events.reserve(reverse_sz);
 
-                    rapidjson::Document::Array all_events = res->value.GetArray();
-                    for (rapidjson::Document::Array::ValueIterator iter = all_events.Begin(); iter != all_events.End(); ++iter) {
-                        response.events.push_back(event_t());
-                        event_t &evt = response.events.back();
+                    if (res->value.IsArray()) {
+                        rapidjson::Document::Array all_events = res->value.GetArray();
+                        for (rapidjson::Document::Array::ValueIterator iter = all_events.Begin(); iter != all_events.End(); ++iter) {
+                            response.events.push_back(event_t());
+                            event_t &evt = response.events.back();
 
-                        evt.evt_type = etcd_watch_event::EN_WEVT_PUT; // 查询的结果都认为是PUT
-                        etcd_packer::unpack(evt.kv, *iter);
+                            evt.evt_type = etcd_watch_event::EN_WEVT_PUT; // 查询的结果都认为是PUT
+                            etcd_packer::unpack(evt.kv, *iter);
+                        }
                     }
                 }
             }
@@ -288,10 +296,8 @@ namespace atframe {
                 self->rpc_data_stream_.str("");
 
                 WLOGTRACE("Etcd watcher %p got http trunk: %s", self, value_json.c_str());
-                doc.Parse(value_json.c_str(), value_json.size());
-
                 // 忽略空数据
-                if (!doc.IsObject()) {
+                if (false == ::atframe::component::etcd_packer::parse_object(doc, value_json.c_str())) {
                     continue;
                 }
 
@@ -327,7 +333,7 @@ namespace atframe {
                 etcd_packer::unpack_bool(*result, "canceled", response.canceled);
 
                 rapidjson::Document::MemberIterator events = result->FindMember("events");
-                if (result->MemberEnd() != events) {
+                if (result->MemberEnd() != events && events->value.IsArray()) {
                     rapidjson::Document::Array all_events = events->value.GetArray();
                     for (rapidjson::Document::Array::ValueIterator iter = all_events.Begin(); iter != all_events.End(); ++iter) {
                         response.events.push_back(event_t());

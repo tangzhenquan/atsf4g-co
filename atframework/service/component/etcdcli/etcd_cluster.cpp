@@ -303,6 +303,24 @@ namespace atframe {
             return ret;
         }
 
+        bool etcd_cluster::is_available() const {
+            if (!curl_multi_) {
+                return false;
+            }
+
+            if (check_flag(flag_t::CLOSING)) {
+                return false;
+            }
+
+            // empty other actions will be delayed
+            if (conf_.path_node.empty()) {
+                return false;
+            }
+
+            // check or start authorization
+            return check_authorization();
+        }
+
         void etcd_cluster::set_flag(flag_t::type f, bool v) {
             assert(0 == (f & (f - 1)));
             if (v == check_flag(f)) {
@@ -1076,7 +1094,7 @@ namespace atframe {
 
         void etcd_cluster::add_stats_create_request() { stats_.sum_create_requests = 0; }
 
-        bool etcd_cluster::check_authorization() {
+        bool etcd_cluster::check_authorization() const {
             if (conf_.authorization.empty()) {
                 return true;
             }

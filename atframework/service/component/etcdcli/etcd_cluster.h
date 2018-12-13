@@ -77,6 +77,7 @@ namespace atframe {
             util::network::http_request::ptr_t close(bool wait = false);
             void                               reset();
             int                                tick();
+            bool                               is_available() const;
 
             inline bool check_flag(uint32_t f) const { return 0 != (flags_ & f); };
             void        set_flag(flag_t::type f, bool v);
@@ -188,7 +189,7 @@ namespace atframe {
             void add_stats_success_request();
             void add_stats_create_request();
 
-            bool check_authorization();
+            bool check_authorization() const;
 
         public:
             void check_authorization_expired(int http_code, const std::string &content);
