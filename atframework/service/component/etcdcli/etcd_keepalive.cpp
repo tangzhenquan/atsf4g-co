@@ -13,10 +13,10 @@ namespace atframe {
         bool etcd_keepalive::default_checker_t::operator()(const std::string &checked) const { return checked.empty() || data == checked; }
 
         etcd_keepalive::etcd_keepalive(etcd_cluster &owner, const std::string &path, constrict_helper_t &) : owner_(&owner), path_(path) {
-            checker_.is_check_run = false;
+            checker_.is_check_run    = false;
             checker_.is_check_passed = false;
-            checker_.retry_times = 0;
-            rpc_.is_actived = false;
+            checker_.retry_times     = 0;
+            rpc_.is_actived          = false;
         }
 
         etcd_keepalive::ptr_t etcd_keepalive::create(etcd_cluster &owner, const std::string &path) {
@@ -33,10 +33,10 @@ namespace atframe {
             }
             rpc_.is_actived = false;
 
-            checker_.is_check_run = false;
+            checker_.is_check_run    = false;
             checker_.is_check_passed = false;
-            checker_.fn = NULL;
-            checker_.retry_times = 0;
+            checker_.fn              = NULL;
+            checker_.retry_times     = 0;
         }
 
         void etcd_keepalive::set_checker(const std::string &checked_str) { checker_.fn = default_checker_t(checked_str); }
@@ -59,7 +59,7 @@ namespace atframe {
 
             // if has checker and has not check date yet, send a check request
             if (!checker_.fn) {
-                checker_.is_check_run = true;
+                checker_.is_check_run    = true;
                 checker_.is_check_passed = true;
                 ++checker_.retry_times;
             }
@@ -126,6 +126,7 @@ namespace atframe {
                           req.get_error_msg());
 
                 self->owner_->add_retry_keepalive(self->shared_from_this());
+                self->owner_->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
                 return 0;
             }
 
@@ -192,6 +193,7 @@ namespace atframe {
                           req.get_error_msg());
 
                 self->owner_->add_retry_keepalive(self->shared_from_this());
+                self->owner_->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
                 return 0;
             }
 

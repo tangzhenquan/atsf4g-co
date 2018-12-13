@@ -12,13 +12,13 @@ namespace atframe {
     namespace component {
         etcd_watcher::etcd_watcher(etcd_cluster &owner, const std::string &path, const std::string &range_end, constrict_helper_t &)
             : owner_(&owner), path_(path), range_end_(range_end) {
-            rpc_.retry_interval = std::chrono::seconds(15); // 重试间隔15秒
-            rpc_.request_timeout = std::chrono::hours(1);   // 一小时超时时间，相当于每小时重新拉取数据
+            rpc_.retry_interval            = std::chrono::seconds(15); // 重试间隔15秒
+            rpc_.request_timeout           = std::chrono::hours(1);    // 一小时超时时间，相当于每小时重新拉取数据
             rpc_.watcher_next_request_time = std::chrono::system_clock::from_time_t(0);
-            rpc_.enable_progress_notify = true;
-            rpc_.enable_prev_kv = false;
-            rpc_.is_actived = false;
-            rpc_.last_revision = 0;
+            rpc_.enable_progress_notify    = true;
+            rpc_.enable_prev_kv            = false;
+            rpc_.is_actived                = false;
+            rpc_.last_revision             = 0;
         }
 
         etcd_watcher::ptr_t etcd_watcher::create(etcd_cluster &owner, const std::string &path, const std::string &range_end) {
@@ -34,7 +34,7 @@ namespace atframe {
                 rpc_.rpc_opr_->stop();
                 rpc_.rpc_opr_.reset();
             }
-            rpc_.is_actived = false;
+            rpc_.is_actived    = false;
             rpc_.last_revision = 0;
         }
 
@@ -126,6 +126,7 @@ namespace atframe {
 
                 self->rpc_.watcher_next_request_time = util::time::time_utility::now() + self->rpc_.retry_interval;
 
+                self->owner_->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
                 // 立刻开启下一次watch
                 self->active();
                 return 0;
@@ -141,7 +142,7 @@ namespace atframe {
             // unpack header
             etcd_response_header header;
             {
-                header.revision = 0;
+                header.revision                         = 0;
                 rapidjson::Document::MemberIterator res = doc.FindMember("header");
                 if (res != doc.MemberEnd()) {
                     etcd_packer::unpack(header, res->value);
@@ -161,9 +162,9 @@ namespace atframe {
 
             // first event
             response_t response;
-            response.watch_id = 0;
-            response.created = false;
-            response.canceled = false;
+            response.watch_id         = 0;
+            response.created          = false;
+            response.canceled         = false;
             response.compact_revision = 0;
             {
                 rapidjson::Document::MemberIterator res = doc.FindMember("kvs");
@@ -232,6 +233,8 @@ namespace atframe {
                     self->rpc_.watcher_next_request_time = util::time::time_utility::now();
                 }
 
+                self->owner_->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
+
                 // 立刻开启下一次watch
                 self->active();
                 return 0;
@@ -247,7 +250,7 @@ namespace atframe {
         int etcd_watcher::libcurl_callback_on_watch_write(util::network::http_request &req, const char *inbuf, size_t inbufsz, const char *&outbuf,
                                                           size_t &outbufsz) {
             // etcd_watcher 模块内消耗掉缓冲区，不需要写出到通用缓冲区了
-            outbuf = NULL;
+            outbuf   = NULL;
             outbufsz = 0;
 
             etcd_watcher *self = reinterpret_cast<etcd_watcher *>(req.get_priv_data());
@@ -280,7 +283,7 @@ namespace atframe {
 
                 // 如果lease不存在（没有TTL）则启动创建流程
                 rapidjson::Document doc;
-                std::string value_json;
+                std::string         value_json;
                 self->rpc_data_stream_.str().swap(value_json);
                 self->rpc_data_stream_.str("");
 
@@ -292,7 +295,7 @@ namespace atframe {
                     continue;
                 }
 
-                rapidjson::Value root = doc.GetObject();
+                rapidjson::Value  root   = doc.GetObject();
                 rapidjson::Value *result = &root;
                 {
                     rapidjson::Document::MemberIterator res = root.FindMember("result");
@@ -372,7 +375,7 @@ namespace atframe {
                               response.canceled ? "Yes" : "No");
                     for (size_t i = 0; i < response.events.size(); ++i) {
                         etcd_key_value *kv = &response.events[i].kv;
-                        const char *name;
+                        const char *    name;
                         if (etcd_watch_event::EN_WEVT_PUT == response.events[i].evt_type) {
                             name = "PUT";
                         } else {

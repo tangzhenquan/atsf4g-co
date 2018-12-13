@@ -20,6 +20,8 @@ namespace atframe {
     namespace component {
         class etcd_packer {
         public:
+            static bool parse_object(rapidjson::Document &doc, const char *data);
+
             static void pack(const etcd_key_value &etcd_val, rapidjson::Value &json_val, rapidjson::Document &doc);
             static void unpack(etcd_key_value &etcd_val, rapidjson::Value &json_val);
 
@@ -39,6 +41,8 @@ namespace atframe {
             static void pack_key_range(rapidjson::Value &json_val, const std::string &key, std::string range_end, rapidjson::Document &doc);
 
             static void pack_string(rapidjson::Value &json_val, const char *key, const char *val, rapidjson::Document &doc);
+            static bool unpack_string(rapidjson::Value &json_val, const char *key, std::string &val);
+
             static void pack_base64(rapidjson::Value &json_val, const char *key, const std::string &val, rapidjson::Document &doc);
             static bool unpack_base64(rapidjson::Value &json_val, const char *key, std::string &val);
 

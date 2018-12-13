@@ -247,6 +247,12 @@ namespace atframe {
             }
 
             {
+                std::string auth;
+                cfg.dump_to("atapp.etcd.authorization", auth, true);
+                etcd_ctx_.set_conf_authorization(auth);
+            }
+
+            {
                 util::config::duration_value dur;
                 cfg.dump_to("atapp.etcd.request.timeout", dur, true);
                 if (0 != dur.sec || 0 != dur.nsec) {
@@ -508,7 +514,7 @@ namespace atframe {
         }
 
 
-        void etcd_module::unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data) {
+        bool etcd_module::unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data) {
             if (reset_data) {
                 out.action = node_action_t::EN_NAT_UNKNOWN;
                 out.id     = 0;
@@ -518,6 +524,7 @@ namespace atframe {
                 out.hash_code.clear();
                 out.type_id = 0;
                 out.type_name.clear();
+                out.version.clear();
             }
 
             if (json.empty()) {
@@ -532,12 +539,11 @@ namespace atframe {
                 if (start_idx < path.size()) {
                     util::string::str2int(out.id, &path[start_idx]);
                 }
-                return;
+                return false;
             }
 
             rapidjson::Document doc;
-            doc.Parse(json.c_str(), json.size());
-            if (doc.IsObject()) {
+            if (::atframe::component::etcd_packer::parse_object(doc, json.c_str())) {
                 rapidjson::Value                 val = doc.GetObject();
                 rapidjson::Value::MemberIterator atproxy_iter;
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("id"))) {
@@ -545,28 +551,47 @@ namespace atframe {
                         out.id = atproxy_iter->value.GetUint64();
                     } else {
                         out.id = 0;
+                        return false;
                     }
+                } else {
+                    return false;
                 }
 
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("name"))) {
-                    out.name = atproxy_iter->value.GetString();
+                    if (atproxy_iter->value.IsString()) {
+                        out.name = atproxy_iter->value.GetString();
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
                 }
 
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("hostname"))) {
-                    out.hostname = atproxy_iter->value.GetString();
+                    if (atproxy_iter->value.IsString()) {
+                        out.hostname = atproxy_iter->value.GetString();
+                    } else {
+                        return false;
+                    }
                 }
 
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("listen"))) {
                     if (atproxy_iter->value.IsArray()) {
                         rapidjson::Document::Array nodes = atproxy_iter->value.GetArray();
                         for (rapidjson::Document::Array::ValueIterator iter = nodes.Begin(); iter != nodes.End(); ++iter) {
-                            out.listens.push_back(iter->GetString());
+                            if (atproxy_iter->value.IsString()) {
+                                out.listens.push_back(iter->GetString());
+                            }
                         }
                     }
                 }
 
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("hash_code"))) {
-                    out.hash_code = atproxy_iter->value.GetString();
+                    if (atproxy_iter->value.IsString()) {
+                        out.hash_code = atproxy_iter->value.GetString();
+                    } else {
+                        return false;
+                    }
                 }
 
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("type_id"))) {
@@ -578,9 +603,25 @@ namespace atframe {
                 }
 
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("type_name"))) {
-                    out.type_name = atproxy_iter->value.GetString();
+                    if (atproxy_iter->value.IsString()) {
+                        out.type_name = atproxy_iter->value.GetString();
+                    } else {
+                        return false;
+                    }
+                }
+
+                if (val.MemberEnd() != (atproxy_iter = val.FindMember("version"))) {
+                    if (atproxy_iter->value.IsString()) {
+                        out.version = atproxy_iter->value.GetString();
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
                 }
             }
+
+            return true;
         }
 
         void etcd_module::pack(const node_info_t &src, std::string &json) {
@@ -601,6 +642,7 @@ namespace atframe {
             doc.AddMember("hash_code", rapidjson::StringRef(src.hash_code.c_str(), src.hash_code.size()), doc.GetAllocator());
             doc.AddMember("type_id", src.type_id, doc.GetAllocator());
             doc.AddMember("type_name", rapidjson::StringRef(src.type_name.c_str(), src.type_name.size()), doc.GetAllocator());
+            doc.AddMember("version", rapidjson::StringRef(src.version.c_str(), src.version.size()), doc.GetAllocator());
 
             // Stringify the DOM
             rapidjson::StringBuffer                    buffer;
@@ -622,7 +664,9 @@ namespace atframe {
             for (size_t i = 0; i < body.events.size(); ++i) {
                 const ::atframe::component::etcd_watcher::event_t &evt_data = body.events[i];
                 node_info_t                                        node;
-                unpack(node, evt_data.kv.key, evt_data.kv.value, true);
+                if (!unpack(node, evt_data.kv.key, evt_data.kv.value, true)) {
+                    continue;
+                }
 
                 if (evt_data.evt_type == ::atframe::component::etcd_watch_event::EN_WEVT_DELETE) {
                     node.action = node_action_t::EN_NAT_DELETE;
@@ -650,7 +694,9 @@ namespace atframe {
             for (size_t i = 0; i < body.events.size(); ++i) {
                 const ::atframe::component::etcd_watcher::event_t &evt_data = body.events[i];
                 node_info_t                                        node;
-                unpack(node, evt_data.kv.key, evt_data.kv.value, true);
+                if (!unpack(node, evt_data.kv.key, evt_data.kv.value, true)) {
+                    continue;
+                }
 
                 if (evt_data.evt_type == ::atframe::component::etcd_watch_event::EN_WEVT_DELETE) {
                     node.action = node_action_t::EN_NAT_DELETE;
@@ -674,6 +720,7 @@ namespace atframe {
                 ni.hash_code = get_app()->get_hash_code();
                 ni.type_id   = static_cast<uint64_t>(get_app()->get_type_id());
                 ni.type_name = get_app()->get_type_name();
+                ni.version   = get_app()->get_app_version();
                 pack(ni, val);
             }
 

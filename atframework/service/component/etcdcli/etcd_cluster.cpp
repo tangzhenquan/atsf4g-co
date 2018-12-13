@@ -21,40 +21,52 @@ namespace atframe {
          * @see https://coreos.com/etcd/docs/latest/dev-guide/api_reference_v3.html
          * @see https://coreos.com/etcd/docs/latest/dev-guide/apispec/swagger/rpc.swagger.json
          * @note KeyValue: { "key": "KEY", "create_revision": "number", "mod_revision": "number", "version": "number", "value": "", "lease": "number" }
-         *   Get data => curl http://localhost:2379/v3alpha/range -X POST -d '{"key": "KEY", "range_end": ""}'
+         *   Get data => curl http://localhost:2379/v3beta/range -X POST -d '{"key": "KEY", "range_end": ""}'
          *       # Response {"kvs": [{...}], "more": "bool", "count": "COUNT"}
-         *   Set data => curl http://localhost:2379/v3alpha/kv/put -X POST -d '{"key": "KEY", "value": "", "lease": "number", "prev_kv": "bool"}'
-         *   Renew data => curl http://localhost:2379/v3alpha/kv/put -X POST -d '{"key": "KEY", "value": "", "prev_kv": "bool", "ignore_lease": true}'
+         *   Set data => curl http://localhost:2379/v3beta/kv/put -X POST -d '{"key": "KEY", "value": "", "lease": "number", "prev_kv": "bool"}'
+         *   Renew data => curl http://localhost:2379/v3beta/kv/put -X POST -d '{"key": "KEY", "value": "", "prev_kv": "bool", "ignore_lease": true}'
          *       # Response {"header":{...}, "prev_kv": {...}}
-         *   Delete data => curl http://localhost:2379/v3alpha/kv/deleterange -X POST -d '{"key": "KEY", "range_end": "", "prev_kv": "bool"}'
+         *   Delete data => curl http://localhost:2379/v3beta/kv/deleterange -X POST -d '{"key": "KEY", "range_end": "", "prev_kv": "bool"}'
          *       # Response {"header":{...}, "deleted": "number", "prev_kvs": [{...}]}
          *
-         *   Watch => curl http://localhost:2379/v3alpha/watch -XPOST -d '{"create_request":  {"key": "WATCH KEY", "range_end": "", "prev_kv": true} }'
+         *   Watch => curl http://localhost:2379/v3beta/watch -XPOST -d '{"create_request":  {"key": "WATCH KEY", "range_end": "", "prev_kv": true} }'
          *       # Response {"header":{...},"watch_id":"ID","created":"bool", "canceled": "bool", "compact_revision": "REVISION", "events": [{"type":
          *                  "PUT=0|DELETE=1", "kv": {...}, prev_kv": {...}"}]}
          *
-         *   Allocate Lease => curl http://localhost:2379/v3alpha/lease/grant -XPOST -d '{"TTL": 5, "ID": 0}'
+         *   Allocate Lease => curl http://localhost:2379/v3beta/lease/grant -XPOST -d '{"TTL": 5, "ID": 0}'
          *       # Response {"header":{...},"ID":"ID","TTL":"5"}
-         *   Keepalive Lease => curl http://localhost:2379/v3alpha/lease/keepalive -XPOST -d '{"ID": 0}'
+         *   Keepalive Lease => curl http://localhost:2379/v3beta/lease/keepalive -XPOST -d '{"ID": 0}'
          *       # Response {"header":{...},"ID":"ID","TTL":"5"}
-         *   Revoke Lease => curl http://localhost:2379/v3alpha/kv/lease/revoke -XPOST -d '{"ID": 0}'
+         *   Revoke Lease => curl http://localhost:2379/v3beta/kv/lease/revoke -XPOST -d '{"ID": 0}'
          *       # Response {"header":{...}}
          *
-         *   List members => curl http://localhost:2379/v3alpha/cluster/member/list
+         *   List members => curl http://localhost:2379/v3beta/cluster/member/list
          *       # Response {"header":{...},"members":[{"ID":"ID","name":"NAME","peerURLs":["peer url"],"clientURLs":["client url"]}]}
+         * 
+         *   Authorization => curl -H "Authorization: TOKEN"
+         *   Authorization => curl http://localhost:2379/v3beta/auth/authenticate -XPOST -d '{"name": "username", "password": "pass"}'
+         *       # Response {"header":{...}, "token": "TOKEN"}
+         *       # Return 401 if auth token invalid
+         *       # Return 400 with {"error": "etcdserver: user name is empty", "code": 3} if need TOKEN
+         *       # Return 400 with {"error": "etcdserver: authentication failed, ...", "code": 3} if username of password invalid
          */
 
-#define ETCD_API_V3_MEMBER_LIST "/v3alpha/cluster/member/list"
+#define ETCD_API_V3_ERROR_HTTP_CODE_AUTH 401
+#define ETCD_API_V3_ERROR_HTTP_INVALID_PARAM 400
+#define ETCD_API_V3_ERROR_HTTP_PRECONDITION 412
 
-#define ETCD_API_V3_KV_GET "/v3alpha/kv/range"
-#define ETCD_API_V3_KV_SET "/v3alpha/kv/put"
-#define ETCD_API_V3_KV_DELETE "/v3alpha/kv/deleterange"
+#define ETCD_API_V3_MEMBER_LIST "/v3beta/cluster/member/list"
+#define ETCD_API_V3_AUTH_AUTHENTICATE "/v3beta/auth/authenticate"
 
-#define ETCD_API_V3_WATCH "/v3alpha/watch"
+#define ETCD_API_V3_KV_GET "/v3beta/kv/range"
+#define ETCD_API_V3_KV_SET "/v3beta/kv/put"
+#define ETCD_API_V3_KV_DELETE "/v3beta/kv/deleterange"
 
-#define ETCD_API_V3_LEASE_GRANT "/v3alpha/lease/grant"
-#define ETCD_API_V3_LEASE_KEEPALIVE "/v3alpha/lease/keepalive"
-#define ETCD_API_V3_LEASE_REVOKE "/v3alpha/kv/lease/revoke"
+#define ETCD_API_V3_WATCH "/v3beta/watch"
+
+#define ETCD_API_V3_LEASE_GRANT "/v3beta/lease/grant"
+#define ETCD_API_V3_LEASE_KEEPALIVE "/v3beta/lease/keepalive"
+#define ETCD_API_V3_LEASE_REVOKE "/v3beta/kv/lease/revoke"
 
         namespace details {
             const std::string &get_default_user_agent() {
@@ -63,9 +75,9 @@ namespace atframe {
                     return ret;
                 }
 
-                char buffer[256] = {0};
-                const char *prefix = "Mozilla/5.0";
-                const char *suffix = "Atframework Etcdcli/1.0";
+                char        buffer[256] = {0};
+                const char *prefix      = "Mozilla/5.0";
+                const char *suffix      = "Atframework Etcdcli/1.0";
 #if defined(_WIN32) || defined(__WIN32__)
 #if (defined(__MINGW32__) && __MINGW32__)
                 const char *sys_env = "Win32; MinGW32";
@@ -146,14 +158,14 @@ namespace atframe {
         } // namespace details
 
         etcd_cluster::etcd_cluster() : flags_(0) {
-            conf_.http_cmd_timeout = std::chrono::seconds(10);
+            conf_.http_cmd_timeout              = std::chrono::seconds(10);
             conf_.etcd_members_next_update_time = std::chrono::system_clock::from_time_t(0);
-            conf_.etcd_members_update_interval = std::chrono::minutes(5);
+            conf_.etcd_members_update_interval  = std::chrono::minutes(5);
 
-            conf_.lease = 0;
+            conf_.lease                      = 0;
             conf_.keepalive_next_update_time = std::chrono::system_clock::from_time_t(0);
-            conf_.keepalive_timeout = std::chrono::seconds(16);
-            conf_.keepalive_interval = std::chrono::seconds(5);
+            conf_.keepalive_timeout          = std::chrono::seconds(16);
+            conf_.keepalive_interval         = std::chrono::seconds(5);
 
             memset(&stats_, 0, sizeof(stats_));
         }
@@ -180,6 +192,12 @@ namespace atframe {
                 rpc_update_members_->set_on_complete(NULL);
                 rpc_update_members_->stop();
                 rpc_update_members_.reset();
+            }
+
+            if (rpc_authenticate_) {
+                rpc_authenticate_->set_on_complete(NULL);
+                rpc_authenticate_->stop();
+                rpc_authenticate_.reset();
             }
 
             for (size_t i = 0; i < keepalive_actors_.size(); ++i) {
@@ -225,14 +243,15 @@ namespace atframe {
 
             conf_.http_cmd_timeout = std::chrono::seconds(10);
 
+            conf_.authorization_header.clear();
             conf_.path_node.clear();
             conf_.etcd_members_next_update_time = std::chrono::system_clock::from_time_t(0);
-            conf_.etcd_members_update_interval = std::chrono::minutes(5);
+            conf_.etcd_members_update_interval  = std::chrono::minutes(5);
 
-            conf_.lease = 0;
+            conf_.lease                      = 0;
             conf_.keepalive_next_update_time = std::chrono::system_clock::from_time_t(0);
-            conf_.keepalive_timeout = std::chrono::seconds(16);
-            conf_.keepalive_interval = std::chrono::seconds(5);
+            conf_.keepalive_timeout          = std::chrono::seconds(16);
+            conf_.keepalive_interval         = std::chrono::seconds(5);
         }
 
         int etcd_cluster::tick() {
@@ -253,6 +272,15 @@ namespace atframe {
 
             // empty other actions will be delayed
             if (conf_.path_node.empty()) {
+                return ret;
+            }
+
+            // check or start authorization
+            if (!check_authorization()) {
+                if (!rpc_authenticate_) {
+                    ret += create_request_auth_authenticate()? 1: 0;
+                }
+
                 return ret;
             }
 
@@ -378,7 +406,7 @@ namespace atframe {
 
         void etcd_cluster::set_lease(int64_t v, bool force_active_keepalives) {
             int64_t old_v = get_lease();
-            conf_.lease = v;
+            conf_.lease   = v;
 
             if (old_v == v && false == force_active_keepalives) {
                 // 仅重试失败项目
@@ -409,6 +437,126 @@ namespace atframe {
             }
 
             keepalive_retry_actors_.clear();
+        }
+
+        bool etcd_cluster::create_request_auth_authenticate() {
+            if (!curl_multi_) {
+                return false;
+            }
+
+            if (check_flag(flag_t::CLOSING)) {
+                return false;
+            }
+
+            if(conf_.path_node.empty()) {
+                return false;
+            }
+
+            if (conf_.authorization.empty()) {
+                conf_.authorization_header.clear();
+                return false;
+            }
+
+            if (rpc_authenticate_) {
+                return false;
+            }
+            
+            std::stringstream ss;
+            ss << conf_.path_node << ETCD_API_V3_AUTH_AUTHENTICATE;
+            util::network::http_request::ptr_t req = util::network::http_request::create(curl_multi_.get(), ss.str());
+
+            std::string::size_type username_sep = conf_.authorization.find(':');
+            std::string username, password;
+            if (username_sep == std::string::npos) {
+                username = conf_.authorization;
+            } else {
+                username = conf_.authorization.substr(0, username_sep);
+                if (username_sep + 1 < conf_.authorization.size()) {
+                    password = conf_.authorization.substr(username_sep + 1);
+                }
+            }
+
+            if (req) {
+                add_stats_create_request();
+
+                rapidjson::Document doc;
+                doc.SetObject();
+                doc.AddMember("name", rapidjson::StringRef(username.c_str(), username.size()), doc.GetAllocator());
+                doc.AddMember("password", rapidjson::StringRef(password.c_str(), password.size()), doc.GetAllocator());
+
+                setup_http_request(req, doc, get_http_timeout_ms(), conf_.authorization_header);
+                req->set_priv_data(this);
+                req->set_on_complete(libcurl_callback_on_auth_authenticate);
+
+                // req->set_on_verbose(details::etcd_cluster_verbose_callback);
+                int res = req->start(util::network::http_request::method_t::EN_MT_POST, false);
+                if (res != 0) {
+                    req->set_on_complete(NULL);
+                    WLOGERROR("Etcd start authenticate request for user %s to %s failed, res: %d", username.c_str(), req->get_url().c_str(),
+                              res);
+                    add_stats_error_request();
+                    return false;
+                }
+
+                WLOGINFO("Etcd start authenticate request for user %s to %s", username.c_str(), req->get_url().c_str());
+                rpc_authenticate_ = req;
+            } else {
+                add_stats_error_request();
+
+            }
+
+            return !!rpc_authenticate_;
+        }
+
+        int etcd_cluster::libcurl_callback_on_auth_authenticate(util::network::http_request &req) {
+            etcd_cluster *self = reinterpret_cast<etcd_cluster *>(req.get_priv_data());
+            if (NULL == self) {
+                WLOGERROR("Etcd authenticate shouldn't has request without private data");
+                return 0;
+            }
+
+            self->rpc_authenticate_.reset();
+
+            // 服务器错误则忽略
+            if (0 != req.get_error_code() ||
+                util::network::http_request::status_code_t::EN_ECG_SUCCESS != util::network::http_request::get_status_code_group(req.get_response_code())) {
+
+                // only network error will trigger a etcd member update
+                if (0 != req.get_error_code()) {
+                    self->create_request_member_update();
+                }
+                self->add_stats_error_request();
+
+                WLOGERROR("Etcd authenticate failed, error code: %d, http code: %d\n%s", req.get_error_code(), req.get_response_code(), req.get_error_msg());
+                self->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
+                return 0;
+            }
+
+            std::string http_content;
+            req.get_response_stream().str().swap(http_content);
+            WLOGTRACE("Etcd cluster got http response: %s", http_content.c_str());
+
+            do {
+                // 如果lease不存在（没有TTL）则启动创建流程
+                // 忽略空数据
+                rapidjson::Document doc;
+                if (false == ::atframe::component::etcd_packer::parse_object(doc, http_content.c_str())) {
+                    break;
+                }
+
+                rapidjson::Value root = doc.GetObject();
+                std::string token;
+                if (false == etcd_packer::unpack_string(root, "token", token)) {
+                    WLOGERROR("Etcd authenticate failed, token not found.(%s)", http_content.c_str());
+                    self->add_stats_error_request();
+                    return 0;
+                }
+
+                self->conf_.authorization_header = "Authorization: " + token;
+                WLOGINFO("Etcd cluster got authenticate token: %s", token.c_str());
+            } while (false);
+
+            return 0;
         }
 
         bool etcd_cluster::create_request_member_update() {
@@ -451,7 +599,7 @@ namespace atframe {
                 rapidjson::Document doc;
                 doc.SetObject();
 
-                setup_http_request(req, doc, get_http_timeout_ms());
+                setup_http_request(req, doc, get_http_timeout_ms(), conf_.authorization_header);
                 req->set_priv_data(this);
                 req->set_on_complete(libcurl_callback_on_member_update);
 
@@ -512,16 +660,13 @@ namespace atframe {
             WLOGTRACE("Etcd cluster got http response: %s", http_content.c_str());
 
             do {
-                // unpack
-                rapidjson::Document doc;
-                doc.Parse(http_content.c_str());
-
                 // ignore empty data
-                if (false == doc.IsObject()) {
+                rapidjson::Document doc;
+                if (false == ::atframe::component::etcd_packer::parse_object(doc, http_content.c_str())) {
                     break;
                 }
 
-                rapidjson::Value root = doc.GetObject();
+                rapidjson::Value                    root    = doc.GetObject();
                 rapidjson::Document::MemberIterator members = root.FindMember("members");
                 if (root.MemberEnd() == members) {
                     WLOGERROR("Etcd members not found");
@@ -530,8 +675,8 @@ namespace atframe {
                 }
 
                 self->conf_.hosts.clear();
-                bool need_select_node = true;
-                rapidjson::Document::Array all_members = members->value.GetArray();
+                bool                       need_select_node = true;
+                rapidjson::Document::Array all_members      = members->value.GetArray();
                 for (rapidjson::Document::Array::ValueIterator iter = all_members.Begin(); iter != all_members.End(); ++iter) {
                     rapidjson::Document::MemberIterator client_urls = iter->FindMember("clientURLs");
                     if (client_urls == iter->MemberEnd()) {
@@ -596,7 +741,7 @@ namespace atframe {
                 doc.AddMember("ID", get_lease(), doc.GetAllocator());
                 doc.AddMember("TTL", std::chrono::duration_cast<std::chrono::seconds>(conf_.keepalive_timeout).count(), doc.GetAllocator());
 
-                setup_http_request(req, doc, get_http_timeout_ms());
+                setup_http_request(req, doc, get_http_timeout_ms(), conf_.authorization_header);
                 req->set_priv_data(this);
                 req->set_on_complete(libcurl_callback_on_lease_keepalive);
 
@@ -653,7 +798,7 @@ namespace atframe {
                 doc.SetObject();
                 doc.AddMember("ID", get_lease(), doc.GetAllocator());
 
-                setup_http_request(req, doc, get_http_timeout_ms());
+                setup_http_request(req, doc, get_http_timeout_ms(), conf_.authorization_header);
                 req->set_priv_data(this);
                 req->set_on_complete(libcurl_callback_on_lease_keepalive);
 
@@ -695,6 +840,7 @@ namespace atframe {
                 self->add_stats_error_request();
 
                 WLOGERROR("Etcd lease keepalive failed, error code: %d, http code: %d\n%s", req.get_error_code(), req.get_response_code(), req.get_error_msg());
+                self->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
                 return 0;
             }
 
@@ -704,28 +850,21 @@ namespace atframe {
 
             do {
                 // 如果lease不存在（没有TTL）则启动创建流程
-                rapidjson::Document doc;
-                doc.Parse(http_content.c_str());
-
                 // 忽略空数据
-                if (false == doc.IsObject()) {
+                rapidjson::Document doc;
+                if (false == ::atframe::component::etcd_packer::parse_object(doc, http_content.c_str())) {
                     break;
                 }
 
-                bool is_grant = false;
-                rapidjson::Value root = doc.GetObject();
-                rapidjson::Value::MemberIterator result = root.FindMember("result");
+                bool                             is_grant = false;
+                rapidjson::Value                 root     = doc.GetObject();
+                rapidjson::Value::MemberIterator result   = root.FindMember("result");
                 if (result == root.MemberEnd()) {
                     is_grant = true;
                 } else {
                     root = result->value;
                 }
 
-                if (false == root.IsObject()) {
-                    WLOGERROR("Etcd lease grant failed, root is not object.(%s)", http_content.c_str());
-                    self->add_stats_error_request();
-                    return 0;
-                }
 
                 if (root.MemberEnd() == root.FindMember("TTL")) {
                     if (is_grant) {
@@ -778,7 +917,7 @@ namespace atframe {
                 doc.SetObject();
                 doc.AddMember("ID", get_lease(), doc.GetAllocator());
 
-                setup_http_request(ret, doc, get_http_timeout_ms());
+                setup_http_request(ret, doc, get_http_timeout_ms(), conf_.authorization_header);
             } else {
                 add_stats_error_request();
             }
@@ -800,13 +939,13 @@ namespace atframe {
                 add_stats_create_request();
 
                 rapidjson::Document doc;
-                rapidjson::Value &root = doc.SetObject();
+                rapidjson::Value &  root = doc.SetObject();
 
                 etcd_packer::pack_key_range(root, key, range_end, doc);
                 doc.AddMember("limit", limit, doc.GetAllocator());
                 doc.AddMember("revision", revision, doc.GetAllocator());
 
-                setup_http_request(ret, doc, get_http_timeout_ms());
+                setup_http_request(ret, doc, get_http_timeout_ms(), conf_.authorization_header);
             } else {
                 add_stats_error_request();
             }
@@ -832,7 +971,7 @@ namespace atframe {
                 add_stats_create_request();
 
                 rapidjson::Document doc;
-                rapidjson::Value &root = doc.SetObject();
+                rapidjson::Value &  root = doc.SetObject();
 
                 etcd_packer::pack_base64(root, "key", key, doc);
                 etcd_packer::pack_base64(root, "value", value, doc);
@@ -844,7 +983,7 @@ namespace atframe {
                 doc.AddMember("ignore_value", ignore_value, doc.GetAllocator());
                 doc.AddMember("ignore_lease", ignore_lease, doc.GetAllocator());
 
-                setup_http_request(ret, doc, get_http_timeout_ms());
+                setup_http_request(ret, doc, get_http_timeout_ms(), conf_.authorization_header);
             } else {
                 add_stats_error_request();
             }
@@ -865,12 +1004,12 @@ namespace atframe {
                 add_stats_create_request();
 
                 rapidjson::Document doc;
-                rapidjson::Value &root = doc.SetObject();
+                rapidjson::Value &  root = doc.SetObject();
 
                 etcd_packer::pack_key_range(root, key, range_end, doc);
                 doc.AddMember("prev_kv", prev_kv, doc.GetAllocator());
 
-                setup_http_request(ret, doc, get_http_timeout_ms());
+                setup_http_request(ret, doc, get_http_timeout_ms(), conf_.authorization_header);
             } else {
                 add_stats_error_request();
             }
@@ -892,7 +1031,7 @@ namespace atframe {
                 add_stats_create_request();
 
                 rapidjson::Document doc;
-                rapidjson::Value &root = doc.SetObject();
+                rapidjson::Value &  root = doc.SetObject();
 
                 rapidjson::Value create_request(rapidjson::kObjectType);
 
@@ -912,7 +1051,7 @@ namespace atframe {
 
                 root.AddMember("create_request", create_request, doc.GetAllocator());
 
-                setup_http_request(ret, doc, get_http_timeout_ms());
+                setup_http_request(ret, doc, get_http_timeout_ms(), conf_.authorization_header);
                 ret->set_opt_keepalive(75, 150);
                 // 不能共享socket
                 ret->set_opt_reuse_connection(false);
@@ -937,7 +1076,33 @@ namespace atframe {
 
         void etcd_cluster::add_stats_create_request() { stats_.sum_create_requests = 0; }
 
-        void etcd_cluster::setup_http_request(util::network::http_request::ptr_t &req, rapidjson::Document &doc, time_t timeout) {
+        bool etcd_cluster::check_authorization() {
+            if (conf_.authorization.empty()) {
+                return true;
+            }
+
+            if (!conf_.authorization_header.empty()) {
+                return true;
+            }
+
+            return false;
+        }
+
+        void etcd_cluster::check_authorization_expired(int http_code, const std::string &content) {
+            if (ETCD_API_V3_ERROR_HTTP_CODE_AUTH == http_code) {
+                conf_.authorization_header.clear();
+                return;
+            }
+
+            if (ETCD_API_V3_ERROR_HTTP_INVALID_PARAM == http_code || ETCD_API_V3_ERROR_HTTP_PRECONDITION == http_code) {
+                if (std::string::npos != content.find("authentication")) {
+                    conf_.authorization_header.clear();
+                }
+            }
+        }
+
+        void etcd_cluster::setup_http_request(util::network::http_request::ptr_t &req, rapidjson::Document &doc, time_t timeout,
+                                              const std::string &authorization) {
             if (!req) {
                 return;
             }
@@ -949,6 +1114,9 @@ namespace atframe {
             req->set_opt_timeout(timeout);
             req->set_user_agent(details::get_default_user_agent());
             req->set_opt_reuse_connection(false);
+            if (!authorization.empty()) {
+                req->append_http_header(authorization.c_str());
+            }
 
             // req->set_on_verbose(details::etcd_cluster_verbose_callback);
 
@@ -957,7 +1125,7 @@ namespace atframe {
             }
 
             // Stringify the DOM
-            rapidjson::StringBuffer buffer;
+            rapidjson::StringBuffer                    buffer;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
             doc.Accept(writer);
 

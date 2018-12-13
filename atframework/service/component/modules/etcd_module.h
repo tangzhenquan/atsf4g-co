@@ -42,6 +42,7 @@ namespace atframe {
                 std::string            hash_code;
                 uint64_t               type_id;
                 std::string            type_name;
+                std::string            version;
 
                 node_action_t::type action;
             };
@@ -125,7 +126,7 @@ namespace atframe {
             int add_watcher_by_name(watcher_list_callback_t fn);
 
         private:
-            static void unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data);
+            static bool unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data);
             static void pack(const node_info_t &out, std::string &json);
 
             static int http_callback_on_etcd_closed(util::network::http_request &req);

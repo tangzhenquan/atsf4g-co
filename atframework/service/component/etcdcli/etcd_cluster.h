@@ -35,26 +35,28 @@ namespace atframe {
         public:
             struct flag_t {
                 enum type {
-                    CLOSING = 0x0001,      // closeing
+                    CLOSING      = 0x0001, // closeing
                     ENABLE_LEASE = 0x0100, // enable auto get lease
                 };
             };
 
             struct conf_t {
-                std::vector<std::string> conf_hosts;
-                std::vector<std::string> hosts;
+                std::vector<std::string>            conf_hosts;
+                std::vector<std::string>            hosts;
+                std::string                         authorization;
                 std::chrono::system_clock::duration http_cmd_timeout;
 
                 // generated data for cluster members
-                std::string path_node;
+                std::string                           authorization_header;
+                std::string                           path_node;
                 std::chrono::system_clock::time_point etcd_members_next_update_time;
-                std::chrono::system_clock::duration etcd_members_update_interval;
+                std::chrono::system_clock::duration   etcd_members_update_interval;
 
                 // generated data for lease
-                int64_t lease;
+                int64_t                               lease;
                 std::chrono::system_clock::time_point keepalive_next_update_time;
-                std::chrono::system_clock::duration keepalive_timeout;
-                std::chrono::system_clock::duration keepalive_interval;
+                std::chrono::system_clock::duration   keepalive_timeout;
+                std::chrono::system_clock::duration   keepalive_interval;
             };
 
             struct stats_t {
@@ -73,33 +75,36 @@ namespace atframe {
             void init(const util::network::http_request::curl_m_bind_ptr_t &curl_mgr);
 
             util::network::http_request::ptr_t close(bool wait = false);
-            void reset();
-            int tick();
+            void                               reset();
+            int                                tick();
 
             inline bool check_flag(uint32_t f) const { return 0 != (flags_ & f); };
-            void set_flag(flag_t::type f, bool v);
+            void        set_flag(flag_t::type f, bool v);
 
             inline const stats_t &get_stats() const { return stats_; };
             // ====================== apis for configure ==================
             inline const std::vector<std::string> &get_available_hosts() const { return conf_.hosts; }
-            inline const std::string &get_selected_host() const { return conf_.path_node; }
+            inline const std::string &             get_selected_host() const { return conf_.path_node; }
+
+            inline void               set_conf_authorization(const std::string &authorization) { conf_.authorization = authorization; }
+            inline const std::string &get_conf_authorization() const { return conf_.authorization; }
 
             inline int64_t get_keepalive_lease() const { return get_lease(); }
 
-            inline void set_conf_hosts(const std::vector<std::string> &hosts) { conf_.conf_hosts = hosts; }
+            inline void                            set_conf_hosts(const std::vector<std::string> &hosts) { conf_.conf_hosts = hosts; }
             inline const std::vector<std::string> &get_conf_hosts() const { return conf_.conf_hosts; }
 
-            inline void set_conf_http_timeout(std::chrono::system_clock::duration v) { conf_.http_cmd_timeout = v; }
-            inline void set_conf_http_timeout_sec(time_t v) { set_conf_http_timeout(std::chrono::seconds(v)); }
+            inline void                                       set_conf_http_timeout(std::chrono::system_clock::duration v) { conf_.http_cmd_timeout = v; }
+            inline void                                       set_conf_http_timeout_sec(time_t v) { set_conf_http_timeout(std::chrono::seconds(v)); }
             inline const std::chrono::system_clock::duration &get_conf_http_timeout() const { return conf_.http_cmd_timeout; }
-            time_t get_http_timeout_ms() const;
+            time_t                                            get_http_timeout_ms() const;
 
             inline void set_conf_etcd_members_update_interval(std::chrono::system_clock::duration v) { conf_.etcd_members_update_interval = v; }
             inline void set_conf_etcd_members_update_interval_min(time_t v) { set_conf_etcd_members_update_interval(std::chrono::minutes(v)); }
             inline const std::chrono::system_clock::duration &get_conf_etcd_members_update_interval() const { return conf_.etcd_members_update_interval; }
 
-            inline void set_conf_keepalive_timeout(std::chrono::system_clock::duration v) { conf_.keepalive_timeout = v; }
-            inline void set_conf_keepalive_timeout_sec(time_t v) { set_conf_keepalive_timeout(std::chrono::seconds(v)); }
+            inline void                                       set_conf_keepalive_timeout(std::chrono::system_clock::duration v) { conf_.keepalive_timeout = v; }
+            inline void                                       set_conf_keepalive_timeout_sec(time_t v) { set_conf_keepalive_timeout(std::chrono::seconds(v)); }
             inline const std::chrono::system_clock::duration &get_conf_keepalive_timeout() const { return conf_.keepalive_timeout; }
 
             inline void set_conf_keepalive_interval(std::chrono::system_clock::duration v) { conf_.keepalive_interval = v; }
@@ -165,35 +170,43 @@ namespace atframe {
                                                                     bool prev_kv = false, bool progress_notify = true);
 
         private:
-            void set_lease(int64_t v, bool force_active_keepalives);
+            void           set_lease(int64_t v, bool force_active_keepalives);
             inline int64_t get_lease() const { return conf_.lease; }
 
-            bool create_request_member_update();
+            bool       create_request_auth_authenticate();
+            static int libcurl_callback_on_auth_authenticate(util::network::http_request &req);
+
+            bool       create_request_member_update();
             static int libcurl_callback_on_member_update(util::network::http_request &req);
 
-            bool create_request_lease_grant();
-            bool create_request_lease_keepalive();
-            static int libcurl_callback_on_lease_keepalive(util::network::http_request &req);
+            bool                               create_request_lease_grant();
+            bool                               create_request_lease_keepalive();
+            static int                         libcurl_callback_on_lease_keepalive(util::network::http_request &req);
             util::network::http_request::ptr_t create_request_lease_revoke();
 
             void add_stats_error_request();
             void add_stats_success_request();
             void add_stats_create_request();
 
+            bool check_authorization();
+
         public:
-            static void setup_http_request(util::network::http_request::ptr_t &req, rapidjson::Document &doc, time_t timeout);
+            void check_authorization_expired(int http_code, const std::string &content);
+
+            static void setup_http_request(util::network::http_request::ptr_t &req, rapidjson::Document &doc, time_t timeout, const std::string &authorization);
 
         private:
-            uint32_t flags_;
-            util::random::mt19937 random_generator_;
-            conf_t conf_;
-            stats_t stats_;
+            uint32_t                                       flags_;
+            util::random::mt19937                          random_generator_;
+            conf_t                                         conf_;
+            stats_t                                        stats_;
             util::network::http_request::curl_m_bind_ptr_t curl_multi_;
-            util::network::http_request::ptr_t rpc_update_members_;
-            util::network::http_request::ptr_t rpc_keepalive_;
-            std::vector<std::shared_ptr<etcd_keepalive> > keepalive_actors_;
-            std::vector<std::shared_ptr<etcd_keepalive> > keepalive_retry_actors_;
-            std::vector<std::shared_ptr<etcd_watcher> > watcher_actors_;
+            util::network::http_request::ptr_t             rpc_authenticate_;
+            util::network::http_request::ptr_t             rpc_update_members_;
+            util::network::http_request::ptr_t             rpc_keepalive_;
+            std::vector<std::shared_ptr<etcd_keepalive> >  keepalive_actors_;
+            std::vector<std::shared_ptr<etcd_keepalive> >  keepalive_retry_actors_;
+            std::vector<std::shared_ptr<etcd_watcher> >    watcher_actors_;
         };
     } // namespace component
 } // namespace atframe
