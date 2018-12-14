@@ -38,15 +38,15 @@ namespace atframe {
 
             struct event_t {
                 etcd_watch_event::type evt_type;
-                etcd_key_value kv;
-                etcd_key_value prev_kv;
+                etcd_key_value         kv;
+                etcd_key_value         prev_kv;
             };
 
             struct response_t {
-                int64_t watch_id;
-                bool created;
-                bool canceled;
-                int64_t compact_revision;
+                int64_t              watch_id;
+                bool                 created;
+                bool                 canceled;
+                int64_t              compact_revision;
                 std::vector<event_t> events;
             };
 
@@ -65,7 +65,7 @@ namespace atframe {
 
             void active();
 
-            etcd_cluster &get_owner() { return *owner_; }
+            etcd_cluster &      get_owner() { return *owner_; }
             const etcd_cluster &get_owner() const { return *owner_; }
 
             // ====================== apis for configure ==================
@@ -76,17 +76,17 @@ namespace atframe {
             inline bool is_prev_kv_enabled() const { return rpc_.enable_prev_kv; }
             inline void set_prev_kv_enabled(bool v) { rpc_.enable_prev_kv = v; }
 
-            inline void set_conf_retry_interval(std::chrono::system_clock::duration v) { rpc_.retry_interval = v; }
-            inline void set_conf_retry_interval_sec(time_t v) { set_conf_retry_interval(std::chrono::seconds(v)); }
+            inline void                                       set_conf_retry_interval(std::chrono::system_clock::duration v) { rpc_.retry_interval = v; }
+            inline void                                       set_conf_retry_interval_sec(time_t v) { set_conf_retry_interval(std::chrono::seconds(v)); }
             inline const std::chrono::system_clock::duration &get_conf_retry_interval() const { return rpc_.retry_interval; }
 
-            inline void set_conf_request_timeout(std::chrono::system_clock::duration v) { rpc_.request_timeout = v; }
-            inline void set_conf_request_timeout_sec(time_t v) { set_conf_request_timeout(std::chrono::seconds(v)); }
-            inline void set_conf_request_timeout_min(time_t v) { set_conf_request_timeout(std::chrono::minutes(v)); }
-            inline void set_conf_request_timeout_hour(time_t v) { set_conf_request_timeout(std::chrono::hours(v)); }
+            inline void                                       set_conf_request_timeout(std::chrono::system_clock::duration v) { rpc_.request_timeout = v; }
+            inline void                                       set_conf_request_timeout_sec(time_t v) { set_conf_request_timeout(std::chrono::seconds(v)); }
+            inline void                                       set_conf_request_timeout_min(time_t v) { set_conf_request_timeout(std::chrono::minutes(v)); }
+            inline void                                       set_conf_request_timeout_hour(time_t v) { set_conf_request_timeout(std::chrono::hours(v)); }
             inline const std::chrono::system_clock::duration &get_conf_request_timeout() const { return rpc_.request_timeout; }
 
-                // ====================== apis for events ==================
+            // ====================== apis for events ==================
 #if defined(UTIL_CONFIG_COMPILER_CXX_RVALUE_REFERENCES) && UTIL_CONFIG_COMPILER_CXX_RVALUE_REFERENCES
             inline void set_evt_handle(watch_event_fn_t &&fn) { evt_handle_ = std::move(fn); }
 #else
@@ -104,19 +104,20 @@ namespace atframe {
                                                        size_t &outbufsz);
 
         private:
-            etcd_cluster *owner_;
-            std::string path_;
-            std::string range_end_;
+            etcd_cluster *    owner_;
+            std::string       path_;
+            std::string       range_end_;
             std::stringstream rpc_data_stream_;
+            int64_t           rpc_data_brackets_;
             typedef struct {
-                util::network::http_request::ptr_t rpc_opr_;
-                bool is_actived;
-                bool enable_progress_notify;
-                bool enable_prev_kv;
-                int64_t last_revision;
+                util::network::http_request::ptr_t    rpc_opr_;
+                bool                                  is_actived;
+                bool                                  enable_progress_notify;
+                bool                                  enable_prev_kv;
+                int64_t                               last_revision;
                 std::chrono::system_clock::time_point watcher_next_request_time;
-                std::chrono::system_clock::duration retry_interval;
-                std::chrono::system_clock::duration request_timeout;
+                std::chrono::system_clock::duration   retry_interval;
+                std::chrono::system_clock::duration   request_timeout;
             } rpc_data_t;
             rpc_data_t rpc_;
 

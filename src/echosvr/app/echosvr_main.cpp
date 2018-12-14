@@ -3,32 +3,34 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <vector>
-#include <map>
 
-#include <common/file_system.h>
+
 #include <atframe/atapp.h>
+#include <common/file_system.h>
 #include <time/time_utility.h>
 
-#include <libatgw_server_protocol.h>
 #include <config/atframe_service_types.h>
+#include <libatgw_server_protocol.h>
 
+#include <modules/etcd_module.h>
 
 typedef std::map<uint64_t, uint64_t> session_gw_map_t;
 
 struct app_command_handler_kickoff {
-    atapp::app* app_;
-    session_gw_map_t* gw_;
-    app_command_handler_kickoff(atapp::app* app, session_gw_map_t* gw) :app_(app), gw_(gw){}
+    atapp::app *      app_;
+    session_gw_map_t *gw_;
+    app_command_handler_kickoff(atapp::app *app, session_gw_map_t *gw) : app_(app), gw_(gw) {}
     int operator()(util::cli::callback_param params) {
         if (params.get_params_number() <= 0) {
             WLOGERROR("kickoff command must require session id");
             return 0;
         }
 
-        uint64_t sess_id = params[0]->to_uint64();
-        session_gw_map_t::iterator iter = gw_->find(sess_id);
+        uint64_t                   sess_id = params[0]->to_uint64();
+        session_gw_map_t::iterator iter    = gw_->find(sess_id);
         if (iter == gw_->end()) {
             WLOGWARNING("try to kickoff 0x%llx, but session not found", static_cast<unsigned long long>(sess_id));
             return 0;
@@ -49,10 +51,10 @@ struct app_command_handler_kickoff {
 };
 
 struct app_handle_on_msg {
-    session_gw_map_t* gw_;
-    app_handle_on_msg(session_gw_map_t* gw) :gw_(gw) {}
+    session_gw_map_t *gw_;
+    app_handle_on_msg(session_gw_map_t *gw) : gw_(gw) {}
 
-    int operator()(atapp::app &app, const atapp::app::msg_t& msg, const void *buffer, size_t len) {
+    int operator()(atapp::app &app, const atapp::app::msg_t &msg, const void *buffer, size_t len) {
         if (NULL == msg.body.forward || 0 == msg.head.src_bus_id) {
             WLOGERROR("receive a message from unknown source");
             return app.get_bus_node()->send_data(msg.head.src_bus_id, msg.head.type, buffer, len);
@@ -61,7 +63,7 @@ struct app_handle_on_msg {
         switch (msg.head.type) {
         case ::atframe::component::service_type::EN_ATST_GATEWAY: {
             ::atframe::gw::ss_msg req_msg;
-            msgpack::unpacked result;
+            msgpack::unpacked     result;
             msgpack::unpack(result, reinterpret_cast<const char *>(buffer), len);
             msgpack::object obj = result.get();
             if (obj.is_nil()) {
@@ -76,19 +78,15 @@ struct app_handle_on_msg {
                 if (res < 0) {
                     WLOGERROR("send back post data to 0x%llx failed, res: %d", static_cast<unsigned long long>(msg.body.forward->from), res);
                 } else if (NULL != req_msg.body.post) {
-                    WLOGDEBUG("receive msg %s and send back to 0x%llx done", 
-                        std::string(reinterpret_cast<const char*>(req_msg.body.post->content.ptr), req_msg.body.post->content.size).c_str(), 
-                        static_cast<unsigned long long>(msg.body.forward->from)
-                    );
+                    WLOGDEBUG("receive msg %s and send back to 0x%llx done",
+                              std::string(reinterpret_cast<const char *>(req_msg.body.post->content.ptr), req_msg.body.post->content.size).c_str(),
+                              static_cast<unsigned long long>(msg.body.forward->from));
                 }
                 break;
             }
             case ATFRAME_GW_CMD_SESSION_ADD: {
-                WLOGINFO("create new session 0x%llx, address: %s:%d",
-                    static_cast<unsigned long long>(req_msg.head.session_id),
-                    req_msg.body.session->client_ip.c_str(),
-                    req_msg.body.session->client_port
-                );
+                WLOGINFO("create new session 0x%llx, address: %s:%d", static_cast<unsigned long long>(req_msg.head.session_id),
+                         req_msg.body.session->client_ip.c_str(), req_msg.body.session->client_port);
 
                 if (0 != req_msg.head.session_id) {
                     (*gw_)[req_msg.head.session_id] = msg.body.forward->from;
@@ -96,9 +94,7 @@ struct app_handle_on_msg {
                 break;
             }
             case ATFRAME_GW_CMD_SESSION_REMOVE: {
-                WLOGINFO("remove session 0x%llx",
-                    static_cast<unsigned long long>(req_msg.head.session_id)
-                );
+                WLOGINFO("remove session 0x%llx", static_cast<unsigned long long>(req_msg.head.session_id));
 
                 gw_->erase(req_msg.head.session_id);
                 break;
@@ -120,8 +116,7 @@ struct app_handle_on_msg {
     }
 };
 
-static int app_handle_on_send_fail(atapp::app &app, atapp::app::app_id_t src_pd, atapp::app::app_id_t dst_pd,
-    const atbus::protocol::msg &m) {
+static int app_handle_on_send_fail(atapp::app &app, atapp::app::app_id_t src_pd, atapp::app::app_id_t dst_pd, const atbus::protocol::msg &m) {
     WLOGERROR("send data from 0x%llx to 0x%llx failed", static_cast<unsigned long long>(src_pd), static_cast<unsigned long long>(dst_pd));
     return 0;
 }
@@ -137,7 +132,13 @@ static int app_handle_on_disconnected(atapp::app &app, atbus::endpoint &ep, int 
 }
 
 int main(int argc, char *argv[]) {
-    atapp::app app;
+    atapp::app                                       app;
+    std::shared_ptr<atframe::component::etcd_module> etcd_mod = std::make_shared<atframe::component::etcd_module>();
+    if (!etcd_mod) {
+        fprintf(stderr, "create etcd module failed\n");
+        return -1;
+    }
+
     session_gw_map_t gws;
 
     // project directory
@@ -149,8 +150,10 @@ int main(int argc, char *argv[]) {
 
     // setup cmd
     util::cli::cmd_option_ci::ptr_type cmgr = app.get_command_manager();
-    cmgr->bind_cmd("kickoff", app_command_handler_kickoff(&app, &gws))
-        ->set_help_msg("kickoff <session id>                   kickoff a client.");
+    cmgr->bind_cmd("kickoff", app_command_handler_kickoff(&app, &gws))->set_help_msg("kickoff <session id>                   kickoff a client.");
+
+    // setup module
+    app.add_module(etcd_mod);
 
     // setup message handle
     app.set_evt_on_recv_msg(app_handle_on_msg(&gws));

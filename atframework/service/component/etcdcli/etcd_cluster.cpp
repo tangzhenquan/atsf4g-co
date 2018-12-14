@@ -40,15 +40,20 @@ namespace atframe {
          *   Revoke Lease => curl http://localhost:2379/v3beta/kv/lease/revoke -XPOST -d '{"ID": 0}'
          *       # Response {"header":{...}}
          *
-         *   List members => curl http://localhost:2379/v3beta/cluster/member/list
+         *   List members => curl http://localhost:2379/v3beta/cluster/member/list -XPOST -d '{}'
          *       # Response {"header":{...},"members":[{"ID":"ID","name":"NAME","peerURLs":["peer url"],"clientURLs":["client url"]}]}
-         * 
-         *   Authorization => curl -H "Authorization: TOKEN"
+         *
+         *   Authorization Header => curl -H "Authorization: TOKEN"
          *   Authorization => curl http://localhost:2379/v3beta/auth/authenticate -XPOST -d '{"name": "username", "password": "pass"}'
          *       # Response {"header":{...}, "token": "TOKEN"}
          *       # Return 401 if auth token invalid
          *       # Return 400 with {"error": "etcdserver: user name is empty", "code": 3} if need TOKEN
          *       # Return 400 with {"error": "etcdserver: authentication failed, ...", "code": 3} if username of password invalid
+         *   Authorization Enable:
+         *       curl -L http://127.0.0.1:2379/v3beta/auth/user/add -XPOST -d '{"name": "root", "password": "3d91123233ffd36825bf2aca17808bfe"}'
+         *       curl -L http://127.0.0.1:2379/v3beta/auth/role/add -XPOST -d '{"name": "root"}'
+         *       curl -L http://127.0.0.1:2379/v3beta/auth/user/grant -XPOST -d '{"user": "root", "role": "root"}'
+         *       curl -L http://127.0.0.1:2379/v3beta/auth/enable -XPOST -d '{}'
          */
 
 #define ETCD_API_V3_ERROR_HTTP_CODE_AUTH 401
@@ -221,6 +226,7 @@ namespace atframe {
 
                     // wait to delete content
                     if (ret) {
+                        WLOGDEBUG("Etcd start to revoke lease %lld", static_cast<long long>(get_lease()));
                         ret->start(util::network::http_request::method_t::EN_MT_POST, wait);
                     }
 
@@ -278,7 +284,7 @@ namespace atframe {
             // check or start authorization
             if (!check_authorization()) {
                 if (!rpc_authenticate_) {
-                    ret += create_request_auth_authenticate()? 1: 0;
+                    ret += create_request_auth_authenticate() ? 1 : 0;
                 }
 
                 return ret;
@@ -466,7 +472,7 @@ namespace atframe {
                 return false;
             }
 
-            if(conf_.path_node.empty()) {
+            if (conf_.path_node.empty()) {
                 return false;
             }
 
@@ -478,13 +484,13 @@ namespace atframe {
             if (rpc_authenticate_) {
                 return false;
             }
-            
+
             std::stringstream ss;
             ss << conf_.path_node << ETCD_API_V3_AUTH_AUTHENTICATE;
             util::network::http_request::ptr_t req = util::network::http_request::create(curl_multi_.get(), ss.str());
 
             std::string::size_type username_sep = conf_.authorization.find(':');
-            std::string username, password;
+            std::string            username, password;
             if (username_sep == std::string::npos) {
                 username = conf_.authorization;
             } else {
@@ -510,8 +516,7 @@ namespace atframe {
                 int res = req->start(util::network::http_request::method_t::EN_MT_POST, false);
                 if (res != 0) {
                     req->set_on_complete(NULL);
-                    WLOGERROR("Etcd start authenticate request for user %s to %s failed, res: %d", username.c_str(), req->get_url().c_str(),
-                              res);
+                    WLOGERROR("Etcd start authenticate request for user %s to %s failed, res: %d", username.c_str(), req->get_url().c_str(), res);
                     add_stats_error_request();
                     return false;
                 }
@@ -520,7 +525,6 @@ namespace atframe {
                 rpc_authenticate_ = req;
             } else {
                 add_stats_error_request();
-
             }
 
             return !!rpc_authenticate_;
@@ -533,6 +537,7 @@ namespace atframe {
                 return 0;
             }
 
+            util::network::http_request::ptr_t keep_rpc = self->rpc_authenticate_;
             self->rpc_authenticate_.reset();
 
             // 服务器错误则忽略
@@ -563,7 +568,7 @@ namespace atframe {
                 }
 
                 rapidjson::Value root = doc.GetObject();
-                std::string token;
+                std::string      token;
                 if (false == etcd_packer::unpack_string(root, "token", token)) {
                     WLOGERROR("Etcd authenticate failed, token not found.(%s)", http_content.c_str());
                     self->add_stats_error_request();
@@ -571,7 +576,7 @@ namespace atframe {
                 }
 
                 self->conf_.authorization_header = "Authorization: " + token;
-                WLOGINFO("Etcd cluster got authenticate token: %s", token.c_str());
+                WLOGDEBUG("Etcd cluster got authenticate token: %s", token.c_str());
             } while (false);
 
             return 0;
@@ -646,6 +651,7 @@ namespace atframe {
                 return 0;
             }
 
+            util::network::http_request::ptr_t keep_rpc = self->rpc_update_members_;
             self->rpc_update_members_.reset();
 
             // 服务器错误则忽略
@@ -845,6 +851,7 @@ namespace atframe {
                 return 0;
             }
 
+            util::network::http_request::ptr_t keep_rpc = self->rpc_keepalive_;
             self->rpc_keepalive_.reset();
 
             // 服务器错误则忽略

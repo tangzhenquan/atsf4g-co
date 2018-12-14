@@ -7,6 +7,7 @@ import ctypes
 import platform
 import cgi
 import re
+import hashlib
 
 environment_check_shm = None
 global_opts = None
@@ -312,20 +313,20 @@ def get_server_list_to_hosts(key, default_val, env_name=None):
 
 
 def get_server_or_global_option(section, key, default_val, env_name=None):
-    ret = get_server_option('{0}.{1}'.format(section, key), None, env_name)
+    ret = get_server_option('{0}.{1}'.format(section, key), None, None)
     if ret is None:
         return get_global_option(section, key, default_val, env_name)
     return ret
 
 def get_server_or_global_list(section, key, default_val, env_name=None):
-    ret = get_server_list('{0}.{1}'.format(section, key), None, env_name)
+    ret = get_server_list('{0}.{1}'.format(section, key), None, None)
     if ret is None or len(ret) == 0:
         return get_global_list(section, key, default_val, env_name)
     return ret
 
 
 def get_server_or_global_list_to_hosts(section, key, default_val, env_name=None):
-    ret = get_server_list_to_hosts('{0}.{1}'.format(section, key), None, env_name)
+    ret = get_server_list_to_hosts('{0}.{1}'.format(section, key), None, None)
     if ret is None or len(ret) == 0:
         return get_global_list_to_hosts(section, key, default_val, env_name)
     return ret
@@ -399,10 +400,10 @@ def get_server_atbus_shm():
 
     if not environment_check_shm:
         return None
+    port_offset = int(get_global_option('global', 'port_offset', 0, 'SYSTEM_MACRO_GLOBAL_PORT_OFFSET'))
     base_key = int(get_global_option('atsystem', 'shm_key_pool',
                                      0x16000000, 'SYSTEM_MACRO_CUSTOM_SHM_KEY'))
-    shm_key = base_key + \
-        get_server_group_inner_id(get_server_name(), get_server_index())
+    shm_key = base_key + get_server_group_inner_id(get_server_name(), get_server_index()) + port_offset
     return 'shm://{0}'.format(hex(shm_key))
 
 def disable_server_atbus_shm():
@@ -446,8 +447,17 @@ def get_server_atbus_tcp():
 
 
 def get_server_atbus_unix():
+    h = hashlib.sha1(__file__.encode('utf-8')).hexdigest()
+    if os.path.exists('/tmp'):
+        default_base = '/tmp/atapp/{0}/'.format(h)
+    elif os.path.exists('/run/tmp'):
+        default_base = '/run/tmp/atapp/{0}/'.format(h)
+    elif os.path.exists('/'):
+        default_base = '/tmp/atapp/{0}/'.format(h)
+    else:
+        default_base = './'
     dir_path = get_global_option(
-        'atsystem', 'unix_sock_dir', './', 'SYSTEM_MACRO_CUSTOM_UNIX_SOCK_DIR')
+        'atsystem', 'unix_sock_dir', default_base, 'SYSTEM_MACRO_CUSTOM_UNIX_SOCK_DIR')
     return 'unix://{0}{1}-{2:x}.sock'.format(dir_path, get_server_full_name(), get_server_id())
 
 

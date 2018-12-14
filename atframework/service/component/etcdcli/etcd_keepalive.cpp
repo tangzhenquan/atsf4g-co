@@ -115,6 +115,7 @@ namespace atframe {
                 WLOGERROR("Etcd keepalive get request shouldn't has request without private data");
                 return 0;
             }
+            util::network::http_request::ptr_t keep_rpc = self->rpc_.rpc_opr_;
 
             self->rpc_.rpc_opr_.reset();
             ++self->checker_.retry_times;
@@ -183,6 +184,7 @@ namespace atframe {
                 return 0;
             }
 
+            util::network::http_request::ptr_t keep_rpc = self->rpc_.rpc_opr_;
             self->rpc_.rpc_opr_.reset();
 
             // 服务器错误则忽略

@@ -27,13 +27,15 @@ namespace atframe {
                 return -1;
             }
 
-            int ret = binded_etcd_mod_->add_watcher_by_type_name(binded_etcd_mod_->get_by_type_name_watcher_path(get_app()->get_type_name()),
+            int ret = binded_etcd_mod_->add_watcher_by_type_name(get_app()->get_type_name(),
                                                                  std::bind(&atproxy_manager::on_watcher_notify, this, std::placeholders::_1));
 
             if (ret < 0) {
                 WLOGERROR("add watcher by type name %s failed, res: %d", get_app()->get_type_name().c_str(), ret);
                 return ret;
             }
+
+            WLOGINFO("watch atproxy by_type path: %s", binded_etcd_mod_->get_by_type_name_watcher_path(get_app()->get_type_name()).c_str());
 
             return 0;
         }
@@ -139,10 +141,12 @@ namespace atframe {
                 } else {
                     iter->second.next_action_time = ci.timeout_sec;
                 }
+                iter->second.etcd_node = etcd_node;
             } else {
                 node_info_t &proxy_info     = proxy_set_[etcd_node.id];
                 proxy_info.next_action_time = ci.timeout_sec;
                 proxy_info.etcd_node        = etcd_node;
+                WLOGINFO("new atproxy %llx found", static_cast<unsigned long long>(etcd_node.id));
             }
 
             // push front and check it on next loop
@@ -151,7 +155,11 @@ namespace atframe {
         }
 
         int atproxy_manager::remove(::atapp::app::app_id_t id) {
-            proxy_set_.erase(id);
+            proxy_set_t::iterator iter = proxy_set_.find(id);
+            if (iter != proxy_set_.end()) {
+                WLOGINFO("lost atproxy %llx", static_cast<unsigned long long>(id));
+                proxy_set_.erase(iter);
+            }
             return 0;
         }
 

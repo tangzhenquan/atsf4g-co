@@ -20,6 +20,7 @@
 #define ETCD_MODULE_BY_TYPE_ID_DIR "by_type_id"
 #define ETCD_MODULE_BY_TYPE_NAME_DIR "by_type_name"
 #define ETCD_MODULE_BY_NAME_DIR "by_name"
+#define ETCD_MODULE_BY_TAG "by_tag"
 
 namespace atframe {
     namespace component {
@@ -61,6 +62,7 @@ namespace atframe {
             conf_.report_alive_by_id   = false;
             conf_.report_alive_by_type = false;
             conf_.report_alive_by_name = false;
+            conf_.report_alive_by_tag.clear();
         }
 
         etcd_module::~etcd_module() { reset(); }
@@ -113,6 +115,7 @@ namespace atframe {
                 }
 
                 keepalive_actors.push_back(actor);
+                WLOGINFO("create etcd_keepalive for by_id index %s success", get_by_id_path().c_str());
             }
 
             if (conf_.report_alive_by_type) {
@@ -122,6 +125,7 @@ namespace atframe {
                     return -1;
                 }
                 keepalive_actors.push_back(actor);
+                WLOGINFO("create etcd_keepalive for by_type_id index %s success", get_by_type_id_path().c_str());
 
                 actor = add_keepalive_actor(keepalive_val, get_by_type_name_path());
                 if (!actor) {
@@ -129,6 +133,8 @@ namespace atframe {
                     return -1;
                 }
                 keepalive_actors.push_back(actor);
+
+                WLOGINFO("create etcd_keepalive for by_type_name index %s success", get_by_type_name_path().c_str());
             }
 
             if (conf_.report_alive_by_name) {
@@ -139,6 +145,24 @@ namespace atframe {
                 }
 
                 keepalive_actors.push_back(actor);
+                WLOGINFO("create etcd_keepalive for by_name index %s success", get_by_name_path().c_str());
+            }
+
+            for (size_t i = 0; i < conf_.report_alive_by_tag.size(); ++i) {
+                const std::string &tag_name = conf_.report_alive_by_tag[i];
+
+                if (tag_name.empty()) {
+                    continue;
+                }
+
+                atframe::component::etcd_keepalive::ptr_t actor = add_keepalive_actor(keepalive_val, get_by_tag_path(tag_name));
+                if (!actor) {
+                    WLOGERROR("create etcd_keepalive for by_tag %s index failed.", tag_name.c_str());
+                    return -1;
+                }
+
+                keepalive_actors.push_back(actor);
+                WLOGINFO("create etcd_keepalive for by_tag index %s success", get_by_tag_path(tag_name).c_str());
             }
 
             // 执行到首次检测结束
@@ -311,6 +335,7 @@ namespace atframe {
             cfg.dump_to("atapp.etcd.report_alive.by_id", conf_.report_alive_by_id, true);
             cfg.dump_to("atapp.etcd.report_alive.by_type", conf_.report_alive_by_type, true);
             cfg.dump_to("atapp.etcd.report_alive.by_name", conf_.report_alive_by_name, true);
+            cfg.dump_to("atapp.etcd.report_alive.by_tag", conf_.report_alive_by_tag, true);
 
             return 0;
         }
@@ -323,6 +348,8 @@ namespace atframe {
             }
 
             self->cleanup_request_.reset();
+
+            WLOGDEBUG("Etcd revoke lease finished");
 
             // call stop to trigger stop process again.
             self->get_app()->stop();
@@ -399,6 +426,12 @@ namespace atframe {
             return ss.str();
         }
 
+        std::string etcd_module::get_by_tag_path(const std::string &tag_name) const {
+            std::stringstream ss;
+            ss << conf_.path_prefix << ETCD_MODULE_BY_TAG << "/" << tag_name << "/" << get_app()->get_id();
+            return ss.str();
+        }
+
         std::string etcd_module::get_by_id_watcher_path() const {
             std::stringstream ss;
             ss << conf_.path_prefix << ETCD_MODULE_BY_ID_DIR;
@@ -423,6 +456,12 @@ namespace atframe {
             return ss.str();
         }
 
+        std::string etcd_module::get_by_tag_watcher_path(const std::string &tag_name) const {
+            std::stringstream ss;
+            ss << conf_.path_prefix << ETCD_MODULE_BY_TAG << "/" << tag_name;
+            return ss.str();
+        }
+
         int etcd_module::add_watcher_by_id(watcher_list_callback_t fn) {
             if (!fn) {
                 return EN_ATBUS_ERR_PARAMS;
@@ -434,13 +473,18 @@ namespace atframe {
                 std::stringstream ss;
                 ss << conf_.path_prefix << ETCD_MODULE_BY_ID_DIR;
                 // generate watch data
-                atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, ss.str(), "+1");
+                std::string watch_path = ss.str();
+
+                atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, watch_path, "+1");
                 if (!p) {
                     WLOGERROR("create etcd_watcher by_id failed.");
                     return EN_ATBUS_ERR_MALLOC;
                 }
 
+                p->set_conf_request_timeout(conf_.watcher_request_timeout);
+                p->set_conf_retry_interval(conf_.watcher_retry_interval);
                 etcd_ctx_.add_watcher(p);
+                WLOGINFO("create etcd_watcher for by_id index %s success", watch_path.c_str());
 
                 p->set_evt_handle(watcher_callback_list_wrapper_t(*this, watcher_by_id_callbacks_));
             }
@@ -457,13 +501,19 @@ namespace atframe {
             std::stringstream ss;
             ss << conf_.path_prefix << ETCD_MODULE_BY_TYPE_ID_DIR << "/" << type_id;
             // generate watch data
-            atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, ss.str(), "+1");
+            std::string watch_path = ss.str();
+
+            atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, watch_path, "+1");
             if (!p) {
                 WLOGERROR("create etcd_watcher by_type_id failed.");
                 return EN_ATBUS_ERR_MALLOC;
             }
 
+            p->set_conf_request_timeout(conf_.watcher_request_timeout);
+            p->set_conf_retry_interval(conf_.watcher_retry_interval);
             etcd_ctx_.add_watcher(p);
+            WLOGINFO("create etcd_watcher for by_type_id index %s success", watch_path.c_str());
+
             p->set_evt_handle(watcher_callback_one_wrapper_t(*this, fn));
             return 0;
         }
@@ -476,13 +526,19 @@ namespace atframe {
             std::stringstream ss;
             ss << conf_.path_prefix << ETCD_MODULE_BY_TYPE_NAME_DIR << "/" << type_name;
             // generate watch data
-            atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, ss.str(), "+1");
+            std::string watch_path = ss.str();
+
+            atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, watch_path, "+1");
             if (!p) {
                 WLOGERROR("create etcd_watcher by_type_name failed.");
                 return EN_ATBUS_ERR_MALLOC;
             }
 
+            p->set_conf_request_timeout(conf_.watcher_request_timeout);
+            p->set_conf_retry_interval(conf_.watcher_retry_interval);
             etcd_ctx_.add_watcher(p);
+            WLOGINFO("create etcd_watcher for by_type_name index %s success", watch_path.c_str());
+
             p->set_evt_handle(watcher_callback_one_wrapper_t(*this, fn));
             return 0;
         }
@@ -498,18 +554,46 @@ namespace atframe {
                 std::stringstream ss;
                 ss << conf_.path_prefix << ETCD_MODULE_BY_NAME_DIR;
                 // generate watch data
-                atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, ss.str(), "+1");
+                std::string watch_path = ss.str();
+
+                atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, watch_path, "+1");
                 if (!p) {
                     WLOGERROR("create etcd_watcher by_name failed.");
                     return EN_ATBUS_ERR_MALLOC;
                 }
 
+                p->set_conf_request_timeout(conf_.watcher_request_timeout);
+                p->set_conf_retry_interval(conf_.watcher_retry_interval);
                 etcd_ctx_.add_watcher(p);
+                WLOGINFO("create etcd_watcher for by_name index %s success", watch_path.c_str());
 
                 p->set_evt_handle(watcher_callback_list_wrapper_t(*this, watcher_by_name_callbacks_));
             }
 
             watcher_by_name_callbacks_.push_back(fn);
+            return 0;
+        }
+
+        int etcd_module::add_watcher_by_tag(const std::string &tag_name, watcher_one_callback_t fn) {
+            if (!fn) {
+                return EN_ATBUS_ERR_PARAMS;
+            }
+
+            std::stringstream ss;
+            ss << conf_.path_prefix << ETCD_MODULE_BY_TAG << "/" << tag_name;
+            // generate watch data
+            std::string watch_path = ss.str();
+
+            atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, watch_path, "+1");
+            if (!p) {
+                WLOGERROR("create etcd_watcher by_tag failed.");
+                return EN_ATBUS_ERR_MALLOC;
+            }
+
+            etcd_ctx_.add_watcher(p);
+            WLOGINFO("create etcd_watcher for by_tag index %s success", watch_path.c_str());
+
+            p->set_evt_handle(watcher_callback_one_wrapper_t(*this, fn));
             return 0;
         }
 
@@ -579,7 +663,7 @@ namespace atframe {
                     if (atproxy_iter->value.IsArray()) {
                         rapidjson::Document::Array nodes = atproxy_iter->value.GetArray();
                         for (rapidjson::Document::Array::ValueIterator iter = nodes.Begin(); iter != nodes.End(); ++iter) {
-                            if (atproxy_iter->value.IsString()) {
+                            if (iter->IsString()) {
                                 out.listens.push_back(iter->GetString());
                             }
                         }

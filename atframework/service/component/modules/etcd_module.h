@@ -57,9 +57,10 @@ namespace atframe {
                 std::chrono::system_clock::duration watcher_retry_interval;
                 std::chrono::system_clock::duration watcher_request_timeout;
 
-                bool report_alive_by_id;
-                bool report_alive_by_type;
-                bool report_alive_by_name;
+                bool                     report_alive_by_id;
+                bool                     report_alive_by_type;
+                bool                     report_alive_by_name;
+                std::vector<std::string> report_alive_by_tag;
             };
 
             struct watcher_sender_list_t {
@@ -114,16 +115,19 @@ namespace atframe {
             std::string get_by_type_id_path() const;
             std::string get_by_type_name_path() const;
             std::string get_by_name_path() const;
+            std::string get_by_tag_path(const std::string &tag_name) const;
 
             std::string get_by_id_watcher_path() const;
             std::string get_by_type_id_watcher_path(uint64_t type_id) const;
             std::string get_by_type_name_watcher_path(const std::string &type_name) const;
             std::string get_by_name_watcher_path() const;
+            std::string get_by_tag_watcher_path(const std::string &tag_name) const;
 
             int add_watcher_by_id(watcher_list_callback_t fn);
             int add_watcher_by_type_id(uint64_t type_id, watcher_one_callback_t fn);
             int add_watcher_by_type_name(const std::string &type_name, watcher_one_callback_t fn);
             int add_watcher_by_name(watcher_list_callback_t fn);
+            int add_watcher_by_tag(const std::string &tag_name, watcher_one_callback_t fn);
 
         private:
             static bool unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data);

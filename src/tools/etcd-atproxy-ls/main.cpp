@@ -112,13 +112,21 @@ static int libcurl_callback_on_range_completed(util::network::http_request &req)
 
     rapidjson::Document::MemberIterator res = doc.FindMember("kvs");
 
+    bool has_data = false;
     if (doc.MemberEnd() != res) {
         rapidjson::Document::Array all_events = res->value.GetArray();
         for (rapidjson::Document::Array::ValueIterator iter = all_events.Begin(); iter != all_events.End(); ++iter) {
             ::atframe::component::etcd_key_value kv_data;
             ::atframe::component::etcd_packer::unpack(kv_data, *iter);
-            printf("Path: %s, Lease: %lld\n\tValue: %s\n", kv_data.key.c_str(), static_cast<long long>(kv_data.lease), kv_data.value.c_str());
+            WLOGINFO("Path: %s, Lease: %lld, Created: %lld, Modify: %lld, Version: %lld", kv_data.key.c_str(), static_cast<long long>(kv_data.lease),
+                     static_cast<long long>(kv_data.create_revision), static_cast<long long>(kv_data.mod_revision), static_cast<long long>(kv_data.version));
+            WLOGINFO("\tValue: %s", kv_data.value.c_str());
+            has_data = true;
         }
+    }
+
+    if (!has_data) {
+        WLOGINFO("Nothing found.");
     }
 
     return 0;
@@ -157,15 +165,15 @@ int main(int argc, char *argv[]) {
     std::string::size_type pp = etcd_host.find("://");
     if (std::string::npos == pp) {
         std::cerr << "Invalid base url: " << etcd_host << std::endl;
-        pp = etcd_host.find('/', pp + 3);
         return 1;
     }
+    pp = etcd_host.find('/', pp + 3);
 
     util::time::time_utility::update();
     WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->init();
-    WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->set_prefix_format("[%L][%F %T.%f][%k:%n(%C)]: ");
+    WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->set_prefix_format("[%L][%F %T.%f]: ");
     WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->add_sink(log_callback);
-    WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->set_stacktrace_level(util::log::log_formatter::level_t::LOG_LW_ERROR);
+    WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->set_stacktrace_level(util::log::log_formatter::level_t::LOG_LW_DISABLED);
 
     util::network::http_request::curl_m_bind_ptr_t curl_mgr;
     util::network::http_request::create_curl_multi(uv_default_loop(), curl_mgr);

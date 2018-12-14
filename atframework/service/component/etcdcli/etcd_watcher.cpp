@@ -11,7 +11,7 @@
 namespace atframe {
     namespace component {
         etcd_watcher::etcd_watcher(etcd_cluster &owner, const std::string &path, const std::string &range_end, constrict_helper_t &)
-            : owner_(&owner), path_(path), range_end_(range_end) {
+            : owner_(&owner), path_(path), range_end_(range_end), rpc_data_brackets_(0) {
             rpc_.retry_interval            = std::chrono::seconds(15); // 重试间隔15秒
             rpc_.request_timeout           = std::chrono::hours(1);    // 一小时超时时间，相当于每小时重新拉取数据
             rpc_.watcher_next_request_time = std::chrono::system_clock::from_time_t(0);
@@ -95,6 +95,7 @@ namespace atframe {
             rpc_.rpc_opr_->set_opt_timeout(static_cast<time_t>(std::chrono::duration_cast<std::chrono::milliseconds>(rpc_.request_timeout).count()));
 
             rpc_data_stream_.str("");
+            rpc_data_brackets_ = 0;
 
             int res = rpc_.rpc_opr_->start(util::network::http_request::method_t::EN_MT_POST, false);
             if (res != 0) {
@@ -115,6 +116,7 @@ namespace atframe {
                 WLOGERROR("Etcd watcher range request shouldn't has request without private data");
                 return 0;
             }
+            util::network::http_request::ptr_t keep_rpc = self->rpc_.rpc_opr_;
             self->rpc_.rpc_opr_.reset();
 
             // 服务器错误则过一段时间后重试
@@ -223,6 +225,7 @@ namespace atframe {
                 WLOGERROR("Etcd watcher watch request shouldn't has request without private data");
                 return 0;
             }
+            util::network::http_request::ptr_t keep_rpc = self->rpc_.rpc_opr_;
             self->rpc_.rpc_opr_.reset();
 
             // 服务器错误则过一段时间后重试
@@ -274,9 +277,30 @@ namespace atframe {
 
             while (inbufsz > 0) {
                 bool need_process = false;
+                // etcd 的汇报数据内容里内有符号，所以这里直接用括号匹配来判定
+                int64_t rpc_data_brackets = self->rpc_data_brackets_;
+                if (rpc_data_brackets <= 0) {
+                    while (inbufsz > 0 && inbuf[0]) {
+                        if (inbuf[0] == '{' || inbuf[0] == '[') {
+                            break;
+                        }
+
+                        --inbufsz;
+                        ++inbuf;
+                    }
+                }
+
                 for (size_t i = 0; i < inbufsz; ++i) {
-                    if (inbuf[i] == 0 || inbuf[i] == '\n') {
-                        self->rpc_data_stream_.write(inbuf, i);
+                    if (inbuf[i] == '{' || inbuf[i] == '[') {
+                        ++rpc_data_brackets;
+                    }
+
+                    if (inbuf[i] == '}' || inbuf[i] == ']') {
+                        --rpc_data_brackets;
+                    }
+
+                    if (rpc_data_brackets <= 0) {
+                        self->rpc_data_stream_.write(inbuf, i + 1);
                         inbuf += i + 1;
                         inbufsz -= i + 1;
                         need_process = true;
@@ -286,6 +310,7 @@ namespace atframe {
 
                 if (!need_process) {
                     self->rpc_data_stream_.write(inbuf, inbufsz);
+                    self->rpc_data_brackets_ = rpc_data_brackets;
                     break;
                 }
 
@@ -294,6 +319,7 @@ namespace atframe {
                 std::string         value_json;
                 self->rpc_data_stream_.str().swap(value_json);
                 self->rpc_data_stream_.str("");
+                self->rpc_data_brackets_ = 0;
 
                 WLOGTRACE("Etcd watcher %p got http trunk: %s", self, value_json.c_str());
                 // 忽略空数据
@@ -376,9 +402,9 @@ namespace atframe {
                 }
 
                 if (util::log::log_wrapper::check(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_DEBUG)) {
-                    WLOGDEBUG("Etcd watcher %p got response: watch_id: %lld, compact_revision: %lld, created: %s, canceled: %s", self,
+                    WLOGDEBUG("Etcd watcher %p got response: watch_id: %lld, compact_revision: %lld, created: %s, canceled: %s, event: %lld", self,
                               static_cast<long long>(response.watch_id), static_cast<long long>(response.compact_revision), response.created ? "Yes" : "No",
-                              response.canceled ? "Yes" : "No");
+                              response.canceled ? "Yes" : "No", static_cast<unsigned long long>(response.events.size()));
                     for (size_t i = 0; i < response.events.size(); ++i) {
                         etcd_key_value *kv = &response.events[i].kv;
                         const char *    name;
@@ -394,6 +420,11 @@ namespace atframe {
                 // trigger event
                 if (self->evt_handle_) {
                     self->evt_handle_(header, response);
+                }
+
+                // stopped if canceled and wait to start another watcher later
+                if (response.canceled) {
+                    req.stop();
                 }
             }
 
