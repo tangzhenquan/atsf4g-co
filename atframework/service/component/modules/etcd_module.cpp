@@ -294,6 +294,14 @@ namespace atframe {
 
             {
                 util::config::duration_value dur;
+                cfg.dump_to("atapp.etcd.cluster.retry_interval", dur, true);
+                if (0 != dur.sec || 0 != dur.nsec) {
+                    etcd_ctx_.set_conf_etcd_members_retry_interval(detail::convert(dur));
+                }
+            }
+
+            {
+                util::config::duration_value dur;
                 cfg.dump_to("atapp.etcd.keepalive.timeout", dur, true);
                 if (0 != dur.sec || 0 != dur.nsec) {
                     etcd_ctx_.set_conf_keepalive_timeout(detail::convert(dur));

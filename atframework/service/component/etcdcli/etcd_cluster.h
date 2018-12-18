@@ -51,6 +51,7 @@ namespace atframe {
                 std::string                           path_node;
                 std::chrono::system_clock::time_point etcd_members_next_update_time;
                 std::chrono::system_clock::duration   etcd_members_update_interval;
+                std::chrono::system_clock::duration   etcd_members_retry_interval;
 
                 // generated data for lease
                 int64_t                               lease;
@@ -103,6 +104,10 @@ namespace atframe {
             inline void set_conf_etcd_members_update_interval(std::chrono::system_clock::duration v) { conf_.etcd_members_update_interval = v; }
             inline void set_conf_etcd_members_update_interval_min(time_t v) { set_conf_etcd_members_update_interval(std::chrono::minutes(v)); }
             inline const std::chrono::system_clock::duration &get_conf_etcd_members_update_interval() const { return conf_.etcd_members_update_interval; }
+
+            inline void set_conf_etcd_members_retry_interval(std::chrono::system_clock::duration v) { conf_.etcd_members_retry_interval = v; }
+            inline void set_conf_etcd_members_retry_interval_min(time_t v) { set_conf_etcd_members_retry_interval(std::chrono::minutes(v)); }
+            inline const std::chrono::system_clock::duration &get_conf_etcd_members_retry_interval() const { return conf_.etcd_members_retry_interval; }
 
             inline void                                       set_conf_keepalive_timeout(std::chrono::system_clock::duration v) { conf_.keepalive_timeout = v; }
             inline void                                       set_conf_keepalive_timeout_sec(time_t v) { set_conf_keepalive_timeout(std::chrono::seconds(v)); }
@@ -177,6 +182,7 @@ namespace atframe {
             bool       create_request_auth_authenticate();
             static int libcurl_callback_on_auth_authenticate(util::network::http_request &req);
 
+            bool       retry_request_member_update();
             bool       create_request_member_update();
             static int libcurl_callback_on_member_update(util::network::http_request &req);
 

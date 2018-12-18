@@ -169,6 +169,7 @@ namespace atframe {
             conf_.http_cmd_timeout              = std::chrono::seconds(10);
             conf_.etcd_members_next_update_time = std::chrono::system_clock::from_time_t(0);
             conf_.etcd_members_update_interval  = std::chrono::minutes(5);
+            conf_.etcd_members_retry_interval   = std::chrono::minutes(1);
 
             conf_.lease                      = 0;
             conf_.keepalive_next_update_time = std::chrono::system_clock::from_time_t(0);
@@ -256,6 +257,7 @@ namespace atframe {
             conf_.path_node.clear();
             conf_.etcd_members_next_update_time = std::chrono::system_clock::from_time_t(0);
             conf_.etcd_members_update_interval  = std::chrono::minutes(5);
+            conf_.etcd_members_retry_interval   = std::chrono::minutes(1);
 
             conf_.lease                      = 0;
             conf_.keepalive_next_update_time = std::chrono::system_clock::from_time_t(0);
@@ -549,7 +551,7 @@ namespace atframe {
 
                 // only network error will trigger a etcd member update
                 if (0 != req.get_error_code()) {
-                    self->create_request_member_update();
+                    self->retry_request_member_update();
                 }
                 self->add_stats_error_request();
 
@@ -580,9 +582,24 @@ namespace atframe {
 
                 self->conf_.authorization_header = "Authorization: " + token;
                 WLOGDEBUG("Etcd cluster got authenticate token: %s", token.c_str());
+
+                self->add_stats_success_request();
             } while (false);
 
             return 0;
+        }
+
+        bool etcd_cluster::retry_request_member_update() {
+            if (util::time::time_utility::now() + conf_.etcd_members_retry_interval < conf_.etcd_members_next_update_time) {
+                conf_.etcd_members_next_update_time = util::time::time_utility::now() + conf_.etcd_members_retry_interval;
+                return false;
+            }
+
+            if (util::time::time_utility::now() <= conf_.etcd_members_next_update_time) {
+                return false;
+            }
+
+            return create_request_member_update();
         }
 
         bool etcd_cluster::create_request_member_update() {
@@ -663,7 +680,7 @@ namespace atframe {
 
                 // only network error will trigger a etcd member update
                 if (0 != req.get_error_code()) {
-                    self->create_request_member_update();
+                    self->retry_request_member_update();
                 }
                 WLOGERROR("Etcd member list failed, error code: %d, http code: %d\n%s", req.get_error_code(), req.get_response_code(), req.get_error_msg());
                 self->add_stats_error_request();
@@ -863,7 +880,7 @@ namespace atframe {
 
                 // only network error will trigger a etcd member update
                 if (0 != req.get_error_code()) {
-                    self->create_request_member_update();
+                    self->retry_request_member_update();
                 }
                 self->add_stats_error_request();
 
