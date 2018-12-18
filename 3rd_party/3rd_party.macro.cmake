@@ -80,3 +80,8 @@ endif()
 include("${PROJECT_3RD_PARTY_ROOT_DIR}/libcopp/libcopp.cmake")
 ## 导入所有工程项目
 add_project_recurse(${CMAKE_CURRENT_LIST_DIR})
+
+## 移除可能重复的依赖项目
+if (COMPILER_OPTION_EXTERN_CXX_LIBS)
+    list(REMOVE_DUPLICATES COMPILER_OPTION_EXTERN_CXX_LIBS)
+endif()

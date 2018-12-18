@@ -18,6 +18,7 @@ namespace atframe {
             rpc_.enable_progress_notify    = true;
             rpc_.enable_prev_kv            = false;
             rpc_.is_actived                = false;
+            rpc_.is_retry_mode             = false;
             rpc_.last_revision             = 0;
         }
 
@@ -35,6 +36,7 @@ namespace atframe {
                 rpc_.rpc_opr_.reset();
             }
             rpc_.is_actived    = false;
+            rpc_.is_retry_mode = false;
             rpc_.last_revision = 0;
         }
 
@@ -57,9 +59,14 @@ namespace atframe {
             }
 
             // ask for revision first
-            if (0 == rpc_.last_revision) {
+            if (0 == rpc_.last_revision || rpc_.is_retry_mode) {
                 // create range request
-                rpc_.rpc_opr_ = owner_->create_request_kv_get(path_, range_end_);
+
+                if (rpc_.is_retry_mode) {
+                    rpc_.rpc_opr_ = owner_->create_request_kv_get(path_, "");
+                } else {
+                    rpc_.rpc_opr_ = owner_->create_request_kv_get(path_, range_end_);
+                }
                 if (!rpc_.rpc_opr_) {
                     WLOGERROR("Etcd watcher %p create range request to %s failed", this, path_.c_str());
                     rpc_.watcher_next_request_time = util::time::time_utility::now() + rpc_.retry_interval;
@@ -129,6 +136,15 @@ namespace atframe {
                 self->rpc_.watcher_next_request_time = util::time::time_utility::now() + self->rpc_.retry_interval;
 
                 self->owner_->check_authorization_expired(req.get_response_code(), req.get_response_stream().str());
+                return 0;
+            }
+
+            // 重试是模式是为了触发一下可能需要的token替换
+            if (self->rpc_.is_retry_mode) {
+                self->rpc_.is_retry_mode = false;
+                // reset request time to invoke watch request immediately
+                self->rpc_.watcher_next_request_time = util::time::time_utility::now();
+
                 // 立刻开启下一次watch
                 self->active();
                 return 0;
@@ -227,6 +243,7 @@ namespace atframe {
             }
             util::network::http_request::ptr_t keep_rpc = self->rpc_.rpc_opr_;
             self->rpc_.rpc_opr_.reset();
+            self->rpc_.is_retry_mode = true;
 
             // 服务器错误则过一段时间后重试
             if (0 != req.get_error_code() ||

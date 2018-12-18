@@ -42,7 +42,10 @@ set (3RD_PARTY_LIBUV_LINK_NAME ${Libuv_LIBRARIES})
 include_directories(${3RD_PARTY_LIBUV_INC_DIR})
 
 get_filename_component(3RD_PARTY_LIBUV_LIB_DIR ${Libuv_LIBRARIES} DIRECTORY CACHE)
-file(GLOB 3RD_PARTY_LIBUV_ALL_LIB_FILES  "${3RD_PARTY_LIBUV_LIB_DIR}/libuv*.so" "${3RD_PARTY_LIBUV_LIB_DIR}/libuv*.so.*")
+file(GLOB 3RD_PARTY_LIBUV_ALL_LIB_FILES 
+    "${3RD_PARTY_LIBUV_LIB_DIR}/libuv*.so*" 
+    "${3RD_PARTY_LIBUV_LIB_DIR}/libuv*.dll*"
+)
 project_copy_shared_lib(${3RD_PARTY_LIBUV_ALL_LIB_FILES} ${PROJECT_INSTALL_SHARED_DIR})
 
 # mingw

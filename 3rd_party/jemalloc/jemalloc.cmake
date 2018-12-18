@@ -42,7 +42,10 @@ if (NOT MSVC)
 
         include_directories(${3RD_PARTY_JEMALLOC_INC_DIR})
 
-        file(GLOB 3RD_PARTY_JEMALLOC_ALL_LIB_FILES  "${3RD_PARTY_JEMALLOC_LIB_DIR}/*.so" "${3RD_PARTY_JEMALLOC_LIB_DIR}/*.so.*")
+        file(GLOB 3RD_PARTY_JEMALLOC_ALL_LIB_FILES  
+            "${3RD_PARTY_JEMALLOC_LIB_DIR}/libjemalloc*.so*"
+            "${3RD_PARTY_JEMALLOC_LIB_DIR}/libjemalloc*.dll*"
+        )
         project_copy_shared_lib(${3RD_PARTY_JEMALLOC_ALL_LIB_FILES} ${PROJECT_INSTALL_SHARED_DIR})
     endif()
 endif()

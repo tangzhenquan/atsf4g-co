@@ -21,7 +21,7 @@ namespace atframe {
          * @see https://coreos.com/etcd/docs/latest/dev-guide/api_reference_v3.html
          * @see https://coreos.com/etcd/docs/latest/dev-guide/apispec/swagger/rpc.swagger.json
          * @note KeyValue: { "key": "KEY", "create_revision": "number", "mod_revision": "number", "version": "number", "value": "", "lease": "number" }
-         *   Get data => curl http://localhost:2379/v3beta/range -X POST -d '{"key": "KEY", "range_end": ""}'
+         *   Get data => curl http://localhost:2379/v3beta/kv/range -X POST -d '{"key": "KEY", "range_end": ""}'
          *       # Response {"kvs": [{...}], "more": "bool", "count": "COUNT"}
          *   Set data => curl http://localhost:2379/v3beta/kv/put -X POST -d '{"key": "KEY", "value": "", "lease": "number", "prev_kv": "bool"}'
          *   Renew data => curl http://localhost:2379/v3beta/kv/put -X POST -d '{"key": "KEY", "value": "", "prev_kv": "bool", "ignore_lease": true}'
@@ -59,6 +59,8 @@ namespace atframe {
 #define ETCD_API_V3_ERROR_HTTP_CODE_AUTH 401
 #define ETCD_API_V3_ERROR_HTTP_INVALID_PARAM 400
 #define ETCD_API_V3_ERROR_HTTP_PRECONDITION 412
+// @see https://godoc.org/google.golang.org/grpc/codes
+#define ETCD_API_V3_ERROR_GRPC_CODE_UNAUTHENTICATED 16
 
 #define ETCD_API_V3_MEMBER_LIST "/v3beta/cluster/member/list"
 #define ETCD_API_V3_AUTH_AUTHENTICATE "/v3beta/auth/authenticate"
@@ -118,8 +120,9 @@ namespace atframe {
             }
 
             static int etcd_cluster_trace_porcess_callback(util::network::http_request &req, const util::network::http_request::progress_t &process) {
-                WLOGTRACE("Etcd cluster %p http request %p to %s, process: download %lf/%lf, upload %lf/%lf", req.get_priv_data(), &req, req.get_url().c_str(),
-                          process.dlnow, process.dltotal, process.ulnow, process.ultotal);
+                WLOGTRACE("Etcd cluster %p http request %p to %s, process: download %llu/%llu, upload %llu/%llu", req.get_priv_data(), &req,
+                          req.get_url().c_str(), static_cast<unsigned long long>(process.dlnow), static_cast<unsigned long long>(process.dltotal),
+                          static_cast<unsigned long long>(process.ulnow), static_cast<unsigned long long>(process.ultotal));
                 return 0;
             }
 
@@ -1119,8 +1122,18 @@ namespace atframe {
                 return;
             }
 
+            rapidjson::Document doc;
+            if (::atframe::component::etcd_packer::parse_object(doc, content.c_str())) {
+                int64_t error_code = 0;
+                ::atframe::component::etcd_packer::unpack_int(doc, "code", error_code);
+                if (ETCD_API_V3_ERROR_GRPC_CODE_UNAUTHENTICATED == error_code) {
+                    conf_.authorization_header.clear();
+                    return;
+                }
+            }
+
             if (ETCD_API_V3_ERROR_HTTP_INVALID_PARAM == http_code || ETCD_API_V3_ERROR_HTTP_PRECONDITION == http_code) {
-                if (std::string::npos != content.find("authentication")) {
+                if (std::string::npos != content.find("authenticat")) {
                     conf_.authorization_header.clear();
                 }
             }

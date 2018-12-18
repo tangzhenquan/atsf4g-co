@@ -112,6 +112,7 @@ namespace atframe {
             typedef struct {
                 util::network::http_request::ptr_t    rpc_opr_;
                 bool                                  is_actived;
+                bool                                  is_retry_mode;
                 bool                                  enable_progress_notify;
                 bool                                  enable_prev_kv;
                 int64_t                               last_revision;

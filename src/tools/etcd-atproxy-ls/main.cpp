@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <common/string_oprs.h>
 #include <time/time_utility.h>
 
 #include <log/log_wrapper.h>
@@ -136,12 +137,14 @@ static int libcurl_callback_on_range_completed(util::network::http_request &req)
 int main(int argc, char *argv[]) {
     exec_path                                   = argv[0];
     util::cli::cmd_option_ci::ptr_type cmd_opts = util::cli::cmd_option_ci::create();
+    std::string                        log_level_name;
 
     cmd_opts->bind_cmd("-h, --help, help", &prog_option_handler_help, cmd_opts.get())
-        ->set_help_msg("-h. --help, help                        show this help message.");
-    cmd_opts->bind_cmd("-u, --url", util::cli::phoenix::assign(etcd_host))->set_help_msg("-u, --url [base url with prefix]        set base address.");
+        ->set_help_msg("-h. --help, help                                           show this help message.");
+    cmd_opts->bind_cmd("-u, --url", util::cli::phoenix::assign(etcd_host))
+        ->set_help_msg("-u, --url [base url with prefix]                           set base address.");
     {
-        std::string msg = "-p, --prefix [prefix]                   set ls prefix(default: ";
+        std::string msg = "-p, --prefix [prefix]                                      set list prefix(default: ";
         msg += prefix;
         msg += ", available: ";
         msg += ETCD_MODULE_BY_ID_DIR;
@@ -151,15 +154,35 @@ int main(int argc, char *argv[]) {
         msg += ETCD_MODULE_BY_TYPE_NAME_DIR;
         msg += ", ";
         msg += ETCD_MODULE_BY_NAME_DIR;
+        msg += ")";
         cmd_opts->bind_cmd("-p, --prefix", util::cli::phoenix::assign(prefix))->set_help_msg(msg.c_str());
     }
     cmd_opts->bind_cmd("-a, --authorization", util::cli::phoenix::assign(authorization))
-        ->set_help_msg("-a, --authorization [username:password] set authorization().");
+        ->set_help_msg("-a, --authorization [username:password]                    set authorization().");
+    cmd_opts->bind_cmd("-l, --log-level", util::cli::phoenix::assign(log_level_name))
+        ->set_help_msg("-l, --log-level <trace/debug/notice/info/warn/error/fatal> set log level(defult: info).");
 
 
     cmd_opts->start(argc - 1, argv + 1);
     if (!is_run) {
         return 0;
+    }
+
+    ::util::log::log_wrapper::level_t::type log_level = ::util::log::log_wrapper::level_t::LOG_LW_INFO;
+    if (0 == UTIL_STRFUNC_STRNCASE_CMP("fatal", log_level_name.c_str(), 5)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_FATAL;
+    } else if (0 == UTIL_STRFUNC_STRNCASE_CMP("error", log_level_name.c_str(), 5)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_ERROR;
+    } else if (0 == UTIL_STRFUNC_STRNCASE_CMP("warn", log_level_name.c_str(), 4)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_WARNING;
+    } else if (0 == UTIL_STRFUNC_STRNCASE_CMP("info", log_level_name.c_str(), 4)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_INFO;
+    } else if (0 == UTIL_STRFUNC_STRNCASE_CMP("notice", log_level_name.c_str(), 6)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_NOTICE;
+    } else if (0 == UTIL_STRFUNC_STRNCASE_CMP("debug", log_level_name.c_str(), 5)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_DEBUG;
+    } else if (0 == UTIL_STRFUNC_STRNCASE_CMP("trace", log_level_name.c_str(), 5)) {
+        log_level = ::util::log::log_wrapper::level_t::LOG_LW_TRACE;
     }
 
     std::string::size_type pp = etcd_host.find("://");
@@ -170,7 +193,7 @@ int main(int argc, char *argv[]) {
     pp = etcd_host.find('/', pp + 3);
 
     util::time::time_utility::update();
-    WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->init();
+    WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->init(log_level);
     WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->set_prefix_format("[%L][%F %T.%f]: ");
     WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->add_sink(log_callback);
     WLOG_GETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->set_stacktrace_level(util::log::log_formatter::level_t::LOG_LW_DISABLED);
