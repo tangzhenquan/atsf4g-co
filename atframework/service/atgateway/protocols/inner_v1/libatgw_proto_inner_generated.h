@@ -34,8 +34,8 @@ enum error_code_t {
   error_code_t_MAX = error_code_t_EN_ECT_SUCCESS
 };
 
-inline error_code_t (&EnumValueserror_code_t())[6] {
-  static error_code_t values[] = {
+inline const error_code_t (&EnumValueserror_code_t())[6] {
+  static const error_code_t values[] = {
     error_code_t_EN_ECT_REFUSE_RECONNECT,
     error_code_t_EN_ECT_SESSION_EXPIRED,
     error_code_t_EN_ECT_BUSY,
@@ -44,6 +44,18 @@ inline error_code_t (&EnumValueserror_code_t())[6] {
     error_code_t_EN_ECT_SUCCESS
   };
   return values;
+}
+
+inline const char *EnumNameerror_code_t(error_code_t e) {
+  switch (e) {
+    case error_code_t_EN_ECT_REFUSE_RECONNECT: return "EN_ECT_REFUSE_RECONNECT";
+    case error_code_t_EN_ECT_SESSION_EXPIRED: return "EN_ECT_SESSION_EXPIRED";
+    case error_code_t_EN_ECT_BUSY: return "EN_ECT_BUSY";
+    case error_code_t_EN_ECT_HANDSHAKE: return "EN_ECT_HANDSHAKE";
+    case error_code_t_EN_ECT_FIRST_IDEL: return "EN_ECT_FIRST_IDEL";
+    case error_code_t_EN_ECT_SUCCESS: return "EN_ECT_SUCCESS";
+    default: return "";
+  }
 }
 
 enum handshake_step_t {
@@ -60,8 +72,8 @@ enum handshake_step_t {
   handshake_step_t_MAX = handshake_step_t_EN_HST_VERIFY
 };
 
-inline handshake_step_t (&EnumValueshandshake_step_t())[9] {
-  static handshake_step_t values[] = {
+inline const handshake_step_t (&EnumValueshandshake_step_t())[9] {
+  static const handshake_step_t values[] = {
     handshake_step_t_EN_HST_START_REQ,
     handshake_step_t_EN_HST_START_RSP,
     handshake_step_t_EN_HST_RECONNECT_REQ,
@@ -75,6 +87,21 @@ inline handshake_step_t (&EnumValueshandshake_step_t())[9] {
   return values;
 }
 
+inline const char *EnumNamehandshake_step_t(handshake_step_t e) {
+  switch (e) {
+    case handshake_step_t_EN_HST_START_REQ: return "EN_HST_START_REQ";
+    case handshake_step_t_EN_HST_START_RSP: return "EN_HST_START_RSP";
+    case handshake_step_t_EN_HST_RECONNECT_REQ: return "EN_HST_RECONNECT_REQ";
+    case handshake_step_t_EN_HST_RECONNECT_RSP: return "EN_HST_RECONNECT_RSP";
+    case handshake_step_t_EN_HST_DH_PUBKEY_REQ: return "EN_HST_DH_PUBKEY_REQ";
+    case handshake_step_t_EN_HST_DH_PUBKEY_RSP: return "EN_HST_DH_PUBKEY_RSP";
+    case handshake_step_t_EN_HST_ECDH_PUBKEY_REQ: return "EN_HST_ECDH_PUBKEY_REQ";
+    case handshake_step_t_EN_HST_ECDH_PUBKEY_RSP: return "EN_HST_ECDH_PUBKEY_RSP";
+    case handshake_step_t_EN_HST_VERIFY: return "EN_HST_VERIFY";
+    default: return "";
+  }
+}
+
 enum switch_secret_t {
   switch_secret_t_EN_SST_DIRECT = 0,
   switch_secret_t_EN_SST_DH = 1,
@@ -83,8 +110,8 @@ enum switch_secret_t {
   switch_secret_t_MAX = switch_secret_t_EN_SST_ECDH
 };
 
-inline switch_secret_t (&EnumValuesswitch_secret_t())[3] {
-  static switch_secret_t values[] = {
+inline const switch_secret_t (&EnumValuesswitch_secret_t())[3] {
+  static const switch_secret_t values[] = {
     switch_secret_t_EN_SST_DIRECT,
     switch_secret_t_EN_SST_DH,
     switch_secret_t_EN_SST_ECDH
@@ -92,8 +119,8 @@ inline switch_secret_t (&EnumValuesswitch_secret_t())[3] {
   return values;
 }
 
-inline const char **EnumNamesswitch_secret_t() {
-  static const char *names[] = {
+inline const char * const *EnumNamesswitch_secret_t() {
+  static const char * const names[] = {
     "EN_SST_DIRECT",
     "EN_SST_DH",
     "EN_SST_ECDH",
@@ -120,8 +147,8 @@ enum cs_msg_type_t {
   cs_msg_type_t_MAX = cs_msg_type_t_EN_MTT_POST_KEY_ACK
 };
 
-inline cs_msg_type_t (&EnumValuescs_msg_type_t())[8] {
-  static cs_msg_type_t values[] = {
+inline const cs_msg_type_t (&EnumValuescs_msg_type_t())[8] {
+  static const cs_msg_type_t values[] = {
     cs_msg_type_t_EN_MTT_UNKNOWN,
     cs_msg_type_t_EN_MTT_POST,
     cs_msg_type_t_EN_MTT_HANDSHAKE,
@@ -134,8 +161,8 @@ inline cs_msg_type_t (&EnumValuescs_msg_type_t())[8] {
   return values;
 }
 
-inline const char **EnumNamescs_msg_type_t() {
-  static const char *names[] = {
+inline const char * const *EnumNamescs_msg_type_t() {
+  static const char * const names[] = {
     "EN_MTT_UNKNOWN",
     "EN_MTT_POST",
     "EN_MTT_HANDSHAKE",
@@ -164,8 +191,8 @@ enum cs_msg_body {
   cs_msg_body_MAX = cs_msg_body_cs_body_handshake
 };
 
-inline cs_msg_body (&EnumValuescs_msg_body())[5] {
-  static cs_msg_body values[] = {
+inline const cs_msg_body (&EnumValuescs_msg_body())[5] {
+  static const cs_msg_body values[] = {
     cs_msg_body_NONE,
     cs_msg_body_cs_body_post,
     cs_msg_body_cs_body_kickoff,
@@ -175,8 +202,8 @@ inline cs_msg_body (&EnumValuescs_msg_body())[5] {
   return values;
 }
 
-inline const char **EnumNamescs_msg_body() {
-  static const char *names[] = {
+inline const char * const *EnumNamescs_msg_body() {
+  static const char * const names[] = {
     "NONE",
     "cs_body_post",
     "cs_body_kickoff",
@@ -223,8 +250,14 @@ struct cs_msg_head FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   cs_msg_type_t type() const {
     return static_cast<cs_msg_type_t>(GetField<uint8_t>(VT_TYPE, 0));
   }
+  bool mutate_type(cs_msg_type_t _type) {
+    return SetField<uint8_t>(VT_TYPE, static_cast<uint8_t>(_type), 0);
+  }
   uint64_t sequence() const {
     return GetField<uint64_t>(VT_SEQUENCE, 0);
+  }
+  bool mutate_sequence(uint64_t _sequence) {
+    return SetField<uint64_t>(VT_SEQUENCE, _sequence, 0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -243,13 +276,13 @@ struct cs_msg_headBuilder {
   void add_sequence(uint64_t sequence) {
     fbb_.AddElement<uint64_t>(cs_msg_head::VT_SEQUENCE, sequence, 0);
   }
-  cs_msg_headBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit cs_msg_headBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   cs_msg_headBuilder &operator=(const cs_msg_headBuilder &);
   flatbuffers::Offset<cs_msg_head> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<cs_msg_head>(end);
     return o;
   }
@@ -274,14 +307,20 @@ struct cs_body_post FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint64_t length() const {
     return GetField<uint64_t>(VT_LENGTH, 0);
   }
+  bool mutate_length(uint64_t _length) {
+    return SetField<uint64_t>(VT_LENGTH, _length, 0);
+  }
   const flatbuffers::Vector<int8_t> *data() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_DATA);
+  }
+  flatbuffers::Vector<int8_t> *mutable_data() {
+    return GetPointer<flatbuffers::Vector<int8_t> *>(VT_DATA);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint64_t>(verifier, VT_LENGTH) &&
            VerifyOffset(verifier, VT_DATA) &&
-           verifier.Verify(data()) &&
+           verifier.VerifyVector(data()) &&
            verifier.EndTable();
   }
 };
@@ -295,13 +334,13 @@ struct cs_body_postBuilder {
   void add_data(flatbuffers::Offset<flatbuffers::Vector<int8_t>> data) {
     fbb_.AddOffset(cs_body_post::VT_DATA, data);
   }
-  cs_body_postBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit cs_body_postBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   cs_body_postBuilder &operator=(const cs_body_postBuilder &);
   flatbuffers::Offset<cs_body_post> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<cs_body_post>(end);
     return o;
   }
@@ -334,6 +373,9 @@ struct cs_body_kickoff FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int32_t reason() const {
     return GetField<int32_t>(VT_REASON, 0);
   }
+  bool mutate_reason(int32_t _reason) {
+    return SetField<int32_t>(VT_REASON, _reason, 0);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_REASON) &&
@@ -347,13 +389,13 @@ struct cs_body_kickoffBuilder {
   void add_reason(int32_t reason) {
     fbb_.AddElement<int32_t>(cs_body_kickoff::VT_REASON, reason, 0);
   }
-  cs_body_kickoffBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit cs_body_kickoffBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   cs_body_kickoffBuilder &operator=(const cs_body_kickoffBuilder &);
   flatbuffers::Offset<cs_body_kickoff> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<cs_body_kickoff>(end);
     return o;
   }
@@ -387,20 +429,38 @@ struct cs_body_handshake FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint64_t session_id() const {
     return GetField<uint64_t>(VT_SESSION_ID, 0);
   }
+  bool mutate_session_id(uint64_t _session_id) {
+    return SetField<uint64_t>(VT_SESSION_ID, _session_id, 0);
+  }
   handshake_step_t step() const {
     return static_cast<handshake_step_t>(GetField<uint8_t>(VT_STEP, 0));
+  }
+  bool mutate_step(handshake_step_t _step) {
+    return SetField<uint8_t>(VT_STEP, static_cast<uint8_t>(_step), 0);
   }
   switch_secret_t switch_type() const {
     return static_cast<switch_secret_t>(GetField<uint8_t>(VT_SWITCH_TYPE, 0));
   }
+  bool mutate_switch_type(switch_secret_t _switch_type) {
+    return SetField<uint8_t>(VT_SWITCH_TYPE, static_cast<uint8_t>(_switch_type), 0);
+  }
   const flatbuffers::String *crypt_type() const {
     return GetPointer<const flatbuffers::String *>(VT_CRYPT_TYPE);
+  }
+  flatbuffers::String *mutable_crypt_type() {
+    return GetPointer<flatbuffers::String *>(VT_CRYPT_TYPE);
   }
   const flatbuffers::Vector<int8_t> *crypt_param() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_CRYPT_PARAM);
   }
+  flatbuffers::Vector<int8_t> *mutable_crypt_param() {
+    return GetPointer<flatbuffers::Vector<int8_t> *>(VT_CRYPT_PARAM);
+  }
   const flatbuffers::Vector<int8_t> *switch_param() const {
     return GetPointer<const flatbuffers::Vector<int8_t> *>(VT_SWITCH_PARAM);
+  }
+  flatbuffers::Vector<int8_t> *mutable_switch_param() {
+    return GetPointer<flatbuffers::Vector<int8_t> *>(VT_SWITCH_PARAM);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -408,11 +468,11 @@ struct cs_body_handshake FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_STEP) &&
            VerifyField<uint8_t>(verifier, VT_SWITCH_TYPE) &&
            VerifyOffset(verifier, VT_CRYPT_TYPE) &&
-           verifier.Verify(crypt_type()) &&
+           verifier.VerifyString(crypt_type()) &&
            VerifyOffset(verifier, VT_CRYPT_PARAM) &&
-           verifier.Verify(crypt_param()) &&
+           verifier.VerifyVector(crypt_param()) &&
            VerifyOffset(verifier, VT_SWITCH_PARAM) &&
-           verifier.Verify(switch_param()) &&
+           verifier.VerifyVector(switch_param()) &&
            verifier.EndTable();
   }
 };
@@ -438,13 +498,13 @@ struct cs_body_handshakeBuilder {
   void add_switch_param(flatbuffers::Offset<flatbuffers::Vector<int8_t>> switch_param) {
     fbb_.AddOffset(cs_body_handshake::VT_SWITCH_PARAM, switch_param);
   }
-  cs_body_handshakeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit cs_body_handshakeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   cs_body_handshakeBuilder &operator=(const cs_body_handshakeBuilder &);
   flatbuffers::Offset<cs_body_handshake> Finish() {
-    const auto end = fbb_.EndTable(start_, 6);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<cs_body_handshake>(end);
     return o;
   }
@@ -494,6 +554,9 @@ struct cs_body_ping FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int64_t timepoint() const {
     return GetField<int64_t>(VT_TIMEPOINT, 0);
   }
+  bool mutate_timepoint(int64_t _timepoint) {
+    return SetField<int64_t>(VT_TIMEPOINT, _timepoint, 0);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int64_t>(verifier, VT_TIMEPOINT) &&
@@ -507,13 +570,13 @@ struct cs_body_pingBuilder {
   void add_timepoint(int64_t timepoint) {
     fbb_.AddElement<int64_t>(cs_body_ping::VT_TIMEPOINT, timepoint, 0);
   }
-  cs_body_pingBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit cs_body_pingBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   cs_body_pingBuilder &operator=(const cs_body_pingBuilder &);
   flatbuffers::Offset<cs_body_ping> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<cs_body_ping>(end);
     return o;
   }
@@ -537,8 +600,14 @@ struct cs_msg FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const cs_msg_head *head() const {
     return GetPointer<const cs_msg_head *>(VT_HEAD);
   }
+  cs_msg_head *mutable_head() {
+    return GetPointer<cs_msg_head *>(VT_HEAD);
+  }
   cs_msg_body body_type() const {
     return static_cast<cs_msg_body>(GetField<uint8_t>(VT_BODY_TYPE, 0));
+  }
+  bool mutate_body_type(cs_msg_body _body_type) {
+    return SetField<uint8_t>(VT_BODY_TYPE, static_cast<uint8_t>(_body_type), 0);
   }
   const void *body() const {
     return GetPointer<const void *>(VT_BODY);
@@ -555,6 +624,9 @@ struct cs_msg FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   const cs_body_handshake *body_as_cs_body_handshake() const {
     return body_type() == cs_msg_body_cs_body_handshake ? static_cast<const cs_body_handshake *>(body()) : nullptr;
+  }
+  void *mutable_body() {
+    return GetPointer<void *>(VT_BODY);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -595,13 +667,13 @@ struct cs_msgBuilder {
   void add_body(flatbuffers::Offset<void> body) {
     fbb_.AddOffset(cs_msg::VT_BODY, body);
   }
-  cs_msgBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit cs_msgBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   cs_msgBuilder &operator=(const cs_msgBuilder &);
   flatbuffers::Offset<cs_msg> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<cs_msg>(end);
     return o;
   }
@@ -645,6 +717,7 @@ inline bool Verifycs_msg_body(flatbuffers::Verifier &verifier, const void *obj, 
 }
 
 inline bool Verifycs_msg_bodyVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+  if (!values || !types) return !values && !types;
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!Verifycs_msg_body(
@@ -657,6 +730,14 @@ inline bool Verifycs_msg_bodyVector(flatbuffers::Verifier &verifier, const flatb
 
 inline const atframe::gw::inner::v1::cs_msg *Getcs_msg(const void *buf) {
   return flatbuffers::GetRoot<atframe::gw::inner::v1::cs_msg>(buf);
+}
+
+inline const atframe::gw::inner::v1::cs_msg *GetSizePrefixedcs_msg(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<atframe::gw::inner::v1::cs_msg>(buf);
+}
+
+inline cs_msg *GetMutablecs_msg(void *buf) {
+  return flatbuffers::GetMutableRoot<cs_msg>(buf);
 }
 
 inline const char *cs_msgIdentifier() {
@@ -673,6 +754,11 @@ inline bool Verifycs_msgBuffer(
   return verifier.VerifyBuffer<atframe::gw::inner::v1::cs_msg>(cs_msgIdentifier());
 }
 
+inline bool VerifySizePrefixedcs_msgBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<atframe::gw::inner::v1::cs_msg>(cs_msgIdentifier());
+}
+
 inline const char *cs_msgExtension() {
   return "atgw";
 }
@@ -681,6 +767,12 @@ inline void Finishcs_msgBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
     flatbuffers::Offset<atframe::gw::inner::v1::cs_msg> root) {
   fbb.Finish(root, cs_msgIdentifier());
+}
+
+inline void FinishSizePrefixedcs_msgBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<atframe::gw::inner::v1::cs_msg> root) {
+  fbb.FinishSizePrefixed(root, cs_msgIdentifier());
 }
 
 }  // namespace v1
