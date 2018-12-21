@@ -14,11 +14,11 @@
 
 
 struct client_libuv_data_t {
-    uv_tcp_t tcp_sock;
-    uv_connect_t tcp_req;
+    uv_tcp_t         tcp_sock;
+    uv_connect_t     tcp_req;
     uv_getaddrinfo_t dns_req;
-    uv_write_t write_req;
-    uv_timer_t tick_timer;
+    uv_write_t       write_req;
+    uv_timer_t       tick_timer;
 };
 
 client_libuv_data_t g_client;
@@ -34,22 +34,57 @@ struct proto_wrapper {
 };
 
 struct client_session_data_t {
-    uint64_t session_id;
-    long long seq;
+    uint64_t                       session_id;
+    long long                      seq;
     std::shared_ptr<proto_wrapper> proto;
 
-    bool print_recv;
-    bool allow_reconnect;
+    bool   print_msg;
+    bool   busy_mode;
+    bool   allow_reconnect;
+    size_t sec_send_bound;
+    size_t sec_recv_count;
+    size_t sum_recv_count;
+    size_t sec_send_count;
+    size_t sum_send_count;
+    size_t sec_recv_size;
+    size_t sum_recv_size;
+    size_t sec_send_size;
+    size_t sum_send_size;
 };
 
 client_session_data_t g_client_sess;
 
 std::string g_host;
-int g_port;
+int         g_port;
 std::string crypt_types;
 
+static std::pair<unsigned long long, const char *> get_size_readable(size_t sz) {
+    const char *unit = "B";
+    if (sz >= 32768) {
+        sz /= 1024;
+        unit = "KB";
+    }
+
+    if (sz >= 32768) {
+        sz /= 1024;
+        unit = "MB";
+    }
+
+    if (sz >= 32768) {
+        sz /= 1024;
+        unit = "GB";
+    }
+
+    if (sz >= 32768) {
+        sz /= 1024;
+        unit = "TB";
+    }
+
+    return std::pair<unsigned long long, const char *>(static_cast<unsigned long long>(sz), unit);
+}
+
 // ======================== 以下为网络处理及回调 ========================
-static int close_sock();
+static int  close_sock();
 static void libuv_close_sock_callback(uv_handle_t *handle);
 
 static void libuv_tcp_recv_alloc_fn(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
@@ -90,7 +125,7 @@ static void libuv_tcp_recv_read_fn(uv_stream_t *stream, ssize_t nread, const uv_
     if (g_client_sess.proto) {
         // add reference in case of destroyed in read callback
         std::shared_ptr<proto_wrapper> sess_proto = g_client_sess.proto;
-        int32_t errcode = 0;
+        int32_t                        errcode    = 0;
         libatgw_inner_v1_c_read(sess_proto->ctx, static_cast<int32_t>(nread), buf->base, static_cast<size_t>(nread), &errcode);
         if (0 != errcode) {
             fprintf(stderr, "[Read]: failed, res: %d\n", errcode);
@@ -116,13 +151,13 @@ static void libuv_tcp_connect_callback(uv_connect_t *req, int status) {
 
     if (g_client_sess.proto && g_client_sess.allow_reconnect) {
         std::vector<unsigned char> secret;
-        uint64_t secret_len = libatgw_inner_v1_c_get_crypt_secret_size(g_client_sess.proto->ctx);
+        uint64_t                   secret_len = libatgw_inner_v1_c_get_crypt_secret_size(g_client_sess.proto->ctx);
         secret.resize(secret_len);
         std::string crypt_type = libatgw_inner_v1_c_get_crypt_type(g_client_sess.proto->ctx);
         libatgw_inner_v1_c_copy_crypt_secret(g_client_sess.proto->ctx, &secret[0], secret_len);
 
         g_client_sess.proto = sess_proto;
-        ret = libatgw_inner_v1_c_reconnect_session(sess_proto->ctx, g_client_sess.session_id, crypt_type.c_str(), &secret[0], secret_len);
+        ret                 = libatgw_inner_v1_c_reconnect_session(sess_proto->ctx, g_client_sess.session_id, crypt_type.c_str(), &secret[0], secret_len);
     } else {
         g_client_sess.proto = sess_proto;
 
@@ -153,13 +188,13 @@ static void libuv_dns_callback(uv_getaddrinfo_t *req, int status, struct addrinf
         g_client.tcp_sock.data = &g_client;
 
         if (AF_INET == res->ai_family) {
-            sockaddr_in *res_c = (struct sockaddr_in *)(res->ai_addr);
-            char ip[17] = {0};
+            sockaddr_in *res_c  = (struct sockaddr_in *)(res->ai_addr);
+            char         ip[17] = {0};
             uv_ip4_name(res_c, ip, sizeof(ip));
             uv_ip4_addr(ip, g_port, (struct sockaddr_in *)&real_addr);
         } else if (AF_INET6 == res->ai_family) {
-            sockaddr_in6 *res_c = (struct sockaddr_in6 *)(res->ai_addr);
-            char ip[40] = {0};
+            sockaddr_in6 *res_c  = (struct sockaddr_in6 *)(res->ai_addr);
+            char          ip[40] = {0};
             uv_ip6_name(res_c, ip, sizeof(ip));
             uv_ip6_addr(ip, g_port, (struct sockaddr_in6 *)&real_addr);
         } else {
@@ -235,7 +270,7 @@ static int32_t proto_inner_callback_on_write(libatgw_inner_v1_c_context ctx, voi
     }
 
     uv_buf_t bufs[1] = {uv_buf_init(reinterpret_cast<char *>(buffer), static_cast<unsigned int>(sz))};
-    int ret = uv_write(&g_client.write_req, (uv_stream_t *)&g_client.tcp_sock, bufs, 1, proto_inner_callback_on_written_fn);
+    int      ret     = uv_write(&g_client.write_req, (uv_stream_t *)&g_client.tcp_sock, bufs, 1, proto_inner_callback_on_written_fn);
     if (0 != ret) {
         fprintf(stderr, "send data to proto 0x%llx failed, msg: %s\n", static_cast<unsigned long long>(g_client_sess.session_id), uv_strerror(ret));
     }
@@ -248,9 +283,38 @@ static int32_t proto_inner_callback_on_write(libatgw_inner_v1_c_context ctx, voi
     return ret;
 }
 
+static int send_next_hello_message() {
+    char msg[64] = {0};
+    UTIL_STRFUNC_SNPRINTF(msg, sizeof(msg), "hello 0x%llx, %lld", static_cast<unsigned long long>(g_client_sess.session_id),
+                          static_cast<long long>(++g_client_sess.seq));
+    size_t msg_sz = strlen(msg);
+    int    ret    = libatgw_inner_v1_c_post_msg(g_client_sess.proto->ctx, msg, msg_sz);
+    if (g_client_sess.print_msg) {
+        printf("[Tick]: send %s, res: %d\n", msg, ret);
+    }
+
+    if (0 == ret) {
+        ++g_client_sess.sec_send_count;
+        ++g_client_sess.sum_send_count;
+        g_client_sess.sec_send_size += msg_sz;
+        g_client_sess.sum_send_size += msg_sz;
+    }
+
+    return ret;
+}
+
 static int proto_inner_callback_on_message(libatgw_inner_v1_c_context ctx, const void *buffer, uint64_t sz) {
-    if (g_client_sess.print_recv && NULL != buffer && sz > 0) {
+    if (g_client_sess.print_msg && NULL != buffer && sz > 0) {
         printf("[recv message]: %s\n", std::string(reinterpret_cast<const char *>(buffer), (size_t)sz).c_str());
+    }
+
+    ++g_client_sess.sec_recv_count;
+    ++g_client_sess.sum_recv_count;
+    g_client_sess.sec_recv_size += sz;
+    g_client_sess.sum_recv_size += sz;
+
+    if (g_client_sess.sec_send_count < g_client_sess.sec_send_bound) {
+        send_next_hello_message();
     }
     return 0;
 }
@@ -347,17 +411,32 @@ static void libuv_tick_timer_callback(uv_timer_t *handle) {
         return;
     }
 
-    char msg[64] = {0};
-    UTIL_STRFUNC_SNPRINTF(msg, sizeof(msg), "hello 0x%llx, %lld", static_cast<unsigned long long>(g_client_sess.session_id),
-                          static_cast<long long>(++g_client_sess.seq));
+    if (g_client_sess.busy_mode) {
+        printf("[Tick]: sec recv(%llu,%llu%s), sum recv(%llu,%llu%s), sec send(%llu,%llu%s), sum send(%llu,%llu%s)\n",
+               static_cast<unsigned long long>(g_client_sess.sec_recv_count), get_size_readable(g_client_sess.sec_recv_size).first,
+               get_size_readable(g_client_sess.sec_recv_size).second, static_cast<unsigned long long>(g_client_sess.sum_recv_count),
+               get_size_readable(g_client_sess.sum_recv_size).first, get_size_readable(g_client_sess.sum_recv_size).second,
+               static_cast<unsigned long long>(g_client_sess.sec_send_count), get_size_readable(g_client_sess.sec_send_size).first,
+               get_size_readable(g_client_sess.sec_send_size).second, static_cast<unsigned long long>(g_client_sess.sum_send_count),
+               get_size_readable(g_client_sess.sum_send_size).first, get_size_readable(g_client_sess.sum_send_size).second);
+    }
 
-    int ret = libatgw_inner_v1_c_post_msg(g_client_sess.proto->ctx, msg, strlen(msg));
-    printf("[Tick]: send %s, res: %d\n", msg, ret);
+
+    g_client_sess.sec_recv_count = 0;
+    g_client_sess.sec_send_count = 0;
+    g_client_sess.sec_recv_size  = 0;
+    g_client_sess.sec_send_size  = 0;
+
+    bool continue_send = true;
+    while (continue_send && g_client_sess.sec_send_count < g_client_sess.sec_send_bound) {
+        continue_send = 0 == send_next_hello_message();
+    }
 }
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        fprintf(stderr, "usage: %s <ip> <port> [crypt types] [mode]\n\tmode can only be tick\n", argv[0]);
+        fprintf(stderr, "usage: %s <ip> <port> [crypt types] [mode]\n\tmode can be tick or busy\n\t%s 127.0.0.1 9001 xxtea:aes-128-cfb:aes-256-cfb tick\n",
+                argv[0], argv[0]);
         return -1;
     }
 
@@ -374,19 +453,31 @@ int main(int argc, char *argv[]) {
     libatgw_inner_v1_c_gset_on_handshake_update_fn(proto_inner_callback_on_handshake_update);
     libatgw_inner_v1_c_gset_on_error_fn(proto_inner_callback_on_error);
 
-    g_client_sess.session_id = 0;
-    g_client_sess.seq = 0;
-    g_client_sess.print_recv = false;
+    g_client_sess.session_id      = 0;
+    g_client_sess.seq             = 0;
+    g_client_sess.print_msg       = false;
+    g_client_sess.busy_mode       = false;
     g_client_sess.allow_reconnect = true;
+    g_client_sess.sec_send_bound  = 1;
+    g_client_sess.sec_recv_count  = 0;
+    g_client_sess.sum_recv_count  = 0;
+    g_client_sess.sec_send_count  = 0;
+    g_client_sess.sum_send_count  = 0;
+    g_client_sess.sec_recv_size   = 0;
+    g_client_sess.sum_recv_size   = 0;
+    g_client_sess.sec_send_size   = 0;
+    g_client_sess.sum_send_size   = 0;
 
     std::string mode = "tick";
-    g_host = argv[1];
-    g_port = static_cast<int>(strtol(argv[2], NULL, 10));
+    g_host           = argv[1];
+    g_port           = static_cast<int>(strtol(argv[2], NULL, 10));
     memset(&g_client, 0, sizeof(g_client));
 
     if (argc > 3) {
         crypt_types = argv[3];
-    } else {
+    }
+
+    if (crypt_types.empty()) {
         crypt_types = "xxtea:aes-128-cfb:aes-256-cfb";
     }
 
@@ -397,8 +488,14 @@ int main(int argc, char *argv[]) {
 
     if ("tick" == mode) {
         uv_timer_init(uv_default_loop(), &g_client.tick_timer);
-        uv_timer_start(&g_client.tick_timer, libuv_tick_timer_callback, 2000, 2000);
-        g_client_sess.print_recv = true;
+        uv_timer_start(&g_client.tick_timer, libuv_tick_timer_callback, 1000, 1000);
+        g_client_sess.print_msg = true;
+    } else if ("busy" == mode) {
+        uv_timer_init(uv_default_loop(), &g_client.tick_timer);
+        uv_timer_start(&g_client.tick_timer, libuv_tick_timer_callback, 1000, 1000);
+        g_client_sess.print_msg      = false;
+        g_client_sess.busy_mode      = true;
+        g_client_sess.sec_send_bound = 5000;
     } else {
         fprintf(stderr, "unsupport mode %s\n", mode.c_str());
         return -1;
