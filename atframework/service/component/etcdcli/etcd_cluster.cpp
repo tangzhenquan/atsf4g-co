@@ -1168,7 +1168,9 @@ namespace atframe {
             req->set_opt_http_content_decoding(true);
             req->set_opt_timeout(timeout);
             req->set_user_agent(details::get_default_user_agent());
-            req->set_opt_reuse_connection(false);
+            // req->set_opt_reuse_connection(false); // just enable connection reuse for all but watch request
+            req->set_opt_long(CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+            req->set_opt_no_signal(true);
             if (!authorization.empty()) {
                 req->append_http_header(authorization.c_str());
             }
