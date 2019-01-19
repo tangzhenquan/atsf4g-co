@@ -4,7 +4,7 @@
 
 CheckProcessRunning "$SERVER_PID_FILE_NAME";
 if [ 0 -eq $? ]; then
-	ErrorMsg "send reload command to $full_server_name failed, not running";
+	ErrorMsg "send reload command to $SERVER_FULL_NAME failed, not running";
 	exit 1;
 fi
 
@@ -13,7 +13,7 @@ fi
 export LD_PRELOAD=;
 
 if [ $? -ne 0 ]; then
-	ErrorMsg "send reload command to $full_server_name failed.";
+	ErrorMsg "send reload command to $SERVER_FULL_NAME failed.";
 	exit $?;
 fi
 
