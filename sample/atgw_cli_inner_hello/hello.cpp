@@ -435,7 +435,7 @@ static void libuv_tick_timer_callback(uv_timer_t *handle) {
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        fprintf(stderr, "usage: %s <ip> <port> [crypt types] [mode]\n\tmode can be tick or busy\n\t%s 127.0.0.1 9001 xxtea:aes-128-cfb:aes-256-cfb tick\n",
+        fprintf(stderr, "usage: %s <ip> <port> [crypt types] [mode]\n\tmode can be tick or busy\n\t%s 127.0.0.1 9010 xxtea:aes-128-cfb:aes-256-cfb tick\n",
                 argv[0], argv[0]);
         return -1;
     }
