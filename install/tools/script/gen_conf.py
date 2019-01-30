@@ -197,22 +197,27 @@ fi
                             'bin', 'run-{0}.sh'.format(svr_index))
 
     # parse all services
-    atgateway_index = 1 + opts.server_id_offset
     for svr_name in project.get_global_all_services():
         section_name = 'server.{0}'.format(svr_name)
         install_prefix = project.get_global_option(section_name, 'install_prefix', svr_name)
         for svr_index in project.get_service_index_range(int(project.get_global_option(section_name, 'number', 0))):
             generate_service(svr_name, svr_index, install_prefix, section_name)
-            # atgateway if available
-            atgateway_port = project.get_server_option('atgateway_port', None)
-            if not atgateway_port is None:
-                atgateway_install_prefix = project.get_global_option(
-                    'server.atgateway', 'install_prefix', 'atframe/atgateway')
-                generate_service('atgateway', atgateway_index, atgateway_install_prefix, section_name,
-                                 atgateway_server_name=svr_name,
-                                 atgateway_server_index=svr_index
-                                 )
-                atgateway_index = atgateway_index + 1
+
+    # special services - atgateway
+    for svr_name in project.get_gateway_server_names('atgateway'):
+        section_name = 'server.{0}'.format(svr_name)
+        install_prefix = project.get_global_option('server.atgateway', 'install_prefix', 'atframe/atgateway')
+        for svr_index in project.get_service_index_range(int(project.get_global_option(section_name, 'number', 0))):
+            gateway_index = project.get_server_gateway_index(svr_name, svr_index, 'atgateway')
+            for_server_id = project.get_server_proc_id(svr_name, svr_index)
+            for_server_type_id = project.get_server_type_id(svr_name)
+            generate_service('atgateway', gateway_index, install_prefix, 'server.atgateway',
+                for_server_name=svr_name,
+                for_server_index=svr_index,
+                for_server_id=for_server_id,
+                for_server_type_id=for_server_type_id
+            )
+
     # custom global rules
     project_install_abs_path = os.path.normpath(os.path.join(script_dir, '..', '..'))
     for custom_global_rule_file in glob.glob(os.path.join(script_dir, 'helper', 'custom_global_rules', '*')):

@@ -591,6 +591,17 @@ def get_server_gateway_port(server_name, server_index, gateway_name=None, base_p
     return ret + get_server_gateway_index(server_name, server_index, gateway_name) + port_offset
 
 
+def get_gateway_server_names(gateway_name=None):
+    global global_opts
+    ret = []
+    if gateway_name is None:
+        gateway_name = 'atgateway'
+    for maybe_svr_name in global_opts.options('server.{0}'.format(gateway_name)):
+        if maybe_svr_name[0:10] != "index_map_":
+            continue
+        ret.append(maybe_svr_name[10:])
+    return ret
+
 def get_etcd_client_urls():
     etcd_number = int(get_global_option('server.etcd', 'number', '0'))
     if etcd_number <= 0:
