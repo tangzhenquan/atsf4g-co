@@ -1,5 +1,5 @@
-mkdir build_win64_msvc_openssl
-cd build_win64_msvc_openssl
+mkdir build_jobs_win64_msvc_openssl
+cd build_jobs_win64_msvc_openssl
 :: openssl : see https://slproweb.com/products/Win32OpenSSL.html
 :: libcurl : 
 ::     "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64

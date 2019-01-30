@@ -1,5 +1,5 @@
-mkdir build_win64_msvc_mbedtls
-cd build_win64_msvc_mbedtls
+mkdir build_jobs_win64_msvc_mbedtls
+cd build_jobs_win64_msvc_mbedtls
 :: 
 :: libcurl : 
 ::     "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64

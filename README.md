@@ -134,4 +134,57 @@ python3 gen_conf.py
 
 > * tools: tool projects
 
+
+## Basic Usage
+
+### Build on Windows
+You need to prebuilt all dependency libraries such as openssl/mbedtls, libcurl, libuv and so on.
+Then run
+```bash
+mkdir build_jobs_msvc
+cd build_jobs_msvc
+# run cmake
+cmake [SOURCE PATH] -G "Visual Studio ... Win64" -DLIBUV_ROOT=[LIBUV INSTALL PATH] -DOPENSSL_ROOT=[OPENSSL INSTALL PATH] -DPROJECT_ENABLE_UNITTEST=YES -DPROJECT_ENABLE_SAMPLE=YES -DPROJECT_ENABLE_TOOLS=YES ...
+
+cd build_jobs_msvc
+
+cmake --build . --config Debug
+```  
+Please see [3rd_party](3rd_party) to see which libraries is required.
+
+### Build on Unix like system
+```bash
+# auto setup cmake
+
+sh cmake_dev.sh [options] ...
+
+# we will generate directory build_jobs_$(basename $(uname -s)) for build and place publish directory
+cd build_jobs_*
+
+# just build with make -j4 or ninja -j4
+cmake --build . -- -j4
+```
+Such as sh cmake_dev.sh -su to enable all unit test and samples, or sh cmake_dev.sh -a to use clang-analysis.
+You can also directly run cmake [SOURCE PATH] [options...] just like in windows, use your own prebuilt libraries or not.
+It depends to you.
+
+All resource and file will be put into ```<BUILD_DIR>/publish``` after compile completed.
+
+### Configure
+Configure file is placed on ```<BUILD_DIR>/publish/tools/script/config.conf``` just edit it and set your **etcd server** and ***DB configure***， then run ```<BUILD_DIR>/publish/tools/script/gen_conf.py``` to generate all configure files and scripts for servers. ```restart_all.sh``` 、 ```stop_all.sh``` 、 ```reload_all.sh``` script files will also be generated for easy usage.
+
+```bash
+cd publish/tools/script
+
+vim config.conf # edit configure
+
+python3 gen_conf.py
+
+./restart_all.sh
+```
+
+```gen_conf.py``` also has options for set some configures instead of using it in config.conf, it's useful when integration our server into other management system. Use ```python3 ./gen_conf.py - --help``` for more help information.
+
+At last, you can use ```<BUILD_DIR>/publish/tools/simulator/bin/simulator-cli``` to connect gateway and send/receive messages.
+
 [1]: https://coreos.com/etcd

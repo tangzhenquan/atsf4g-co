@@ -1,5 +1,5 @@
 
-# =========== 3rdparty libcurl ==================
+# =========== 3rdparty rapidjson ==================
 if(NOT 3RD_PARTY_RAPIDJSON_BASE_DIR)
     set (3RD_PARTY_RAPIDJSON_BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif()

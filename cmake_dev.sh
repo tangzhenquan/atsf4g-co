@@ -5,12 +5,16 @@ SYS_NAME="$(basename $SYS_NAME)";
 CC=gcc;
 CXX=g++;
 CCACHE="$(which ccache)";
+DISTCC="";
+if [ ! -z "$DISTCC_HOSTS" ]; then
+    DISTCC="$(which distcc 2>/dev/null)";
+fi
 
 CMAKE_OPTIONS="";
 CMAKE_CLANG_TIDY="";
 CMAKE_CLANG_ANALYZER=0;
 CMAKE_CLANG_ANALYZER_PATH="";
-BUILD_DIR=$(echo "build_$SYS_NAME" | tr '[:upper:]' '[:lower:]');
+BUILD_DIR=$(echo "build_jobs_$SYS_NAME" | tr '[:upper:]' '[:lower:]');
 CMAKE_BUILD_TYPE=Debug;
 
 if [ ! -z "$MSYSTEM" ]; then
@@ -19,7 +23,7 @@ else
     CHECK_MSYS="";
 fi
 
-while getopts "ab:c:e:hlm:o:tus-" OPTION; do
+while getopts "ab:c:d:e:hlm:o:tus-" OPTION; do
     case $OPTION in
         a)
             echo "Ready to check ccc-analyzer and c++-analyzer, please do not use -c to change the compiler when using clang-analyzer.";
@@ -64,6 +68,9 @@ while getopts "ab:c:e:hlm:o:tus-" OPTION; do
             CXX="${CC/%clang/clang++}";
             CXX="${CXX/%gcc/g++}";
         ;;
+        d)
+            DISTCC="$OPTARG";
+        ;;
         e)
             CCACHE="$OPTARG";
         ;;
@@ -72,6 +79,7 @@ while getopts "ab:c:e:hlm:o:tus-" OPTION; do
             echo "options:";
             echo "-a                            using clang-analyzer.";
             echo "-c <compiler>                 compiler toolchains(gcc, clang or others).";
+            echo "-d <distcc path>              try to use specify distcc to speed up building.";
             echo "-e <ccache path>              try to use specify ccache to speed up building.";
             echo "-h                            help message.";
             echo "-m [mbedtls root]             set root of mbedtls.";
@@ -123,7 +131,9 @@ SCRIPT_DIR="$(cd $(dirname $0) && pwd)";
 mkdir -p "$SCRIPT_DIR/$BUILD_DIR";
 cd "$SCRIPT_DIR/$BUILD_DIR";
 
-if [ ! -z "$CCACHE" ] && [ "$CCACHE" != "disable" ] && [ "$CCACHE" != "disabled" ] && [ "$CCACHE" != "no" ] && [ "$CCACHE" != "false" ] && [ -e "$CCACHE" ]; then
+if [ ! -z "$DISTCC" ] && [ "$DISTCC" != "disable" ] && [ "$DISTCC" != "disabled" ] && [ "$DISTCC" != "no" ] && [ "$DISTCC" != "false" ] && [ -e "$DISTCC" ]; then
+    CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER_LAUNCHER=$DISTCC -DCMAKE_CXX_COMPILER_LAUNCHER=$DISTCC -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX";
+elif [ ! -z "$CCACHE" ] && [ "$CCACHE" != "disable" ] && [ "$CCACHE" != "disabled" ] && [ "$CCACHE" != "no" ] && [ "$CCACHE" != "false" ] && [ -e "$CCACHE" ]; then
     #CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER=$CCACHE -DCMAKE_CXX_COMPILER=$CCACHE -DCMAKE_C_COMPILER_ARG1=$CC -DCMAKE_CXX_COMPILER_ARG1=$CXX";
     CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER_LAUNCHER=$CCACHE -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX";
 else

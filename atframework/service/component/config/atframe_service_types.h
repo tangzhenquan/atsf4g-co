@@ -11,10 +11,10 @@ namespace atframe {
                 EN_ATST_ATPROXY,
                 EN_ATST_GATEWAY,
 
-                EN_ATST_INNER_BOUND = 0x80,
-                EN_ATST_CUSTOM_START = 0x81,
+                EN_ATST_INNER_BOUND  = 0x20,
+                EN_ATST_CUSTOM_START = 0x21,
             };
         };
-    }
-}
+    } // namespace component
+} // namespace atframe
 #endif

@@ -8,6 +8,9 @@ import platform
 import cgi
 import re
 import hashlib
+import stat
+import codecs
+import common.print_color
 
 environment_check_shm = None
 global_opts = None
@@ -20,7 +23,7 @@ server_proxy_addr = ''
 server_cache_id = None
 server_cache_full_name = None
 server_cache_ip = dict()
-
+project_templete_engine_lookup = None
 
 def set_global_opts(opts, id_offset):
     global global_opts
@@ -34,6 +37,41 @@ def set_global_opts(opts, id_offset):
         if global_opts.has_section(svr_name):
             global_cahce['services_type'].append(server_type[0])
 
+def set_templete_engine(engine):
+    global project_templete_engine_lookup
+    project_templete_engine_lookup = engine
+
+def render_string(content, **render_options):
+    from mako.template import Template
+    tmpl = Template(content)
+    return tmpl.render(**render_options)
+
+def render(template_name, **render_options):
+    if project_templete_engine_lookup is None:
+        common.print_color.cprintf_stderr([common.print_color.print_style.FC_RED, common.print_color.print_style.FW_BOLD],
+                                    'template not available now\r\n')
+        return ""
+    tmpl = project_templete_engine_lookup.get_template(template_name)
+    if tmpl is None:
+        common.print_color.cprintf_stderr([common.print_color.print_style.FC_RED, common.print_color.print_style.FW_BOLD],
+                                    'template {0} not found\r\n', template_name)
+        return ""
+
+    return tmpl.render(**render_options)
+
+def render_to(template_name, output_path, **render_options):
+    dir_path = os.path.dirname(output_path)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, stat.S_IRWXU + stat.S_IRWXG + stat.S_IRWXO)
+
+    output_file = codecs.open(output_path, mode='w', encoding='utf-8')
+    if not output_file:
+        common.print_color.cprintf_stderr([common.print_color.print_style.FC_RED, common.print_color.print_style.FW_BOLD],
+                                    'try to render {0} but open {1} for writing failed\r\n', template_name, output_path)
+        return
+
+    output_file.write(render(template_name, **render_options))
+    os.chmod(output_path, stat.S_IRWXU + stat.S_IRWXG + stat.S_IROTH + stat.S_IXOTH)
 
 def get_service_index_range(number=1):
     return range(1 + global_cahce['id_offset'], 1 + global_cahce['id_offset'] + number)
@@ -295,10 +333,12 @@ def get_server_name():
     global server_name
     return server_name
 
-def get_server_type_id():
-    if not global_opts.has_option('atservice', get_server_name()):
+def get_server_type_id(server_name=None):
+    if server_name is None:
+        server_name = get_server_name()
+    if not global_opts.has_option('atservice', server_name):
         return 0
-    return int(get_global_option('atservice', get_server_name(), 0))
+    return int(get_global_option('atservice', server_name, 0))
 
 def get_server_option(key, default_val, env_name=None):
     return get_global_option('server.{0}'.format(get_server_name()), key, default_val, env_name)
@@ -311,6 +351,8 @@ def get_server_list(key, default_val, env_name=None):
 def get_server_list_to_hosts(key, default_val, env_name=None):
     return get_global_list_to_hosts('server.{0}'.format(get_server_name()), key, default_val, env_name)
 
+def get_server_option_bool(key, default_val, env_name=None):
+    return get_global_option_bool('server.{0}'.format(get_server_name()), key, default_val, env_name)
 
 def get_server_or_global_option(section, key, default_val, env_name=None):
     ret = get_server_option('{0}.{1}'.format(section, key), None, None)
@@ -331,6 +373,12 @@ def get_server_or_global_list_to_hosts(section, key, default_val, env_name=None)
         return get_global_list_to_hosts(section, key, default_val, env_name)
     return ret
 
+def get_server_or_global_bool(section, key, default_val, env_name=None):
+    try_section_name = '{0}.{1}'.format(section, key)
+    if get_server_option(try_section_name, None) is None:
+        return get_global_option_bool(section, key, default_val, env_name)
+    else:
+        return get_server_option_bool(try_section_name, default_val, env_name)
 
 def get_server_index():
     global server_index
@@ -514,30 +562,43 @@ def get_server_send_buffer_size():
     return get_global_option('atsystem', 'iostream_channel_size', 2 * 1024 * 1024)
 
 
-def get_server_gateway_index(server_name=None, server_index=None):
+def get_server_gateway_index(server_name=None, server_index=None, gateway_name=None):
     if server_name is None:
         server_name = get_server_name()
     if server_index is None:
         server_index = get_server_index()
 
-    step = int(get_global_option('server.atgateway', 'index_type_number', 1))
-    offset = get_global_option(
-        'server.atgateway', 'index_map_{0}'.format(server_name), None)
+    if gateway_name is None:
+        gateway_name = 'atgateway'
+    gateway_section_name = 'server.{0}'.format(gateway_name)
+
+    step = int(get_global_option(gateway_section_name, 'index_type_number', 1))
+    offset = get_global_option(gateway_section_name, 'index_map_{0}'.format(server_name), None)
     if offset is None:
         raise Exception(
-            'index_map_{0} is not found in server.atgateway'.format(server_name))
+            'index_map_{0} is not found in {1}'.format(server_name, gateway_section_name))
     return step * server_index + int(offset)
 
 
-def get_server_gateway_port(server_name=None, server_index=None, base_port='atgateway_port'):
-    if server_name is None:
-        server_name = get_server_name()
-    if server_index is None:
-        server_index = get_server_index()
-    ret = int(get_global_option(
-        'server.{0}'.format(server_name), base_port, 0))
+def get_server_gateway_port(server_name, server_index, gateway_name=None, base_port='atgateway_port'):
+    if gateway_name is None:
+        gateway_name = 'atgateway'
+    gateway_section_name = 'server.{0}'.format(gateway_name)
+    ret = int(get_global_option(gateway_section_name, base_port, 0))
     port_offset = int(get_global_option('global', 'port_offset', 0, 'SYSTEM_MACRO_GLOBAL_PORT_OFFSET'))
-    if 0 != ret:
-        return ret + server_index + port_offset
-    ret = int(get_global_option('server.atgateway', 'default_port', 8000))
-    return ret + get_server_gateway_index(server_name, server_index) + port_offset
+    if ret <= 0:
+        ret = int(get_global_option('server.{0}'.format(gateway_name), 'default_port', 8000))
+    return ret + get_server_gateway_index(server_name, server_index, gateway_name) + port_offset
+
+
+def get_etcd_client_urls():
+    etcd_number = int(get_global_option('server.etcd', 'number', '0'))
+    if etcd_number <= 0:
+        return get_server_or_global_option('etcd', 'hosts', 'http://127.0.0.1:2379', 'SYSTEM_MACRO_CUSTOM_ETCD_HOST')
+    
+    client_urls = []
+    for svr_index in get_service_index_range(etcd_number):
+        client_urls.append('http://{0}:{1}'.format(get_outer_ipv4(), get_calc_listen_port('etcd', svr_index, 'client_port')))
+    
+    return ','.join(client_urls)
+

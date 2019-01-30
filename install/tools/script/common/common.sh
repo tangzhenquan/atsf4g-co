@@ -183,15 +183,15 @@ function WaitForMS() {
 		return 0;
 	fi
 
-	which python > /dev/null 2>&1;
-	if [ 0 -eq $? ]; then
-		python -c "import time; time.sleep($WAITTIME_MS / 1000.0)"
-		return 0;
-	fi
-
 	which python3 > /dev/null 2>&1;
 	if [ 0 -eq $? ]; then
 		python3 -c "import time; time.sleep($WAITTIME_MS / 1000.0)"
+		return 0;
+	fi
+
+	which python > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python -c "import time; time.sleep($WAITTIME_MS / 1000.0)"
 		return 0;
 	fi
 
@@ -210,28 +210,88 @@ function Message() {
 }
 
 function AlertMsg() {
-	python "$COMMON_LIB_DIR/print_color.py" -c green "Alert: $*";
-	echo "";
+	which python3 > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python3 "$COMMON_LIB_DIR/print_color.py" -c green "{0}" "Alert: $*";
+		echo "";
+		return 0;
+	fi
+
+	which python > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python "$COMMON_LIB_DIR/print_color.py" -c green "{0}" "Alert: $*";
+		echo "";
+		return 0;
+	fi
+	echo "Alert: $*";
 }
 
 function NoticeMsg() {
-	python "$COMMON_LIB_DIR/print_color.py" -c yellow -B "Notice: $*";
-	echo "";
+	which python3 > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python3 "$COMMON_LIB_DIR/print_color.py" -c yellow -B "{0}" "Notice: $*";
+		echo "";
+		return 0;
+	fi
+
+	which python > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python "$COMMON_LIB_DIR/print_color.py" -c yellow -B "{0}" "Notice: $*";
+		echo "";
+		return 0;
+	fi
+	echo "Notice: $*";
 }
 
 function ErrorMsg() {
-	python "$COMMON_LIB_DIR/print_color.py" -c red -B "Error: $*";
-	echo "";
+	which python3 > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python3 "$COMMON_LIB_DIR/print_color.py" -c red -B "{0}" "Error: $*";
+		echo "";
+		return 0;
+	fi
+
+	which python > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python "$COMMON_LIB_DIR/print_color.py" -c red -B "{0}" "Error: $*";
+		echo "";
+		return 0;
+	fi
+	echo "Error: $*";
 }
 
 function WarningMsg() {
-	python "$COMMON_LIB_DIR/print_color.py" -c magenta -B "Warning: $*";
-	echo "";
+	which python3 > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python3 "$COMMON_LIB_DIR/print_color.py" -c magenta -B "{0}" "Warning: $*";
+		echo "";
+		return 0;
+	fi
+
+	which python > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python "$COMMON_LIB_DIR/print_color.py" -c magenta -B "{0}" "Warning: $*";
+		echo "";
+		return 0;
+	fi
+	echo "Warning: $*";
 }
 
 function StatusMsg() {
-	python "$COMMON_LIB_DIR/print_color.py" -c cyan "Status: $*";
-	echo "";
+	which python3 > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python3 "$COMMON_LIB_DIR/print_color.py" -c cyan "{0}" "Status: $*";
+		echo "";
+		return 0;
+	fi
+
+	which python > /dev/null 2>&1;
+	if [ 0 -eq $? ]; then
+		python "$COMMON_LIB_DIR/print_color.py" -c cyan "{0}" "Status: $*";
+		echo "";
+		return 0;
+	fi
+	echo "Status: $*";
 }
 
 function WaitProcessStarted() {
@@ -246,7 +306,7 @@ function WaitProcessStarted() {
 		WAIT_TIME=$2;
 	fi
 
-	while [ ! -f "$PROC_NAME" ]; do
+	while [ ! -f "$PROC_NAME" ] || [ -z "$(cat "$PROC_NAME")" ]; do
 		if [ $WAIT_TIME -gt 0 ]; then
 			WaitForMS 100;
 			let WAIT_TIME=$WAIT_TIME-100;

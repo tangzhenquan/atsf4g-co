@@ -9,7 +9,7 @@ import stat
 import shutil
 import re
 import string
-import shutil
+import codecs
 from argparse import ArgumentParser
 
 import glob
@@ -31,11 +31,19 @@ if __name__ == '__main__':
     os.chdir(script_dir)
     from mako.template import Template
     from mako.lookup import TemplateLookup
-    etc_template_dir = os.path.join(script_dir, 'helper', 'template', 'etc')
-    script_template_dir = os.path.join(
-        script_dir, 'helper', 'template', 'script')
-    project_lookup = TemplateLookup(directories=[
-                                    etc_template_dir, script_template_dir], module_directory=os.path.join(script_dir, '.mako_modules'))
+    project_template_dir = os.path.join(script_dir, 'helper', 'template')
+    etc_template_dir = os.path.join(project_template_dir, 'etc')
+    script_template_dir = os.path.join(project_template_dir, 'script')
+    project_lookup = TemplateLookup(
+        directories=[
+            etc_template_dir, 
+            script_template_dir, 
+            os.path.join(project_template_dir, 'custom')
+        ], 
+        module_directory=os.path.join(script_dir, '.mako_modules'),
+        input_encoding='utf-8'
+    )
+    project.set_templete_engine(project_lookup)
 
     parser = ArgumentParser(usage="usage: %(prog)s [options...]")
     parser.add_argument("-e", "--env-prefix", action='store', dest="env_prefix",
@@ -78,6 +86,8 @@ if __name__ == '__main__':
 
     # set all custom configures
     ext_cmd_rule = re.compile('(.*)\.([^\.]+)=([^=]*)$')
+    custom_tmpl_rule = re.compile('(?P<DIR>[^:]+):(?P<SRC>[^=]+)=(?P<DST>[^\\|]+)(\\|(?P<GLOBAL>[^\\|]+))?')
+    custom_global_rule = re.compile('(?P<SRC>[^=]+)=(?P<DST>[^\\r\\n]+)')
     for cmd in opts.set_vars:
         mat_res = ext_cmd_rule.match(cmd)
         if mat_res:
@@ -118,8 +128,7 @@ if __name__ == '__main__':
         common.print_color.cprintf_stdout([common.print_color.print_style.FC_YELLOW, common.print_color.print_style.FW_BOLD],
                                           'start to generate etc and script of {0}-{1}\r\n', svr_name, svr_index)
 
-        install_abs_prefix = os.path.normpath(
-            os.path.join(script_dir, '..', '..', install_prefix))
+        install_abs_prefix = os.path.normpath(os.path.join(script_dir, '..', '..', install_prefix))
 
         if not os.path.exists(os.path.join(install_abs_prefix, 'etc')):
             os.makedirs(os.path.join(install_abs_prefix, 'etc'))
@@ -130,14 +139,8 @@ if __name__ == '__main__':
             gen_in_path = os.path.join(temp_dir, temp_path)
             gen_out_path = os.path.join(install_abs_prefix, out_dir, out_path)
             if os.path.exists(gen_in_path):
-                svr_tmpl = project_lookup.get_template(temp_path)
-                open(gen_out_path, mode='w').write(svr_tmpl.render(
-                    project_install_prefix=os.path.relpath(
-                        '.', os.path.join(install_prefix, out_dir)),
-                    **ext_options
-                ))
-                os.chmod(gen_out_path, stat.S_IRWXU +
-                         stat.S_IRWXG + stat.S_IROTH + stat.S_IXOTH)
+                project.render_to(temp_path, gen_out_path, project_install_prefix=os.path.relpath(
+                    '.', os.path.join(install_prefix, out_dir)), **ext_options)
                 if all_content_script is not None and all_content_script in all_service_temps:
                     all_service_temps[all_content_script]['content'].append("""
 # ==================== {0} ==================== 
@@ -150,28 +153,56 @@ fi
                         os.path.relpath(gen_out_path, script_dir)
                     ))
 
-        # etc
-        generate_template(etc_template_dir, '{0}.conf'.format(
-            svr_name), 'etc', '{0}-{1}.conf'.format(svr_name, svr_index))
+        custom_rule_file_path = os.path.join(script_dir, 'helper', 'custom_template_rules', svr_name)
+        if os.path.exists(custom_rule_file_path): # 自定义服务配置列表
+            rules_data = project.render_string(
+                codecs.open(custom_rule_file_path, mode='r', encoding='utf-8').read(), 
+                **ext_options
+            )
+            for rule_line in rules_data.splitlines():
+                rule_data = rule_line.strip()
+                if not rule_data:
+                    continue
+                if rule_data[0:1] == "#" or rule_data[0:1] == ";":
+                    continue
+                mat_res = custom_tmpl_rule.match(rule_data)
+                if mat_res is None:
+                    common.print_color.cprintf_stderr(
+                        [common.print_color.print_style.FC_RED, common.print_color.print_style.FW_BOLD], '"{0}" is not a valid custom service rule.\r\n', rule_line)
+                    continue
+                tmpl_dir = mat_res.group('DIR').strip()
+                tmpl_src = mat_res.group('SRC').strip()
+                tmpl_dst = mat_res.group('DST').strip()
+                if mat_res.group('GLOBAL') is not None:
+                    tmpl_global = mat_res.group('GLOBAL').strip()
+                else:
+                    tmpl_global = None
+                generate_template(os.path.join(project_template_dir, tmpl_dir), tmpl_src, os.path.dirname(tmpl_dst), os.path.basename(tmpl_dst), tmpl_global)
 
-        # scripts
-        generate_template(script_template_dir, 'start.sh', 'bin',
-                          'start-{0}.sh'.format(svr_index), 'restart_all.sh')
-        generate_template(script_template_dir, 'stop.sh', 'bin',
-                          'stop-{0}.sh'.format(svr_index), 'stop_all.sh')
-        generate_template(script_template_dir, 'reload.sh', 'bin',
-                          'reload-{0}.sh'.format(svr_index), 'reload_all.sh')
-        generate_template(script_template_dir, 'debug.sh',
-                          'bin', 'debug-{0}.sh'.format(svr_index))
-        generate_template(script_template_dir, 'run.sh',
-                          'bin', 'run-{0}.sh'.format(svr_index))
+        else: # 标准服务配置
+            # etc
+            generate_template(etc_template_dir, '{0}.conf'.format(
+                svr_name), 'etc', '{0}-{1}.conf'.format(svr_name, svr_index))
+            if project.get_server_or_global_option('tsf4g', 'tlog.enable', 'false'):
+                generate_template(etc_template_dir, 'tlog.template.xml.mako', 'etc', project.get_tsf4g_tlog_conf_file_name())
+
+            # scripts
+            generate_template(script_template_dir, 'start.sh', 'bin',
+                            'start-{0}.sh'.format(svr_index), 'restart_all.sh')
+            generate_template(script_template_dir, 'stop.sh', 'bin',
+                            'stop-{0}.sh'.format(svr_index), 'stop_all.sh')
+            generate_template(script_template_dir, 'reload.sh', 'bin',
+                            'reload-{0}.sh'.format(svr_index), 'reload_all.sh')
+            generate_template(script_template_dir, 'debug.sh',
+                            'bin', 'debug-{0}.sh'.format(svr_index))
+            generate_template(script_template_dir, 'run.sh',
+                            'bin', 'run-{0}.sh'.format(svr_index))
 
     # parse all services
     atgateway_index = 1 + opts.server_id_offset
     for svr_name in project.get_global_all_services():
         section_name = 'server.{0}'.format(svr_name)
-        install_prefix = project.get_global_option(
-            section_name, 'install_prefix', svr_name)
+        install_prefix = project.get_global_option(section_name, 'install_prefix', svr_name)
         for svr_index in project.get_service_index_range(int(project.get_global_option(section_name, 'number', 0))):
             generate_service(svr_name, svr_index, install_prefix, section_name)
             # atgateway if available
@@ -184,6 +215,34 @@ fi
                                  atgateway_server_index=svr_index
                                  )
                 atgateway_index = atgateway_index + 1
+    # custom global rules
+    project_install_abs_path = os.path.normpath(os.path.join(script_dir, '..', '..'))
+    for custom_global_rule_file in glob.glob(os.path.join(script_dir, 'helper', 'custom_global_rules', '*')):
+        if os.path.exists(custom_global_rule_file): # 自定义全局模板列表
+            rules_data = project.render_string(
+                codecs.open(custom_global_rule_file, mode='r', encoding='utf-8').read()
+            )
+            for rule_line in rules_data.splitlines():
+                rule_data = rule_line.strip()
+                if not rule_data:
+                    continue
+                if rule_data[0:1] == "#" or rule_data[0:1] == ";":
+                    continue
+                mat_res = custom_global_rule.match(rule_data)
+                if mat_res is None:
+                    common.print_color.cprintf_stderr(
+                        [common.print_color.print_style.FC_RED, common.print_color.print_style.FW_BOLD], '"{0}" is not a valid global rule.\r\n', rule_line)
+                    continue
+                tmpl_src = mat_res.group('SRC').strip()
+                tmpl_dst = mat_res.group('DST').strip()
+                if not tmpl_src or not tmpl_dst:
+                    continue
+                
+                gen_out_path = os.path.join(project_install_abs_path, tmpl_dst)
+                project.render_to(tmpl_src, gen_out_path, 
+                    project_install_prefix=os.path.relpath(project_install_abs_path, os.path.dirname(gen_out_path))
+                )
+
 
     for all_svr_temp in all_service_temps:
         all_temp_cfg = all_service_temps[all_svr_temp]
