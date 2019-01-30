@@ -580,7 +580,7 @@ def get_server_gateway_index(server_name=None, server_index=None, gateway_name=N
     return step * server_index + int(offset)
 
 
-def get_server_gateway_port(server_name, server_index, gateway_name=None, base_port='atgateway_port'):
+def get_server_gateway_port(server_name, server_index, gateway_name=None, base_port='default_port'):
     if gateway_name is None:
         gateway_name = 'atgateway'
     gateway_section_name = 'server.{0}'.format(gateway_name)
