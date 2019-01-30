@@ -129,6 +129,9 @@ namespace atframe {
             int add_watcher_by_name(watcher_list_callback_t fn);
             int add_watcher_by_tag(const std::string &tag_name, watcher_one_callback_t fn);
 
+            inline const ::atframe::component::etcd_cluster &get_raw_etcd_ctx() const { return etcd_ctx_; }
+            inline ::atframe::component::etcd_cluster &      get_raw_etcd_ctx() { return etcd_ctx_; }
+
         private:
             static bool unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data);
             static void pack(const node_info_t &out, std::string &json);
