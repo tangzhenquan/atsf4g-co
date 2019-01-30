@@ -154,7 +154,7 @@ fi
                     ))
 
         custom_rule_file_path = os.path.join(script_dir, 'helper', 'custom_template_rules', svr_name)
-        if os.path.exists(custom_rule_file_path): # ×Ô¶¨Òå·şÎñÅäÖÃÁĞ±í
+        if os.path.exists(custom_rule_file_path): # è‡ªå®šä¹‰æœåŠ¡é…ç½®åˆ—è¡¨
             rules_data = project.render_string(
                 codecs.open(custom_rule_file_path, mode='r', encoding='utf-8').read(), 
                 **ext_options
@@ -179,12 +179,10 @@ fi
                     tmpl_global = None
                 generate_template(os.path.join(project_template_dir, tmpl_dir), tmpl_src, os.path.dirname(tmpl_dst), os.path.basename(tmpl_dst), tmpl_global)
 
-        else: # ±ê×¼·şÎñÅäÖÃ
+        else: # æ ‡å‡†æœåŠ¡é…ç½®
             # etc
             generate_template(etc_template_dir, '{0}.conf'.format(
                 svr_name), 'etc', '{0}-{1}.conf'.format(svr_name, svr_index))
-            if project.get_server_or_global_option('tsf4g', 'tlog.enable', 'false'):
-                generate_template(etc_template_dir, 'tlog.template.xml.mako', 'etc', project.get_tsf4g_tlog_conf_file_name())
 
             # scripts
             generate_template(script_template_dir, 'start.sh', 'bin',
@@ -218,7 +216,7 @@ fi
     # custom global rules
     project_install_abs_path = os.path.normpath(os.path.join(script_dir, '..', '..'))
     for custom_global_rule_file in glob.glob(os.path.join(script_dir, 'helper', 'custom_global_rules', '*')):
-        if os.path.exists(custom_global_rule_file): # ×Ô¶¨ÒåÈ«¾ÖÄ£°åÁĞ±í
+        if os.path.exists(custom_global_rule_file): # Ã—Ã”Â¶Â¨Ã’Ã¥ÃˆÂ«Â¾Ã–Ã„Â£Â°Ã¥ÃÃÂ±Ã­
             rules_data = project.render_string(
                 codecs.open(custom_global_rule_file, mode='r', encoding='utf-8').read()
             )
