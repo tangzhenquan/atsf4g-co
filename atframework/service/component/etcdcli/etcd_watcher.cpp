@@ -214,7 +214,8 @@ namespace atframe {
                 }
             }
 
-            if (util::log::log_wrapper::check(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_DEBUG)) {
+            if (util::log::log_wrapper::check_level(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT),
+                                                    util::log::log_wrapper::level_t::LOG_LW_DEBUG)) {
                 WLOGDEBUG("Etcd watcher %p got range response", self);
                 for (size_t i = 0; i < response.events.size(); ++i) {
                     etcd_key_value *kv = &response.events[i].kv;
@@ -418,7 +419,8 @@ namespace atframe {
                     }
                 }
 
-                if (util::log::log_wrapper::check(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_DEBUG)) {
+                if (util::log::log_wrapper::check_level(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT),
+                                                        util::log::log_wrapper::level_t::LOG_LW_DEBUG)) {
                     WLOGDEBUG("Etcd watcher %p got response: watch_id: %lld, compact_revision: %lld, created: %s, canceled: %s, event: %lld", self,
                               static_cast<long long>(response.watch_id), static_cast<long long>(response.compact_revision), response.created ? "Yes" : "No",
                               response.canceled ? "Yes" : "No", static_cast<unsigned long long>(response.events.size()));

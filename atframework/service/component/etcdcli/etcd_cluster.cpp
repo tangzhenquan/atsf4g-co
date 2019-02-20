@@ -127,7 +127,7 @@ namespace atframe {
             }
 
             EXPLICIT_UNUSED_ATTR static int etcd_cluster_verbose_callback(util::network::http_request &req, curl_infotype type, char *data, size_t size) {
-                if (util::log::log_wrapper::check(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_TRACE)) {
+                if (util::log::log_wrapper::check_level(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_TRACE)) {
                     const char *verbose_type = "Unknown Action";
                     switch (type) {
                     case CURLINFO_TEXT:
@@ -1177,7 +1177,7 @@ namespace atframe {
 
             // req->set_on_verbose(details::etcd_cluster_verbose_callback);
 
-            if (util::log::log_wrapper::check(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_TRACE)) {
+            if (util::log::log_wrapper::check_level(WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT), util::log::log_wrapper::level_t::LOG_LW_TRACE)) {
                 req->set_on_progress(details::etcd_cluster_trace_porcess_callback);
             }
 

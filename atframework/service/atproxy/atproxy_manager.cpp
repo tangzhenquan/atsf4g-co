@@ -197,7 +197,7 @@ namespace atframe {
                 check_info_t ci;
 
                 // when stoping bus noe may be unavailable
-                if (!app.check(::atapp::app::flag_t::STOPING)) {
+                if (!app.check_flag(::atapp::app::flag_t::STOPING)) {
                     if (app.get_bus_node() && app.get_bus_node()->get_conf().retry_interval > 0) {
                         ci.timeout_sec = util::time::time_utility::get_now() + app.get_bus_node()->get_conf().retry_interval;
                     } else {
