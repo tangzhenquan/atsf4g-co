@@ -29,7 +29,7 @@ namespace atframe {
         class etcd_keepalive : public std::enable_shared_from_this<etcd_keepalive> {
         public:
             typedef std::function<bool(const std::string &)> checker_fn_t; // the parameter will be base64 of the value
-            typedef std::shared_ptr<etcd_keepalive> ptr_t;
+            typedef std::shared_ptr<etcd_keepalive>          ptr_t;
 
             struct default_checker_t {
                 default_checker_t(const std::string &checked);
@@ -59,12 +59,12 @@ namespace atframe {
 
             void active();
 
-            etcd_cluster &get_owner() { return *owner_; }
+            etcd_cluster &      get_owner() { return *owner_; }
             const etcd_cluster &get_owner() const { return *owner_; }
 
-            inline const bool is_check_run() const { return checker_.is_check_run; }
-            inline const bool is_check_passed() const { return checker_.is_check_passed; }
-            inline const size_t get_check_times() const { return checker_.retry_times; }
+            inline bool   is_check_run() const { return checker_.is_check_run; }
+            inline bool   is_check_passed() const { return checker_.is_check_passed; }
+            inline size_t get_check_times() const { return checker_.retry_times; }
 
         private:
             void process();
@@ -75,19 +75,19 @@ namespace atframe {
 
         private:
             etcd_cluster *owner_;
-            std::string path_;
-            std::string value_;
+            std::string   path_;
+            std::string   value_;
             typedef struct {
                 util::network::http_request::ptr_t rpc_opr_;
-                bool is_actived;
+                bool                               is_actived;
             } rpc_data_t;
             rpc_data_t rpc_;
 
             typedef struct {
                 checker_fn_t fn;
-                bool is_check_run;
-                bool is_check_passed;
-                size_t retry_times;
+                bool         is_check_run;
+                bool         is_check_passed;
+                size_t       retry_times;
             } checker_t;
             checker_t checker_;
         };

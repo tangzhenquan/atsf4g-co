@@ -203,7 +203,7 @@ namespace atframe {
                 bool need_plus = true;
                 while (!range_end.empty() && need_plus) {
                     char c = range_end[range_end.size() - 1];
-                    if (c == 0xff) {
+                    if (static_cast<unsigned char>(c) == 0xff) {
                         range_end.pop_back();
                     } else {
                         range_end[range_end.size() - 1] = c + 1;

@@ -17,9 +17,9 @@ namespace atframe {
                                           [ATBUS_MACRO_MSG_LIMIT + 2 * sizeof(size_t)]; // in case of padding
                 return ret[t];
             }
-        }
-    }
-}
+        } // namespace detail
+    }     // namespace gateway
+} // namespace atframe
 #else
 
 #include <pthread.h>
@@ -27,7 +27,7 @@ namespace atframe {
     namespace gateway {
         namespace detail {
             static pthread_once_t gt_atgateway_get_msg_buffer_tls_once = PTHREAD_ONCE_INIT;
-            static pthread_key_t gt_atgateway_get_msg_buffer_tls_key[::atframe::gateway::proto_base::tls_buffer_t::EN_TBT_MAX];
+            static pthread_key_t  gt_atgateway_get_msg_buffer_tls_key[::atframe::gateway::proto_base::tls_buffer_t::EN_TBT_MAX];
 
             static void dtor_pthread_atgateway_get_msg_buffer_tls(void *p) {
                 char *res = reinterpret_cast<char *>(p);
@@ -51,9 +51,9 @@ namespace atframe {
                 }
                 return ret;
             }
-        }
-    }
-}
+        } // namespace detail
+    }     // namespace gateway
+} // namespace atframe
 
 #endif
 
@@ -95,9 +95,9 @@ namespace atframe {
 
         void *proto_base::get_tls_buffer(tls_buffer_t::type tls_type) { return ::atframe::gateway::detail::atgateway_get_msg_buffer(tls_type); }
 
-        size_t proto_base::get_tls_length(tls_buffer_t::type tls_type) { return ATBUS_MACRO_MSG_LIMIT; }
+        size_t proto_base::get_tls_length(tls_buffer_t::type) { return ATBUS_MACRO_MSG_LIMIT; }
 
-        int proto_base::write_done(int status) {
+        int proto_base::write_done(int /*status*/) {
             if (!check_flag(flag_t::EN_PFT_WRITING)) {
                 return 0;
             }
@@ -119,7 +119,7 @@ namespace atframe {
             return 0;
         }
 
-        bool proto_base::check_reconnect(const proto_base *other) { return false; }
+        bool proto_base::check_reconnect(const proto_base * /*other*/) { return false; }
 
         void proto_base::set_recv_buffer_limit(size_t, size_t) {}
         void proto_base::set_send_buffer_limit(size_t, size_t) {}
@@ -153,5 +153,5 @@ namespace atframe {
         }
 
         std::string proto_base::get_info() const { return std::string(""); }
-    }
-}
+    } // namespace gateway
+} // namespace atframe

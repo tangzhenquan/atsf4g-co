@@ -189,7 +189,7 @@ namespace atframe {
             return 0;
         }
 
-        int atproxy_manager::on_connected(const ::atapp::app &app, ::atapp::app::app_id_t id) { return 0; }
+        int atproxy_manager::on_connected(const ::atapp::app &, ::atapp::app::app_id_t) { return 0; }
 
         int atproxy_manager::on_disconnected(const ::atapp::app &app, ::atapp::app::app_id_t id) {
             proxy_set_t::iterator iter = proxy_set_.find(id);

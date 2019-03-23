@@ -83,6 +83,11 @@ include("${ATFRAMEWORK_BASE_DIR}/atframework.macro.cmake")
 
 ## 导入所有工程项目
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/atframework")
+
+if (COMPILER_STRICT_CFLAGS)
+    add_definitions(${COMPILER_STRICT_CFLAGS})
+endif ()
+
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/src")
 
 if (PROJECT_ENABLE_SAMPLE)

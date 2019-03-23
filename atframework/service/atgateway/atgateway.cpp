@@ -22,7 +22,7 @@
 #include <libatbus.h>
 #include <libatbus_protocol.h>
 
-static int app_handle_on_send_fail(atapp::app &app, atapp::app::app_id_t src_pd, atapp::app::app_id_t dst_pd, const atbus::protocol::msg &m) {
+static int app_handle_on_send_fail(atapp::app &, atapp::app::app_id_t src_pd, atapp::app::app_id_t dst_pd, const atbus::protocol::msg &m) {
     atapp::app::app_id_t stop_at = m.head.src_bus_id;
 
     // 一般会原路返回，所以中间的路由节点就是转发失败的节点
@@ -525,7 +525,8 @@ private:
     }
 
     int proto_inner_callback_on_error(::atframe::gateway::proto_base *, const char *filename, int line, int errcode, const char *errmsg) {
-        if (::util::log::log_wrapper::check_level(WDTLOGGETCAT(::util::log::log_wrapper::categorize_t::DEFAULT), ::util::log::log_wrapper::level_t::LOG_LW_ERROR)) {
+        if (::util::log::log_wrapper::check_level(WDTLOGGETCAT(::util::log::log_wrapper::categorize_t::DEFAULT),
+                                                  ::util::log::log_wrapper::level_t::LOG_LW_ERROR)) {
 
             WDTLOGGETCAT(::util::log::log_wrapper::categorize_t::DEFAULT)
                 ->log(::util::log::log_wrapper::caller_info_t(::util::log::log_wrapper::level_t::LOG_LW_ERROR, "Error", filename, line, "anonymous"),
@@ -594,7 +595,7 @@ struct app_handle_on_recv {
     std::reference_wrapper<gateway_module> mod_;
     app_handle_on_recv(gateway_module &mod) : mod_(mod) {}
 
-    int operator()(::atapp::app &app, const ::atapp::app::msg_t &recv_msg, const void *buffer, size_t len) {
+    int operator()(::atapp::app &, const ::atapp::app::msg_t &recv_msg, const void *buffer, size_t len) {
         if (NULL == buffer || 0 == len || NULL == recv_msg.body.forward) {
             return 0;
         }

@@ -85,19 +85,19 @@ namespace atframe {
 
             // get peer ip&port
             sockaddr_storage sock_addr;
-            int name_len = sizeof(sock_addr);
+            int              name_len = sizeof(sock_addr);
             uv_tcp_getpeername(&tcp_handle_, reinterpret_cast<struct sockaddr *>(&sock_addr), &name_len);
 
             char ip[64] = {0};
             if (sock_addr.ss_family == AF_INET6) {
                 sockaddr_in6 *sock_addr_ipv6 = reinterpret_cast<struct sockaddr_in6 *>(&sock_addr);
                 uv_ip6_name(sock_addr_ipv6, ip, sizeof(ip));
-                peer_ip_ = ip;
+                peer_ip_   = ip;
                 peer_port_ = static_cast<int32_t>(sock_addr_ipv6->sin6_port);
             } else {
                 sockaddr_in *sock_addr_ipv4 = reinterpret_cast<struct sockaddr_in *>(&sock_addr);
                 uv_ip4_name(sock_addr_ipv4, ip, sizeof(ip));
-                peer_ip_ = ip;
+                peer_ip_   = ip;
                 peer_port_ = static_cast<int32_t>(sock_addr_ipv4->sin_port);
             }
 
@@ -130,8 +130,8 @@ namespace atframe {
             uv_stream_set_blocking(&stream_handle_, 0);
 
             // get peer path
-            char pipe_path[util::file_system::MAX_PATH_LEN] = {0};
-            size_t path_len = sizeof(pipe_path);
+            char   pipe_path[util::file_system::MAX_PATH_LEN] = {0};
+            size_t path_len                                   = sizeof(pipe_path);
             uv_pipe_getpeername(&unix_handle_, pipe_path, &path_len);
             peer_ip_.assign(pipe_path, path_len);
             peer_port_ = 0;
@@ -142,8 +142,8 @@ namespace atframe {
         int session::init_new_session(::atbus::node::bus_id_t router) {
             static ::atframe::component::timestamp_id_allocator<id_t> id_alloc;
             // alloc id
-            id_ = id_alloc.allocate();
-            router_ = router;
+            id_                               = id_alloc.allocate();
+            router_                           = router;
             limit_.update_handshake_timepoint = util::time::time_utility::get_now() + owner_->get_conf().crypt.update_interval;
 
             set_flag(flag_t::EN_FT_INITED, true);
@@ -152,9 +152,9 @@ namespace atframe {
 
         int session::init_reconnect(session &sess) {
             // copy id
-            id_ = sess.id_;
-            router_ = sess.router_;
-            limit_ = sess.limit_;
+            id_                               = sess.id_;
+            router_                           = sess.router_;
+            limit_                            = sess.limit_;
             limit_.update_handshake_timepoint = util::time::time_utility::get_now() + owner_->get_conf().crypt.update_interval;
 
             private_data_ = sess.private_data_;
@@ -283,7 +283,7 @@ namespace atframe {
 
                 // shutdown and close uv_stream_t
                 // manager can not be used any more
-                owner_ = NULL;
+                owner_             = NULL;
                 shutdown_req_.data = new ptr_t(shared_from_this());
 
                 // if writing, wait all data written an then shutdown it
@@ -372,13 +372,13 @@ namespace atframe {
             return ret;
         }
 
-        proto_base *session::get_protocol_handle() { return proto_.get(); }
+        proto_base *      session::get_protocol_handle() { return proto_.get(); }
         const proto_base *session::get_protocol_handle() const { return proto_.get(); }
 
-        uv_stream_t *session::get_uv_stream() { return &stream_handle_; }
+        uv_stream_t *      session::get_uv_stream() { return &stream_handle_; }
         const uv_stream_t *session::get_uv_stream() const { return &stream_handle_; }
 
-        void session::on_evt_shutdown(uv_shutdown_t *req, int status) {
+        void session::on_evt_shutdown(uv_shutdown_t *req, int /*status*/) {
             // call close API
             session *self = reinterpret_cast<session *>(req->handle->data);
             assert(self);
@@ -405,7 +405,7 @@ namespace atframe {
         void session::check_hour_limit(bool check_recv, bool check_send) {
             time_t now_hr = ::util::time::time_utility::get_now() / ::util::time::time_utility::DAY_SECONDS;
             if (now_hr != limit_.hour_timepoint) {
-                limit_.hour_timepoint = now_hr;
+                limit_.hour_timepoint  = now_hr;
                 limit_.hour_recv_bytes = 0;
                 limit_.hour_send_bytes = 0;
                 limit_.hour_recv_times = 0;
@@ -441,7 +441,7 @@ namespace atframe {
         void session::check_minute_limit(bool check_recv, bool check_send) {
             time_t now_mi = ::util::time::time_utility::get_now() / ::util::time::time_utility::MINITE_SECONDS;
             if (now_mi != limit_.minute_timepoint) {
-                limit_.minute_timepoint = now_mi;
+                limit_.minute_timepoint  = now_mi;
                 limit_.minute_recv_bytes = 0;
                 limit_.minute_send_bytes = 0;
                 limit_.minute_recv_times = 0;
@@ -480,7 +480,7 @@ namespace atframe {
             if (NULL != owner_ && owner_->get_conf().crypt.update_interval > 0 && check_flag(flag_t::EN_FT_HAS_FD)) {
                 if (limit_.update_handshake_timepoint < ::util::time::time_utility::get_now()) {
                     limit_.update_handshake_timepoint = ::util::time::time_utility::get_now() + owner_->get_conf().crypt.update_interval;
-                    proto_base *proto = get_protocol_handle();
+                    proto_base *proto                 = get_protocol_handle();
                     if (NULL != proto) {
                         proto->handshake_update();
                     }
@@ -513,5 +513,5 @@ namespace atframe {
                 close(close_reason_t::EN_CRT_TRAFIC_EXTENDED);
             }
         }
-    }
-}
+    } // namespace gateway
+} // namespace atframe
