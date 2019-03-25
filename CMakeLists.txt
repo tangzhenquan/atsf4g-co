@@ -81,6 +81,14 @@ include_macro_recurse(${PROJECT_3RD_PARTY_ROOT_DIR})
 # atframwork 内有依赖关系，所以不能直接导，要手动导入
 include("${ATFRAMEWORK_BASE_DIR}/atframework.macro.cmake")
 
+# 增加相对链接路径
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+if(CMAKE_SIZEOF_VOID_P MATCHES 8)
+    set(CMAKE_BUILD_RPATH "../lib64" "../../lib64" "../lib" "../../lib")
+else ()
+    set(CMAKE_BUILD_RPATH "../lib" "../../lib")
+endif ()
+
 ## 导入所有工程项目
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/atframework")
 
