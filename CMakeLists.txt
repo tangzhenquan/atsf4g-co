@@ -84,9 +84,9 @@ include("${ATFRAMEWORK_BASE_DIR}/atframework.macro.cmake")
 # 增加相对链接路径
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 if(CMAKE_SIZEOF_VOID_P MATCHES 8)
-    set(CMAKE_BUILD_RPATH "../lib64" "../../lib64" "../lib" "../../lib")
+    set(CMAKE_BUILD_RPATH "../../lib64" "../../../lib64" "../../lib" "../../../lib")
 else ()
-    set(CMAKE_BUILD_RPATH "../lib" "../../lib")
+    set(CMAKE_BUILD_RPATH "../../lib" "../../../lib")
 endif ()
 
 ## 导入所有工程项目
