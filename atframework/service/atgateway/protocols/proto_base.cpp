@@ -1,14 +1,14 @@
 #include <string>
 
+#include "config/atframe_utils_build_feature.h"
 #include "proto_base.h"
 #include "std/thread.h"
-
 
 #ifndef ATBUS_MACRO_MSG_LIMIT
 #define ATBUS_MACRO_MSG_LIMIT 65536
 #endif
 
-#if defined(THREAD_TLS_ENABLED) && THREAD_TLS_ENABLED
+#if !(defined(THREAD_TLS_USE_PTHREAD) && THREAD_TLS_USE_PTHREAD) && defined(THREAD_TLS_ENABLED) && THREAD_TLS_ENABLED
 namespace atframe {
     namespace gateway {
         namespace detail {
