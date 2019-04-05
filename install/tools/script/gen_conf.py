@@ -17,6 +17,22 @@ import glob
 console_encoding = sys.getfilesystemencoding()
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
+def merge_config_options(config, cmd_line):
+    equal_idx = cmd_line.find("=")
+    if equal_idx and equal_idx > 0:
+        key = cmd_line[0:equal_idx]
+        value = cmd_line[equal_idx + 1:]
+        if len(value) >= 2 and (value[0:1] == '"' or value[0:1] == "'") and value[0:1] == value[-1:]:
+            value = value[1:len(value)-1]
+        key_groups = key.split(".")
+        for i in range(1, len(key_groups) - 1):
+            section_name = ".".join(key_groups[0:i])
+            option_name = ".".join(key_groups[i:])
+            if config.has_option(section_name, option_name):
+                config.set(section_name, option_name, value)
+                return True
+    return False
+
 if __name__ == '__main__':
     sys.path.append(script_dir)
     python3_mode = sys.version_info[0] >= 3
@@ -85,14 +101,10 @@ if __name__ == '__main__':
                        'number', opts.reset_number)
 
     # set all custom configures
-    ext_cmd_rule = re.compile('(.*)\.([^\.]+)=([^=]*)$')
     custom_tmpl_rule = re.compile('(?P<DIR>[^:]+):(?P<SRC>[^=]+)=(?P<DST>[^\\|]+)(\\|(?P<GLOBAL>[^\\|]+))?')
     custom_global_rule = re.compile('(?P<SRC>[^=]+)=(?P<DST>[^\\r\\n]+)')
     for cmd in opts.set_vars:
-        mat_res = ext_cmd_rule.match(cmd)
-        if mat_res:
-            config.set(mat_res.group(1), mat_res.group(2), mat_res.group(3))
-        else:
+        if not merge_config_options(config, cmd):
             common.print_color.cprintf_stdout([common.print_color.print_style.FC_RED, common.print_color.print_style.FW_BOLD],
                                               'set command {0} invalid, must be SECTION.KEY=VALUE\r\n', cmd)
 
