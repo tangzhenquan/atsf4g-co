@@ -134,6 +134,10 @@ target_link_libraries(${LIB_NAME}
     ${COMPILER_OPTION_EXTERN_CXX_LIBS}
 )
 
+if (MSVC)
+    set_property(TARGET ${LIB_NAME} PROPERTY FOLDER "atframework/export")
+endif (MSVC)
+
 # 安装内容
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include
     DESTINATION .

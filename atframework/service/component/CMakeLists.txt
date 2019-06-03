@@ -22,6 +22,10 @@ source_group_by_dir(ATSF4G_APP_SRC_LIST)
 
 add_library(${ATSF4G_APP_NAME} STATIC ${ATSF4G_APP_SRC_LIST})
 
+if (MSVC)
+    set_property(TARGET ${ATSF4G_APP_NAME} PROPERTY FOLDER "atframework/service")
+endif (MSVC)
+
 install(TARGETS ${ATSF4G_APP_NAME}
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib${PLATFORM_SUFFIX}

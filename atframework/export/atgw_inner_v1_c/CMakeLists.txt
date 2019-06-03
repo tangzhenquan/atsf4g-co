@@ -143,3 +143,7 @@ target_link_libraries(${EXPORT_SRC_BIN_NAME}
     ${3RD_PARTY_CRYPT_LINK_NAME}
     ${COMPILER_OPTION_EXTERN_CXX_LIBS}
 )
+
+if (MSVC)
+    set_property(TARGET ${EXPORT_SRC_BIN_NAME} PROPERTY FOLDER "atframework/export")
+endif (MSVC)

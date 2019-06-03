@@ -32,3 +32,7 @@ target_link_libraries(${ATSF4G_APP_NAME}
     ${3RD_PARTY_CRYPT_LINK_NAME}
     ${COMPILER_OPTION_EXTERN_CXX_LIBS}
 )
+
+if (MSVC)
+    set_property(TARGET ${ATSF4G_APP_NAME} PROPERTY FOLDER "atframework/service")
+endif (MSVC)
