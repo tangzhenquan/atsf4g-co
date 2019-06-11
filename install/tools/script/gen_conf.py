@@ -25,7 +25,7 @@ def merge_config_options(config, cmd_line):
         if len(value) >= 2 and (value[0:1] == '"' or value[0:1] == "'") and value[0:1] == value[-1:]:
             value = value[1:len(value)-1]
         key_groups = key.split(".")
-        for i in range(1, len(key_groups) - 1):
+        for i in range(1, len(key_groups)):
             section_name = ".".join(key_groups[0:i])
             option_name = ".".join(key_groups[i:])
             if config.has_option(section_name, option_name):
