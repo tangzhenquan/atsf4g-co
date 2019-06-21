@@ -449,9 +449,9 @@ def get_server_atbus_shm():
     if not environment_check_shm:
         return None
     port_offset = int(get_global_option('global', 'port_offset', 0, 'SYSTEM_MACRO_GLOBAL_PORT_OFFSET'))
-    base_key = int(get_global_option('atsystem', 'shm_key_pool',
-                                     0x16000000, 'SYSTEM_MACRO_CUSTOM_SHM_KEY'))
-    shm_key = base_key + get_server_group_inner_id(get_server_name(), get_server_index()) + port_offset
+    base_key = int(get_global_option('atsystem', 'shm_key_pool', 0x16000000, 'SYSTEM_MACRO_CUSTOM_SHM_KEY'))
+    shm_key_offset = int(get_global_option('atsystem', 'shm_key_offset', 0, 'SYSTEM_MACRO_CUSTOM_SHM_KEY_OFFSET'))
+    shm_key = base_key + shm_key_offset + get_server_group_inner_id(get_server_name(), get_server_index()) + port_offset
     return 'shm://{0}'.format(hex(shm_key))
 
 def disable_server_atbus_shm():
