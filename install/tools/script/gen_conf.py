@@ -98,7 +98,7 @@ if __name__ == '__main__':
     if opts.reset_number is not None:
         for svr_name in project.get_global_all_services():
             config.set('server.{0}'.format(svr_name),
-                       'number', opts.reset_number)
+                       'number', str(opts.reset_number))
 
     # set all custom configures
     custom_tmpl_rule = re.compile('(?P<DIR>[^:]+):(?P<SRC>[^=]+)=(?P<DST>[^\\|]+)(\\|(?P<GLOBAL>[^\\|]+))?')
