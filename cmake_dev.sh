@@ -27,6 +27,8 @@ while getopts "ab:c:d:e:hlm:o:tus-" OPTION; do
     case $OPTION in
         a)
             echo "Ready to check ccc-analyzer and c++-analyzer, please do not use -c to change the compiler when using clang-analyzer.";
+            export CCC_CC="$CC" ;
+            export CCC_CXX="$CXX" ;
             CC=$(which ccc-analyzer);
             CXX=$(which c++-analyzer);
             if [ 0 -ne $? ]; then
@@ -64,9 +66,17 @@ while getopts "ab:c:d:e:hlm:o:tus-" OPTION; do
             CMAKE_BUILD_TYPE="$OPTARG";
         ;;
         c)
-            CC="$OPTARG";
-            CXX="${CC/%clang/clang++}";
-            CXX="${CXX/%gcc/g++}";
+            if [ $CMAKE_CLANG_ANALYZER -ne 0 ]; then
+                CCC_CC="$OPTARG";
+                CCC_CXX="${CCC_CC/%clang/clang++}";
+                CCC_CXX="${CCC_CXX/%gcc/g++}";
+                export CCC_CC;
+                export CCC_CXX;
+            else
+                CC="$OPTARG";
+                CXX="${CC/%clang/clang++}";
+                CXX="${CXX/%gcc/g++}";
+            fi
         ;;
         d)
             DISTCC="$OPTARG";
@@ -163,10 +173,10 @@ if [ 1 -eq $CMAKE_CLANG_ANALYZER ]; then
     fi
 
     if [ -z "$CMAKE_CLANG_ANALYZER_PATH" ]; then
-        echo "cd '$SCRIPT_DIR/$BUILD_DIR' && scan-build -o report --html-title='atsf4g-co static analysis' $CMAKE_CLANG_ANALYZER_OPTIONS make -j4";
+        echo "cd '$SCRIPT_DIR/$BUILD_DIR' && env CCC_CC=\"$CCC_CC\" CCC_CXX=\"$CCC_CXX\" scan-build -o report --html-title='atsf4g-co static analysis' $CMAKE_CLANG_ANALYZER_OPTIONS make -j4";
     else
-        echo "cd '$SCRIPT_DIR/$BUILD_DIR' && env PATH=\"\$PATH:$CMAKE_CLANG_ANALYZER_PATH\" scan-build -o report --html-title='libmt_core static analysis' $CMAKE_CLANG_ANALYZER_OPTIONS make -j4";
+        echo "cd '$SCRIPT_DIR/$BUILD_DIR' && env PATH=\"\$PATH:$CMAKE_CLANG_ANALYZER_PATH\" CCC_CC=\"$CCC_CC\" CCC_CXX=\"$CCC_CXX\" scan-build -o report --html-title='libmt_core static analysis' $CMAKE_CLANG_ANALYZER_OPTIONS make -j4";
     fi
     echo "Now, you can run those code above to get a static analysis report";
-    echo "You can get help and binary of clang-analyzer and scan-build at http://clang-analyzer.llvm.org/scan-build.html"
+    echo "You can get help and binary of clang-analyzer and scan-build at http://clang-analyzer.llvm.org/scan-build.html" ;
 fi
