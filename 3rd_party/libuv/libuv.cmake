@@ -3,7 +3,7 @@ if (NOT 3RD_PARTY_LIBUV_BASE_DIR)
     set (3RD_PARTY_LIBUV_BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif()
 
-set (3RD_PARTY_LIBUV_DEFAULT_VERSION "v1.28.0")
+set (3RD_PARTY_LIBUV_DEFAULT_VERSION "v1.30.0")
 
 if (NOT Libuv_ROOT AND NOT LIBUV_ROOT AND EXISTS "${3RD_PARTY_LIBUV_BASE_DIR}/prebuilt/include")
     set (Libuv_ROOT "${3RD_PARTY_LIBUV_BASE_DIR}/prebuilt/${PLATFORM_BUILD_PLATFORM_NAME}")
@@ -17,7 +17,7 @@ else()
     set (3RD_PARTY_LIBUV_REPO_DIR "${3RD_PARTY_LIBUV_BASE_DIR}/repo-${3RD_PARTY_LIBUV_DEFAULT_VERSION}")
     if (NOT EXISTS ${3RD_PARTY_LIBUV_REPO_DIR})
         find_package(Git)
-        execute_process(COMMAND ${GIT_EXECUTABLE} clone --depth=1 -b ${3RD_PARTY_LIBUV_DEFAULT_VERSION} "https://github.com/libuv/libuv.git" ${3RD_PARTY_LIBUV_REPO_DIR}
+        execute_process(COMMAND ${GIT_EXECUTABLE} clone -b ${3RD_PARTY_LIBUV_DEFAULT_VERSION} "https://github.com/libuv/libuv.git" ${3RD_PARTY_LIBUV_REPO_DIR}
             WORKING_DIRECTORY ${3RD_PARTY_ATFRAME_UTILS_BASE_DIR}
         )
     endif ()
