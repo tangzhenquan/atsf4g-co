@@ -114,34 +114,79 @@ if (NOT 3RD_PARTY_PROTOBUF_FIND_LIB)
     if (NOT EXISTS ${3RD_PARTY_PROTOBUF_BUILD_DIR})
         file(MAKE_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR})
     endif()
-    string(REPLACE ";" " " 3RD_PARTY_PROTOBUF_BUILD_FLAGS_CMD "${3RD_PARTY_PROTOBUF_BUILD_FLAGS}")
+    project_expand_list_for_command_line(3RD_PARTY_PROTOBUF_BUILD_FLAGS_CMD 3RD_PARTY_PROTOBUF_BUILD_FLAGS)
     message(STATUS "@${3RD_PARTY_PROTOBUF_BUILD_DIR} Run: ${3RD_PARTY_PROTOBUF_BUILD_FLAGS_CMD}")
 
-    # build
-    execute_process(
-        COMMAND ${3RD_PARTY_PROTOBUF_BUILD_FLAGS}
-        WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
-    )
-
     if (MSVC)
-        set(3RD_PARTY_PROTOBUF_BUILD_FLAG "--" "/m")
+        set(3RD_PARTY_PROTOBUF_BUILD_MULTI_CORE "--" "/m")
     else ()
         include(ProcessorCount)
         ProcessorCount(CPU_CORE_NUM)
-        set(3RD_PARTY_PROTOBUF_BUILD_FLAG "--" "-j${CPU_CORE_NUM}")
+        set(3RD_PARTY_PROTOBUF_BUILD_MULTI_CORE "--" "-j${CPU_CORE_NUM}")
+        unset(CPU_CORE_NUM)
     endif ()
+    if (CMAKE_HOST_UNIX OR MSYS)
+        file(WRITE "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.sh" "#!/bin/bash${PROJECT_THIRD_PARTY_BUILDTOOLS_BASH_EOL}")
+        file(WRITE "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.sh" "#!/bin/bash${PROJECT_THIRD_PARTY_BUILDTOOLS_BASH_EOL}")
+        file(APPEND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.sh" "export PATH=\"${3RD_PARTY_PROTOBUF_BUILD_DIR}:\$PATH\"${PROJECT_THIRD_PARTY_BUILDTOOLS_BASH_EOL}")
+        file(APPEND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.sh" "export PATH=\"${3RD_PARTY_PROTOBUF_BUILD_DIR}:\$PATH\"${PROJECT_THIRD_PARTY_BUILDTOOLS_BASH_EOL}")
+        project_make_executable("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.sh")
+        project_make_executable("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.sh")
+        project_expand_list_for_command_line_to_file("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.sh"
+            ${3RD_PARTY_PROTOBUF_BUILD_FLAGS}
+        )
+        project_expand_list_for_command_line_to_file("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.sh"
+            ${CMAKE_COMMAND} --build . --target install --config Release ${3RD_PARTY_PROTOBUF_BUILD_MULTI_CORE}
+        )
 
-    # install
-    if (MSVC)
+        # build
         execute_process(
-            COMMAND ${CMAKE_COMMAND} --build . --target install --config Debug ${3RD_PARTY_PROTOBUF_BUILD_FLAG}
+            COMMAND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.sh"
+            WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
+        )
+        # install
+        execute_process(
+            COMMAND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.sh"
+            WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
+        )
+    else ()
+        file(WRITE "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.bat" "@echo off${PROJECT_THIRD_PARTY_BUILDTOOLS_EOL}")
+        file(WRITE "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-debug.bat" "@echo off${PROJECT_THIRD_PARTY_BUILDTOOLS_EOL}")
+        file(WRITE "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.bat" "@echo off${PROJECT_THIRD_PARTY_BUILDTOOLS_EOL}")
+        file(APPEND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.bat" "set PATH=${ATFRAME_THIRD_PARTY_ENV_PATH};%PATH%${PROJECT_THIRD_PARTY_BUILDTOOLS_EOL}")
+        file(APPEND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-debug.bat" "set PATH=${ATFRAME_THIRD_PARTY_ENV_PATH};%PATH%${PROJECT_THIRD_PARTY_BUILDTOOLS_EOL}")
+        file(APPEND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.bat" "set PATH=${ATFRAME_THIRD_PARTY_ENV_PATH};%PATH%${PROJECT_THIRD_PARTY_BUILDTOOLS_EOL}")
+        project_make_executable("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.bat")
+        project_make_executable("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-debug.bat")
+        project_make_executable("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.bat")
+        project_expand_list_for_command_line_to_file("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.bat"
+            ${3RD_PARTY_PROTOBUF_BUILD_FLAGS}
+        )
+        project_expand_list_for_command_line_to_file("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-debug.bat"
+            ${CMAKE_COMMAND} --build . --target install --config Debug ${3RD_PARTY_PROTOBUF_BUILD_MULTI_CORE}
+        )
+        project_expand_list_for_command_line_to_file("${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.bat"
+            ${CMAKE_COMMAND} --build . --target install --config Release ${3RD_PARTY_PROTOBUF_BUILD_MULTI_CORE}
+        )
+
+        # build
+        execute_process(
+            COMMAND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-cmake.bat"
+            WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
+        )
+        # install
+        if (MSVC)
+            execute_process(
+                COMMAND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-debug.bat"
+                WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
+            )
+        endif ()
+        execute_process(
+            COMMAND "${3RD_PARTY_PROTOBUF_BUILD_DIR}/run-build-release.bat"
             WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
         )
     endif ()
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} --build . --target install --config Release ${3RD_PARTY_PROTOBUF_BUILD_FLAG}
-        WORKING_DIRECTORY ${3RD_PARTY_PROTOBUF_BUILD_DIR}
-    )
+    unset(3RD_PARTY_PROTOBUF_BUILD_MULTI_CORE)
 endif ()
 
 find_package(Protobuf)
