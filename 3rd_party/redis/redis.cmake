@@ -52,7 +52,7 @@ if (NOT LIBHIREDIS_FOUND)
         message(STATUS "use cache hiredis sources")
     endif()
 
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} "PREFIX=${3RD_PARTY_REDIS_ROOT_DIR}" install
+    execute_process(COMMAND make CC=gcc "PREFIX=${3RD_PARTY_REDIS_ROOT_DIR}" install
         WORKING_DIRECTORY "${3RD_PARTY_REDIS_PKG_DIR}/hiredis"
     )
 
