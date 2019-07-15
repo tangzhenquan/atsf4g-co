@@ -26,9 +26,10 @@ namespace atframe {
     namespace component {
         namespace detail {
             std::chrono::system_clock::duration convert(const util::config::duration_value &src) {
-                std::chrono::system_clock::duration ret = std::chrono::seconds(src.sec);
-                ret += std::chrono::nanoseconds(src.nsec);
-                return ret;
+                // std::chrono::system_clock::duration ret = std::chrono::seconds(src.sec);
+                // ret += std::chrono::nanoseconds(src.nsec);
+                return std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::seconds(src.sec)) +
+                       std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::nanoseconds(src.nsec));
             }
 
             static void init_timer_timeout_callback(uv_timer_t *handle) {
