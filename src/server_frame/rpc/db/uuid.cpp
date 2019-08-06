@@ -77,7 +77,8 @@ namespace rpc {
             }
 
             int64_t generate_global_unique_id(uint8_t type_id) {
-                if (NULL == task_manager::task_t::this_task()) {
+                task_manager::task_t *this_task = task_manager::task_t::this_task();
+                if (NULL == this_task) {
                     return hello::err::EN_SYS_RPC_NO_TASK;
                 }
 
@@ -92,7 +93,7 @@ namespace rpc {
                 static int64_t unique_id_index_pool[type_id_array] = {0};
                 static int64_t unique_id_base_pool[type_id_array] = {0};
 
-                task_manager::task_ptr_t alloc_task;
+                static task_manager::task_ptr_t alloc_task;
 
                 int64_t ret = 0;
                 int try_left = 5;
@@ -102,7 +103,21 @@ namespace rpc {
                     int64_t &unique_id_base = unique_id_base_pool[type_id];
 
                     // must in task
-                    assert(task_manager::task_t::this_task());
+                    assert(this_task == task_manager::task_t::this_task());
+                    // 任务已经失败或者不在任务中
+                    if (nullptr == this_task || this_task->is_exiting()) {
+                        ret = 0;
+                        break;
+                    }
+
+                    // 如果已有分配请求，仅仅排队即可
+                    if (alloc_task && !alloc_task->is_exiting()) {
+                        alloc_task->next(task_manager::task_ptr_t(this_task));
+                        this_task->yield(NULL); // 切出，等待切回后继续
+                        ret = 0;
+                        continue;
+                    }
+
                     unique_id_index &= bits_mask;
 
                     //                    ret = (unique_id_base.load(std::memory_order_acquire) << bits_off) |
@@ -112,24 +127,11 @@ namespace rpc {
 
                     // call rpc to allocate a id pool
                     if (0 == (ret >> bits_off) || 0 == (ret & bits_mask)) {
-                        task_manager::task_t *this_task = task_manager::task_t::this_task();
-                        // 任务已经失败或者不在任务中
-                        if (nullptr == this_task || this_task->is_completed()) {
-                            ret = 0;
-                            break;
-                        }
-
-                        // 如果已有分配请求，仅仅排队即可
-                        if (alloc_task) {
-                            alloc_task->next(task_manager::task_ptr_t(this_task));
-                            this_task->yield(NULL); // 切出，等待切回后继续
-                            ret = 0;
-                            continue;
-                        }
-
                         alloc_task = task_manager::me()->get_task(this_task->get_id());
                         int64_t res = generate_global_unique_id_pool(type_id);
-                        alloc_task.reset();
+                        if(this_task == alloc_task.get()) {
+                            alloc_task.reset();
+                        }
                         if (res <= 0) {
                             ret = res;
                             continue;
