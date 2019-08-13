@@ -24,9 +24,9 @@ namespace rpc {
              * @param rsp 返回的登入信息
              * @return 0或错误码
              */
-            int get_all(uint64_t user_id, hello::table_user &rsp, std::string &version);
+            int get_all(uint64_t user_id, uint32_t zone_id, hello::table_user &rsp, std::string &version);
 
-            int get_basic(uint64_t user_id, hello::table_user &rsp);
+            int get_basic(uint64_t user_id, uint32_t zone_id, hello::table_user &rsp);
 
             /**
              * @brief 设置用户表的rpc操作
@@ -35,7 +35,7 @@ namespace rpc {
              * @warning 默认值会被忽略，比如空message或者空字符串，或者0不会更新
              * @return 0或错误码
              */
-            int set(uint64_t user_id, hello::table_user &store, std::string &version);
+            int set(uint64_t user_id, uint32_t zone_id, hello::table_user &store, std::string &version);
 
         } // namespace player
     }     // namespace db

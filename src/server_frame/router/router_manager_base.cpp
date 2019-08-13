@@ -52,6 +52,7 @@ int router_manager_base::send_msg_raw(router_object_base &obj, hello::SSMsg &msg
     router_head->set_router_version(obj.get_router_version());
     router_head->set_object_type_id(obj.get_key().type_id);
     router_head->set_object_inst_id(obj.get_key().object_id);
+    router_head->set_object_zone_id(obj.get_key().zone_id);
     //
 
     // 如果路由节点为0，可能是缓存过期，尝试拉取一次
@@ -60,8 +61,8 @@ int router_manager_base::send_msg_raw(router_object_base &obj, hello::SSMsg &msg
     }
 
     if (0 == obj.get_router_server_id()) {
-        WLOGERROR("router object (type=%u) %u:0x%llx has no valid router server", get_type_id(), obj.get_key().type_id,
-                  static_cast<unsigned long long>(obj.get_key().object_id_ull()));
+        WLOGERROR("router object (type=%u) %u:%u:0x%llx has no valid router server", get_type_id(), obj.get_key().type_id,
+                  obj.get_key().zone_id, static_cast<unsigned long long>(obj.get_key().object_id_ull()));
         return hello::err::EN_ROUTER_NOT_IN_SERVER;
     }
 

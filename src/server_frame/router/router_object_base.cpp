@@ -14,13 +14,17 @@
 
 #include "router_object_base.h"
 
-bool router_object_base::key_t::operator==(const key_t &r) const UTIL_CONFIG_NOEXCEPT { return object_id == r.object_id && type_id == r.type_id; }
+bool router_object_base::key_t::operator==(const key_t &r) const UTIL_CONFIG_NOEXCEPT { return object_id == r.object_id && zone_id == r.zone_id && type_id == r.type_id; }
 
-bool router_object_base::key_t::operator!=(const key_t &r) const UTIL_CONFIG_NOEXCEPT { return object_id != r.object_id || type_id != r.type_id; }
+bool router_object_base::key_t::operator!=(const key_t &r) const UTIL_CONFIG_NOEXCEPT { return object_id != r.object_id || zone_id != r.zone_id || type_id != r.type_id; }
 
 bool router_object_base::key_t::operator<(const key_t &r) const UTIL_CONFIG_NOEXCEPT {
     if (type_id != r.type_id) {
         return type_id < r.type_id;
+    }
+
+    if (zone_id != r.zone_id) {
+        return zone_id < r.zone_id;
     }
 
     return object_id < r.object_id;
@@ -31,6 +35,10 @@ bool router_object_base::key_t::operator<=(const key_t &r) const UTIL_CONFIG_NOE
         return type_id < r.type_id;
     }
 
+    if (zone_id != r.zone_id) {
+        return zone_id < r.zone_id;
+    }
+
     return object_id <= r.object_id;
 }
 
@@ -39,12 +47,20 @@ bool router_object_base::key_t::operator>(const key_t &r) const UTIL_CONFIG_NOEX
         return type_id > r.type_id;
     }
 
+    if (zone_id != r.zone_id) {
+        return zone_id > r.zone_id;
+    }
+
     return object_id > r.object_id;
 }
 
 bool router_object_base::key_t::operator>=(const key_t &r) const UTIL_CONFIG_NOEXCEPT {
     if (type_id != r.type_id) {
         return type_id > r.type_id;
+    }
+
+    if (zone_id != r.zone_id) {
+        return zone_id > r.zone_id;
     }
 
     return object_id >= r.object_id;
@@ -109,7 +125,7 @@ int router_object_base::remove_object(void *priv_data, uint64_t transfer_to_svr_
 
     int ret = save(priv_data);
     if (ret < 0) {
-        WLOGERROR("remove router object %u:0x%llx, res:%d", get_key().type_id, get_key().object_id_ull(), ret);
+        WLOGERROR("remove router object %u:%u:0x%llx, res:%d", get_key().type_id, get_key().zone_id, get_key().object_id_ull(), ret);
 
         // 保存失败则恢复原来的路由信息
         set_router_server_id(old_router_server_id, old_router_ver);

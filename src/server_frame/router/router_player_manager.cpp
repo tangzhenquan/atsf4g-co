@@ -16,42 +16,42 @@ const char *router_player_manager::name() const {
     ;
 }
 
-bool router_player_manager::remove_player_object(uint64_t user_id, priv_data_t priv_data) {
+bool router_player_manager::remove_player_object(uint64_t user_id, uint32_t zone_id, priv_data_t priv_data) {
 #if defined(UTIL_CONFIG_COMPILER_CXX_NULLPTR) && UTIL_CONFIG_COMPILER_CXX_NULLPTR
-    return remove_player_object(user_id, nullptr, priv_data);
+    return remove_player_object(user_id, zone_id, nullptr, priv_data);
 #else
-    return remove_player_object(user_id, NULL, priv_data);
+    return remove_player_object(user_id, zone_id, NULL, priv_data);
 #endif
 }
 
-bool router_player_manager::remove_player_object(uint64_t user_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data) {
-    key_t key(get_type_id(), user_id);
+bool router_player_manager::remove_player_object(uint64_t user_id, uint32_t zone_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data) {
+    key_t key(get_type_id(), zone_id, user_id);
     return remove_object(key, cache, priv_data);
 }
 
-bool router_player_manager::remove_player_cache(uint64_t user_id, priv_data_t priv_data) {
+bool router_player_manager::remove_player_cache(uint64_t user_id, uint32_t zone_id, priv_data_t priv_data) {
 #if defined(UTIL_CONFIG_COMPILER_CXX_NULLPTR) && UTIL_CONFIG_COMPILER_CXX_NULLPTR
-    return remove_player_cache(user_id, nullptr, priv_data);
+    return remove_player_cache(user_id, zone_id, nullptr, priv_data);
 #else
-    return remove_player_cache(user_id, NULL, priv_data);
+    return remove_player_cache(user_id, zone_id, NULL, priv_data);
 #endif
 }
 
-bool router_player_manager::remove_player_cache(uint64_t user_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data) {
-    key_t key(get_type_id(), user_id);
+bool router_player_manager::remove_player_cache(uint64_t user_id, uint32_t zone_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data) {
+    key_t key(get_type_id(), zone_id, user_id);
     return remove_cache(key, cache, priv_data);
 }
 
 void router_player_manager::set_create_object_fn(create_object_fn_t fn) { create_fn_ = fn; }
 
-router_player_cache::object_ptr_t router_player_manager::create_player_object(uint64_t user_id, const std::string &openid) {
+router_player_cache::object_ptr_t router_player_manager::create_player_object(uint64_t user_id, uint32_t zone_id, const std::string &openid) {
     router_player_cache::object_ptr_t ret;
     if (create_fn_) {
-        ret = create_fn_(user_id, openid);
+        ret = create_fn_(user_id, zone_id, openid);
     }
 
     if (!ret) {
-        ret = player_cache::create(user_id, openid);
+        ret = player_cache::create(user_id, zone_id, openid);
     }
 
     return ret;

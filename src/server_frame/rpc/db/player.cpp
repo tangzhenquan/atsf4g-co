@@ -43,7 +43,7 @@ namespace rpc {
                 }
             } // namespace detail
 
-            int get_all(uint64_t user_id, hello::table_user &rsp, std::string &version) {
+            int get_all(uint64_t user_id, uint32_t zone_id, hello::table_user &rsp, std::string &version) {
                 task_manager::task_t *task = task_manager::task_t::this_task();
                 if (!task) {
                     WLOGERROR("current not in a task");
@@ -51,7 +51,7 @@ namespace rpc {
                 }
 
                 user_table_key_t user_key;
-                size_t user_key_len = format_user_key(user_key, RPC_DB_TABLE_NAME, user_id);
+                size_t user_key_len = format_user_key(user_key, RPC_DB_TABLE_NAME, user_id, zone_id);
                 if (user_key_len <= 0) {
                     WLOGERROR("format db cmd failed, cmd %s", user_key);
                     return hello::err::EN_DB_SEND_FAILED;
@@ -89,12 +89,12 @@ namespace rpc {
                 return hello::err::EN_SUCCESS;
             }
 
-            int get_basic(uint64_t user_id, hello::table_user &rsp) {
+            int get_basic(uint64_t user_id, uint32_t zone_id, hello::table_user &rsp) {
                 std::string version;
-                return get_all(user_id, rsp, version);
+                return get_all(user_id, zone_id, rsp, version);
             }
 
-            int set(uint64_t user_id, hello::table_user &store, std::string &version) {
+            int set(uint64_t user_id, uint32_t zone_id, hello::table_user &store, std::string &version) {
                 task_manager::task_t *task = task_manager::task_t::this_task();
                 if (!task) {
                     WLOGERROR("current not in a task");
@@ -108,7 +108,7 @@ namespace rpc {
                 std::stringstream segs_debug_info;
 
                 user_table_key_t user_key;
-                size_t user_key_len = format_user_key(user_key, RPC_DB_TABLE_NAME, user_id);
+                size_t user_key_len = format_user_key(user_key, RPC_DB_TABLE_NAME, user_id, zone_id);
                 if (user_key_len <= 0) {
                     WLOGERROR("format db cmd failed, cmd %s", user_key);
                     return hello::err::EN_DB_SEND_FAILED;

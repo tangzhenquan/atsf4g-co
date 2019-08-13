@@ -19,11 +19,12 @@
 router_player_private_type::router_player_private_type() : login_tb(NULL), login_ver(NULL) {}
 router_player_private_type::router_player_private_type(hello::table_login *tb, std::string *ver) : login_tb(tb), login_ver(ver) {}
 
-router_player_cache::router_player_cache(uint64_t user_id, const std::string &openid)
-    : base_type(router_player_manager::me()->create_player_object(user_id, openid), key_t(router_player_manager::me()->get_type_id(), user_id)) {}
+router_player_cache::router_player_cache(uint64_t user_id, uint32_t zone_id, const std::string &openid)
+    : base_type(router_player_manager::me()->create_player_object(user_id, zone_id, openid), 
+      key_t(router_player_manager::me()->get_type_id(), zone_id, user_id)) {}
 
 // 这个时候openid无效，后面需要再init一次
-router_player_cache::router_player_cache(const key_t &key) : base_type(router_player_manager::me()->create_player_object(key.object_id, ""), key) {}
+router_player_cache::router_player_cache(const key_t &key) : base_type(router_player_manager::me()->create_player_object(key.object_id, key.zone_id, ""), key) {}
 
 const char *router_player_cache::name() const { return "[player  router cache]"; }
 
@@ -45,22 +46,22 @@ int router_player_cache::pull_cache(router_player_private_type &priv_data) {
 
     // 先尝试从数据库读数据
     hello::table_user tbu;
-    int               res = rpc::db::player::get_basic(get_key().object_id, tbu);
+    int               res = rpc::db::player::get_basic(get_key().object_id, get_key().zone_id, tbu);
     if (res < 0) {
         if (hello::err::EN_DB_RECORD_NOT_FOUND != res) {
-            WLOGERROR("load player_cache data for %llu failed, error code:%d", get_key().object_id_ull(), res);
+            WLOGERROR("load player_cache data for %u:%llu failed, error code:%d", get_key().zone_id, get_key().object_id_ull(), res);
         }
         return res;
     }
 
     player_cache::ptr_t obj = get_object();
     if (obj->get_open_id().empty()) {
-        obj->init(get_key().object_id, tbu.open_id());
+        obj->init(get_key().object_id, get_key().zone_id, tbu.open_id());
     }
 
     if (NULL == priv_data.login_tb) {
         priv_data.login_tb = &local_login_tb;
-        int ret            = rpc::db::login::get(obj->get_open_id().c_str(), *priv_data.login_tb, *priv_data.login_ver);
+        int ret            = rpc::db::login::get(obj->get_open_id().c_str(), get_key().zone_id, *priv_data.login_tb, *priv_data.login_ver);
         if (ret < 0) {
             return ret;
         }
@@ -69,8 +70,7 @@ int router_player_cache::pull_cache(router_player_private_type &priv_data) {
     // 设置路由ID
     set_router_server_id(priv_data.login_tb->router_server_id(), priv_data.login_tb->router_version());
 
-    obj->get_login_info().Swap(priv_data.login_tb);
-    obj->get_login_version().swap(*priv_data.login_ver);
+    obj->load_and_move_login_info(COPP_MACRO_STD_MOVE(*priv_data.login_tb), *priv_data.login_ver);
 
     // table_login内的平台信息复制到player里
     if (hello::err::EN_DB_RECORD_NOT_FOUND != res) {
@@ -98,16 +98,16 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
 
     player_cache::ptr_t obj = get_object();
     if (!obj || !obj->can_be_writable()) {
-        WLOGERROR("pull_object for %llu failed, error code:%d", get_key().object_id_ull(), hello::err::EN_ROUTER_ACCESS_DENY);
+        WLOGERROR("pull_object for %u:%llu failed, error code:%d", get_key().zone_id, get_key().object_id_ull(), hello::err::EN_ROUTER_ACCESS_DENY);
         return hello::err::EN_ROUTER_ACCESS_DENY;
     }
 
     // 先尝试从数据库读数据
     hello::table_user tbu;
-    int               res = rpc::db::player::get_basic(get_key().object_id, tbu);
+    int               res = rpc::db::player::get_basic(get_key().object_id, get_key().zone_id, tbu);
     if (res < 0) {
         if (hello::err::EN_DB_RECORD_NOT_FOUND != res) {
-            WLOGERROR("load player_cache data for %llu failed, error code:%d", get_key().object_id_ull(), res);
+            WLOGERROR("load player_cache data for %u:%llu failed, error code:%d", get_key().zone_id, get_key().object_id_ull(), res);
             return res;
         } else if (NULL != priv_data.login_tb) {
             // 创建用户走这里的流程
@@ -121,12 +121,12 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
     }
 
     if (obj->get_open_id().empty()) {
-        obj->init(get_key().object_id, tbu.open_id());
+        obj->init(get_key().object_id, get_key().zone_id, tbu.open_id());
     }
 
     if (NULL == priv_data.login_tb) {
         priv_data.login_tb = &local_login_tb;
-        int ret            = rpc::db::login::get(obj->get_open_id().c_str(), *priv_data.login_tb, *priv_data.login_ver);
+        int ret            = rpc::db::login::get(obj->get_open_id().c_str(), obj->get_zone_id(), *priv_data.login_tb, *priv_data.login_ver);
         if (ret < 0) {
             return ret;
         }
@@ -135,9 +135,7 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
     // 拉取玩家数据
     // 设置路由ID
     set_router_server_id(priv_data.login_tb->router_server_id(), priv_data.login_tb->router_version());
-
-    obj->get_login_info().Swap(priv_data.login_tb);
-    obj->get_login_version().swap(*priv_data.login_ver);
+    obj->load_and_move_login_info(COPP_MACRO_STD_MOVE(*priv_data.login_tb), *priv_data.login_ver);
 
     // table_login内的平台信息复制到player里
     if (hello::err::EN_DB_RECORD_NOT_FOUND != res) {
@@ -156,7 +154,7 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
         // 新登入则设置登入时间
         obj->get_login_info().set_login_time(util::time::time_utility::get_now());
 
-        int ret = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_login_info(), obj->get_login_version());
+        int ret = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_login_info(), obj->get_login_version());
         if (ret < 0) {
             WLOGERROR("save login data for %s failed, msg:\n%s", obj->get_open_id().c_str(), obj->get_login_info().DebugString().c_str());
             // 失败则恢复路由信息
@@ -181,7 +179,7 @@ int router_player_cache::save_object(void *priv_data) {
     // 保存数据
     player_cache::ptr_t obj = object();
     if (!obj || !obj->can_be_writable()) {
-        WLOGERROR("save_object for %llu failed, error code:%d", get_key().object_id_ull(), hello::err::EN_ROUTER_ACCESS_DENY);
+        WLOGERROR("save_object for %u:%llu failed, error code:%d", get_key().zone_id, get_key().object_id_ull(), hello::err::EN_ROUTER_ACCESS_DENY);
         return hello::err::EN_ROUTER_ACCESS_DENY;
     }
 
@@ -193,7 +191,7 @@ int router_player_cache::save_object(void *priv_data) {
     int  try_times        = 2; // 其实并不需要重试，这里只是处理table_login过期后走更新流程
     while (try_times-- > 0) {
         if (hello::err::EN_DB_OLD_VERSION == res) {
-            res = rpc::db::login::get(obj->get_open_id().c_str(), obj->get_login_info(), obj->get_login_version());
+            res = rpc::db::login::get(obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_login_info(), obj->get_login_version());
             if (res < 0) {
                 WLOGERROR("player_cache %s(%llu) try load login data failed.", obj->get_open_id().c_str(), obj->get_user_id_llu());
                 return res;
@@ -214,7 +212,7 @@ int router_player_cache::save_object(void *priv_data) {
             obj->get_login_info().set_router_server_id(get_router_server_id());
             obj->get_login_info().set_router_version(old_router_ver + 1);
             // RPC save to db
-            res = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_login_info(), obj->get_login_version());
+            res = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_login_info(), obj->get_login_version());
             if (hello::err::EN_DB_OLD_VERSION == res) {
                 obj->get_login_info().set_router_server_id(old_router_server_id);
                 obj->get_login_info().set_router_version(old_router_ver);
@@ -242,7 +240,7 @@ int router_player_cache::save_object(void *priv_data) {
             obj->get_login_info().set_logout_time(util::time::time_utility::get_now()); // 登出时间
 
             // RPC save to db
-            res = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_login_info(), obj->get_login_version());
+            res = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_login_info(), obj->get_login_version());
             if (hello::err::EN_DB_OLD_VERSION == res) {
                 obj->get_login_info().set_router_server_id(old_router_server_id);
                 obj->get_login_info().set_router_version(old_router_ver);
@@ -270,7 +268,7 @@ int router_player_cache::save_object(void *priv_data) {
             obj->get_login_info().set_login_code_expired(util::time::time_utility::get_now() +
                                                          logic_config::me()->get_cfg_logic().session_login_code_valid_sec);
 
-            res = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_login_info(), obj->get_login_version());
+            res = rpc::db::login::set(obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_login_info(), obj->get_login_version());
             if (hello::err::EN_DB_OLD_VERSION == res) {
                 obj->get_login_info().set_router_server_id(old_router_server_id);
                 obj->get_login_info().set_router_version(old_router_ver);
@@ -310,13 +308,13 @@ int router_player_cache::save_object(void *priv_data) {
     WLOGDEBUG("player_cache %s(%llu) save curr data version:%s", obj->get_open_id().c_str(), obj->get_user_id_llu(), obj->get_version().c_str());
 
     // RPC save to DB
-    res = rpc::db::player::set(obj->get_user_id(), user_tb, obj->get_version());
+    res = rpc::db::player::set(obj->get_user_id(), obj->get_zone_id(), user_tb, obj->get_version());
 
     // CAS 序号错误（可能是先超时再返回成功）,重试一次
     // 前面已经确认了当前用户在此处登入并且已经更新了版本号到版本信息
     // RPC save to DB again
     if (hello::err::EN_DB_OLD_VERSION == res) {
-        res = rpc::db::player::set(obj->get_user_id(), user_tb, obj->get_version());
+        res = rpc::db::player::set(obj->get_user_id(), obj->get_zone_id(), user_tb, obj->get_version());
     }
 
     if (res < 0) {

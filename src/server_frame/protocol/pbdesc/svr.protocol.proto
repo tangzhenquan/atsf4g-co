@@ -48,6 +48,7 @@ message SSRouterHead {
     // 路由对象信息
     uint32 object_type_id = 21; // 每种路由对象都要有自己的类型ID（router_manager_set根据这个来区分走哪个路由对象管理器）
     uint64 object_inst_id = 22; // 每个路由对象的唯一实例ID
+    uint32 object_zone_id = 23; // 每个路由对象的大区ID
 }
 
 // 路由表更新通知
@@ -79,6 +80,7 @@ message SSMsgHead {
     // 玩家标识
     uint64 player_user_id = 101; // 如果涉及玩家此项必需
     string player_open_id = 102; // 此项可选
+    uint32 player_zone_id = 103; // 如果涉及玩家此项必需
 }
 
 // 协议包体

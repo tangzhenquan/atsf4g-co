@@ -16,9 +16,9 @@
 namespace rpc {
     namespace db {
         typedef char user_table_key_t[256];
-        inline size_t format_user_key(user_table_key_t &key, const char *table, const char *open_id) {
+        inline size_t format_user_key(user_table_key_t &key, const char *table, const char *open_id, uint32_t zone_id) {
             size_t keylen = sizeof(key) - 1;
-            int __snprintf_writen_length = UTIL_STRFUNC_SNPRINTF(key, keylen, "%s:%s", table, open_id);
+            int __snprintf_writen_length = UTIL_STRFUNC_SNPRINTF(key, keylen, "%s:%u:%s", table, zone_id, open_id);
             if (__snprintf_writen_length < 0) {
                 key[sizeof(key) - 1] = '\0';
                 keylen = 0;
@@ -30,9 +30,9 @@ namespace rpc {
             return keylen;
         }
 
-        inline size_t format_user_key(user_table_key_t &key, const char *table, uint64_t user_id) {
+        inline size_t format_user_key(user_table_key_t &key, const char *table, uint64_t user_id, uint32_t zone_id) {
             size_t keylen = sizeof(key) - 1;
-            int __snprintf_writen_length = UTIL_STRFUNC_SNPRINTF(key, keylen, "%s:%llu", table, static_cast<unsigned long long>(user_id));
+            int __snprintf_writen_length = UTIL_STRFUNC_SNPRINTF(key, keylen, "%s:%u:%llu", table, zone_id, static_cast<unsigned long long>(user_id));
             if (__snprintf_writen_length < 0) {
                 key[sizeof(key) - 1] = '\0';
                 keylen = 0;

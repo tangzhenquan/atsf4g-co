@@ -28,6 +28,7 @@ public:
 
 private:
     bool is_new_player_;
+    uint32_t zone_id_;
 };
 
 

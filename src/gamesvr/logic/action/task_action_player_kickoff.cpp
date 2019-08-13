@@ -27,15 +27,16 @@ int task_action_player_kickoff::operator()() {
     msg_cref_type req_msg = get_request();
 
     uint64_t player_user_id = req_msg.head().player_user_id();
+    uint32_t player_zone_id = req_msg.head().player_zone_id();
     const std::string player_open_id = req_msg.head().player_open_id();
-    player::ptr_t user = player_manager::me()->find_as<player>(player_user_id);
+    player::ptr_t user = player_manager::me()->find_as<player>(player_user_id, player_zone_id);
     if (!user) {
         WLOGERROR("user %s(%llu) not found, maybe already logout.", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id));
 
         // 尝试保存用户数据
         hello::table_login user_lg;
         std::string version;
-        int res = rpc::db::login::get(player_open_id.c_str(), user_lg, version);
+        int res = rpc::db::login::get(player_open_id.c_str(), player_zone_id, user_lg, version);
         if (res < 0) {
             WLOGERROR("user %s(%llu) try load login data failed.", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id));
             set_rsp_code(hello::err::EN_DB_REPLY_ERROR);
@@ -50,7 +51,7 @@ int task_action_player_kickoff::operator()() {
         }
 
         user_lg.set_router_server_id(0);
-        res = rpc::db::login::set(player_open_id.c_str(), user_lg, version);
+        res = rpc::db::login::set(player_open_id.c_str(), player_zone_id, user_lg, version);
         if (res < 0) {
             WLOGERROR("user %s(%llu) try load login data failed.", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id));
             set_rsp_code(hello::err::EN_DB_SEND_FAILED);

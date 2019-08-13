@@ -77,9 +77,9 @@ public:
     virtual bool is_writable() const;
 
     // 初始化，默认数据
-    virtual void init(uint64_t user_id, const std::string &openid);
+    virtual void init(uint64_t user_id, uint32_t zone_id, const std::string &openid);
 
-    static ptr_t create(uint64_t user_id, const std::string &openid);
+    static ptr_t create(uint64_t user_id, uint32_t zone_id, const std::string &openid);
 
     // 创建默认角色数据
     virtual void create_init(uint32_t version_type);
@@ -146,10 +146,11 @@ public:
     /**
      * @brief 获取大区号
      */
-    inline uint32_t get_zone_id() const { return account_info_->zone_id(); }
+    inline uint32_t get_zone_id() const { return zone_id_; }
 
     inline const hello::table_login &get_login_info() const { return login_info_; }
-    inline hello::table_login &      get_login_info() { return login_info_; }
+    inline hello::table_login &get_login_info() { return login_info_; }
+    void load_and_move_login_info(hello::table_login COPP_MACRO_RV_REF lg, const std::string& ver);
 
     inline const std::string &get_login_version() const { return login_info_version_; }
     inline std::string &      get_login_version() { return login_info_version_; }
@@ -173,6 +174,7 @@ protected:
 private:
     std::string        openid_id_;
     uint64_t           user_id_;
+    uint32_t           zone_id_;
     hello::table_login login_info_;
     std::string        login_info_version_;
 

@@ -113,7 +113,7 @@ void actor_action_cs_req_base::send_rsp_msg() {
         // refresh visit time if success
         if (0 == get_rsp_code()) {
             router_player_manager::ptr_t router_cache =
-                router_player_manager::me()->get_cache(router_player_manager::key_t(router_player_manager::me()->get_type_id(), owner_player->get_user_id()));
+                router_player_manager::me()->get_cache(router_player_manager::key_t(router_player_manager::me()->get_type_id(), owner_player->get_zone_id(), owner_player->get_user_id()));
             if (router_cache && router_cache->is_object_equal(owner_player)) {
                 router_cache->refresh_visit_time();
             }

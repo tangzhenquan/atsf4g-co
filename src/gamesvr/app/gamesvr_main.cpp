@@ -136,8 +136,8 @@ static int app_handle_on_disconnected(atapp::app &app, atbus::endpoint &ep, int 
 
 class main_service_module : public atapp::module_impl {
 private:
-    static router_player_cache::object_ptr_t create_player_fn(uint64_t user_id, const std::string & openid) {
-        return std::static_pointer_cast<player_cache>(player::create(user_id, openid));
+    static router_player_cache::object_ptr_t create_player_fn(uint64_t user_id, uint32_t zone_id, const std::string & openid) {
+        return std::static_pointer_cast<player_cache>(player::create(user_id, zone_id, openid));
     }
 
 public:

@@ -43,7 +43,7 @@ int task_action_ss_req_base::hook_run() {
                 return hello::err::EN_ROUTER_TYPE_INVALID;
             }
 
-            router_manager_base::key_t          key(router.object_type_id(), router.object_inst_id());
+            router_manager_base::key_t          key(router.object_type_id(), router.object_zone_id(), router.object_inst_id());
             std::shared_ptr<router_object_base> obj = mgr->get_base_cache(key);
 
             // 如果正在迁移，追加到pending队列，本task直接退出

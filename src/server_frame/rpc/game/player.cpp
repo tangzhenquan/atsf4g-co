@@ -21,7 +21,7 @@
 namespace rpc {
     namespace game {
         namespace player {
-            int send_kickoff(uint64_t dst_bus_id, uint64_t user_id, const std::string &openid, int32_t reason) {
+            int send_kickoff(uint64_t dst_bus_id, uint64_t user_id, uint32_t zone_id, const std::string &openid, int32_t reason) {
                 task_manager::task_t *task = task_manager::task_t::this_task();
                 if (!task) {
                     WLOGERROR("current not in a task");
@@ -33,6 +33,7 @@ namespace rpc {
                 req_msg.mutable_head()->set_src_task_id(task->get_id());
                 req_msg.mutable_head()->set_player_user_id(user_id);
                 req_msg.mutable_head()->set_player_open_id(openid);
+                req_msg.mutable_head()->set_player_zone_id(zone_id);
                 req_msg.mutable_body()->mutable_mss_player_kickoff_req()->set_reason(reason);
 
                 int res = ss_msg_dispatcher::me()->send_to_proc(dst_bus_id, req_msg);
@@ -42,7 +43,7 @@ namespace rpc {
                 }
 
                 hello::SSMsg rsp_msg;
-                // 协程操作
+                // 坝程擝作
                 res = rpc::wait(rsp_msg);
                 if (res < 0) {
                     return res;

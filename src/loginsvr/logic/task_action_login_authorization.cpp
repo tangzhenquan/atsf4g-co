@@ -30,12 +30,14 @@
 UTIL_ENV_AUTO_SET(std::string) task_action_login_authorization::white_skip_openids_;
 
 task_action_login_authorization::task_action_login_authorization(dispatcher_start_data_t COPP_MACRO_RV_REF param)
-    : task_action_cs_req_base(COPP_MACRO_STD_MOVE(param)), is_new_player_(false), strategy_type_(hello::EN_VERSION_DEFAULT), final_user_id_(0) {}
+    : task_action_cs_req_base(COPP_MACRO_STD_MOVE(param)), is_new_player_(false), strategy_type_(hello::EN_VERSION_DEFAULT), 
+      zone_id_(0), final_user_id_(0) {}
 task_action_login_authorization::~task_action_login_authorization() {}
 
 int task_action_login_authorization::operator()() {
     is_new_player_ = false;
     strategy_type_ = hello::EN_VERSION_DEFAULT;
+    zone_id_ = logic_config::me()->get_cfg_logic().zone_id;
 
     session::ptr_t my_sess = get_session();
     if (!my_sess) {
@@ -146,7 +148,7 @@ int task_action_login_authorization::operator()() {
 
     // 5. 获取当前账户登入信息(如果不存在则直接转到 9)
     do {
-        res = rpc::db::login::get(msg_body.open_id().c_str(), login_data_, version_);
+        res = rpc::db::login::get(msg_body.open_id().c_str(), zone_id_, login_data_, version_);
         if (hello::err::EN_DB_RECORD_NOT_FOUND != res && res < 0) {
             WLOGERROR("call login rpc method failed, msg: %s", msg_body.DebugString().c_str());
             set_rsp_code(hello::EN_ERR_UNKNOWN);
@@ -186,8 +188,8 @@ int task_action_login_authorization::operator()() {
 
         // 7. 如果在线则尝试踢出
         if (0 != login_data_.router_server_id()) {
-            int32_t ret = rpc::game::player::send_kickoff(login_data_.router_server_id(), login_data_.user_id(), login_data_.open_id(),
-                                                          ::atframe::gateway::close_reason_t::EN_CRT_KICKOFF);
+            int32_t ret = rpc::game::player::send_kickoff(login_data_.router_server_id(), login_data_.user_id(), zone_id_, 
+                                                            login_data_.open_id(), ::atframe::gateway::close_reason_t::EN_CRT_KICKOFF);
             if (ret) {
                 WLOGERROR("user %s send msg to 0x%llx fail: %d", login_data_.open_id().c_str(), static_cast<unsigned long long>(login_data_.router_server_id()),
                           ret);
@@ -211,7 +213,7 @@ int task_action_login_authorization::operator()() {
                 // 8. 验证踢出后的登入pd
                 login_data_.Clear();
                 uint64_t old_svr_id = login_data_.router_server_id();
-                res                 = rpc::db::login::get(msg_body.open_id().c_str(), login_data_, version_);
+                res                 = rpc::db::login::get(msg_body.open_id().c_str(), zone_id_, login_data_, version_);
                 if (res < 0) {
                     WLOGERROR("call login rpc method failed, msg: %s", msg_body.DebugString().c_str());
                     set_rsp_code(hello::EN_ERR_LOGIN_ALREADY_ONLINE);
@@ -255,6 +257,7 @@ int task_action_login_authorization::operator()() {
     {
         final_user_id_ = login_data_.user_id();
 
+        login_data_.set_zone_id(zone_id_);
         login_data_.set_stat_login_total_times(login_data_.stat_login_total_times() + 1);
 
         // 登入码
@@ -266,7 +269,6 @@ int task_action_login_authorization::operator()() {
         const ::hello::DAccountData & plat_src = msg_body.account();
 
         plat_dst->set_account_type(static_cast<hello::EnAccountTypeID>(account_type));
-        plat_dst->set_zone_id(logic_config::me()->get_cfg_logic().zone_id);
         if (!plat_src.access().empty()) {
             plat_dst->set_access(plat_src.access());
         }
@@ -275,7 +277,7 @@ int task_action_login_authorization::operator()() {
 
     // 保存登入信息
     login_data_.set_stat_login_success_times(login_data_.stat_login_success_times() + 1);
-    res = rpc::db::login::set(msg_body.open_id().c_str(), login_data_, version_);
+    res = rpc::db::login::set(msg_body.open_id().c_str(), zone_id_, login_data_, version_);
     if (res < 0) {
         WLOGERROR("save login data for %s failed, msg:\n%s", msg_body.open_id().c_str(), login_data_.DebugString().c_str());
         set_rsp_code(hello::EN_ERR_SYSTEM);
@@ -295,7 +297,7 @@ int task_action_login_authorization::on_success() {
     rsp_body->set_user_id(final_user_id_);
     rsp_body->set_version_type(strategy_type_);
     rsp_body->set_is_new_player(is_new_player_);
-    rsp_body->set_zone_id(logic_config::me()->get_cfg_logic().zone_id);
+    rsp_body->set_zone_id(zone_id_);
 
     std::shared_ptr<session> my_sess = get_session();
 
@@ -344,7 +346,7 @@ int task_action_login_authorization::on_failed() {
     rsp_body->set_user_id(final_user_id_);
     rsp_body->set_ban_time(login_data_.ban_time());
     rsp_body->set_version_type(strategy_type_);
-    rsp_body->set_zone_id(logic_config::me()->get_cfg_logic().zone_id);
+    rsp_body->set_zone_id(zone_id_);
 
     // 如果是版本过低则要下发更新信息
     if (hello::EN_UPDATE_NONE != update_info_.result()) {
@@ -384,6 +386,7 @@ task_action_login_authorization::auth_fn_t task_action_login_authorization::get_
 void task_action_login_authorization::init_login_data(hello::table_login &tb, const ::hello::CSLoginAuthReq &req, int64_t player_uid, uint32_t channel_id) {
     tb.set_open_id(req.open_id());
     tb.set_user_id(static_cast<uint64_t>(player_uid));
+    tb.set_zone_id(zone_id_);
 
     tb.set_router_server_id(0);
     tb.set_router_version(0);
@@ -404,13 +407,13 @@ void task_action_login_authorization::init_login_data(hello::table_login &tb, co
 }
 
 std::string task_action_login_authorization::make_openid(const hello::CSLoginAuthReq &req) {
-    return rpc::auth::login::make_open_id(logic_config::me()->get_cfg_logic().zone_id, req.account().account_type(), req.account().channel_id(), req.open_id());
+    return rpc::auth::login::make_open_id(zone_id_, req.account().account_type(), req.account().channel_id(), req.open_id());
 }
 
 int task_action_login_authorization::verify_plat_account(const ::hello::CSLoginAuthReq &req) {
     hello::table_login tb;
     std::string        version;
-    int                res = rpc::db::login::get(req.open_id().c_str(), tb, version);
+    int                res = rpc::db::login::get(req.open_id().c_str(), zone_id_, tb, version);
     if (hello::err::EN_DB_RECORD_NOT_FOUND != res && res < 0) {
         WLOGERROR("call login rpc method failed, msg: %s", req.DebugString().c_str());
         return hello::EN_ERR_SYSTEM;

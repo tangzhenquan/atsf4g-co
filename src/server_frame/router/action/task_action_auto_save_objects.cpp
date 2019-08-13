@@ -76,33 +76,33 @@ int task_action_auto_save_objects::operator()() {
         }
 
         if (hello::err::EN_SYS_TIMEOUT == res) {
-            WLOGERROR("auto do %s to router object %s(%u:0x%llx) timeout", get_action_name(auto_save.action), auto_save.object->name(),
-                      auto_save.object->get_key().type_id, auto_save.object->get_key().object_id_ull());
+            WLOGERROR("auto do %s to router object %s(%u:%u:0x%llx) timeout", get_action_name(auto_save.action), auto_save.object->name(),
+                      auto_save.object->get_key().type_id, auto_save.object->get_key().zone_id, auto_save.object->get_key().object_id_ull());
             ++failed_count_;
             return hello::err::EN_SUCCESS;
         }
 
         if (hello::err::EN_SYS_RPC_TASK_CANCELLED == res) {
-            WLOGWARNING("auto do %s to router object %s(%u:0x%llx) but cancelled", get_action_name(auto_save.action), auto_save.object->name(),
-                        auto_save.object->get_key().type_id, auto_save.object->get_key().object_id_ull());
+            WLOGWARNING("auto do %s to router object %s(%u:%u:0x%llx) but cancelled", get_action_name(auto_save.action), auto_save.object->name(),
+                        auto_save.object->get_key().type_id, auto_save.object->get_key().zone_id, auto_save.object->get_key().object_id_ull());
             ++failed_count_;
             return hello::err::EN_SUCCESS;
         }
 
         if (hello::err::EN_SYS_RPC_TASK_KILLED == res) {
-            WLOGERROR("auto do %s to router object %s(%u:0x%llx) but killed", get_action_name(auto_save.action), auto_save.object->name(),
-                      auto_save.object->get_key().type_id, auto_save.object->get_key().object_id_ull());
+            WLOGERROR("auto do %s to router object %s(%u:%u:0x%llx) but killed", get_action_name(auto_save.action), auto_save.object->name(),
+                      auto_save.object->get_key().type_id, auto_save.object->get_key().zone_id, auto_save.object->get_key().object_id_ull());
             ++failed_count_;
             return hello::err::EN_SUCCESS;
         }
 
         if (res < 0) {
-            WLOGERROR("auto do %s to router object %s(%u:0x%llx) failed, res: %d", get_action_name(auto_save.action), auto_save.object->name(),
-                      auto_save.object->get_key().type_id, auto_save.object->get_key().object_id_ull(), res);
+            WLOGERROR("auto do %s to router object %s(%u:%u:0x%llx) failed, res: %d", get_action_name(auto_save.action), auto_save.object->name(),
+                      auto_save.object->get_key().type_id, auto_save.object->get_key().zone_id, auto_save.object->get_key().object_id_ull(), res);
             ++failed_count_;
         } else {
-            WLOGDEBUG("auto do %s to router object %s(%u:0x%llx) success", get_action_name(auto_save.action), auto_save.object->name(),
-                      auto_save.object->get_key().type_id, auto_save.object->get_key().object_id_ull());
+            WLOGDEBUG("auto do %s to router object %s(%u:%u:0x%llx) success", get_action_name(auto_save.action), auto_save.object->name(),
+                      auto_save.object->get_key().type_id, auto_save.object->get_key().zone_id, auto_save.object->get_key().object_id_ull());
             ++success_count_;
         }
     }

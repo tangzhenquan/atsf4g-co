@@ -28,10 +28,11 @@ class router_object_base : public ::util::design_pattern::noncopyable {
 public:
     struct key_t {
         uint32_t type_id;
+        uint32_t zone_id;
         uint64_t object_id;
 
-        key_t() : type_id(0), object_id(0) {}
-        key_t(uint32_t tid, uint64_t oid) : type_id(tid), object_id(oid) {}
+        key_t() : type_id(0), zone_id(0), object_id(0) {}
+        key_t(uint32_t tid, uint32_t zid, uint64_t oid) : type_id(tid), zone_id(zid), object_id(oid) {}
 
         inline unsigned long long object_id_ull() const { return static_cast<unsigned long long>(object_id); }
 
@@ -277,7 +278,7 @@ namespace std {
     template <>
     struct hash<router_object_base::key_t> {
         size_t operator()(const router_object_base::key_t &k) const UTIL_CONFIG_NOEXCEPT {
-            size_t first  = hash<uint32_t>()(k.type_id);
+            size_t first  = hash<uint64_t>()((static_cast<uint64_t>(k.type_id) << 32) | k.zone_id);
             size_t second = hash<uint64_t>()(k.object_id);
             return first ^ (second << 1);
         }

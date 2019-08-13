@@ -26,8 +26,9 @@ bool player_cache::is_writable() const {
     return false;
 }
 
-void player_cache::init(uint64_t user_id, const std::string &openid) {
+void player_cache::init(uint64_t user_id, uint32_t zone_id, const std::string &openid) {
     user_id_      = user_id;
+    zone_id_      = zone_id;
     openid_id_    = openid;
     data_version_ = 0;
 
@@ -35,11 +36,11 @@ void player_cache::init(uint64_t user_id, const std::string &openid) {
     // ptr_t self = shared_from_this();
 }
 
-player_cache::ptr_t player_cache::create(uint64_t user_id, const std::string &openid) {
+player_cache::ptr_t player_cache::create(uint64_t user_id, uint32_t zone_id, const std::string &openid) {
     fake_constructor ctorp;
     ptr_t            ret = std::make_shared<player_cache>(ctorp);
     if (ret) {
-        ret->init(user_id, openid);
+        ret->init(user_id, zone_id, openid);
     }
 
     return ret;
@@ -51,6 +52,7 @@ void player_cache::create_init(uint32_t version_type) {
 
     // copy account information
     protobuf_copy_message(get_account_info(), get_login_info().account());
+    login_info_.set_zone_id(get_zone_id());
 }
 
 void player_cache::login_init() {
@@ -67,6 +69,8 @@ void player_cache::login_init() {
         account.mutable_profile()->set_open_id(get_open_id());
         account.mutable_profile()->set_user_id(get_user_id());
     }
+
+    login_info_.set_zone_id(get_zone_id());
 }
 
 void player_cache::refresh_feature_limit() {
@@ -103,6 +107,7 @@ void player_cache::init_from_table_data(const hello::table_user &tb_player) {
 int player_cache::dump(hello::table_user &user, bool always) {
     user.set_open_id(get_open_id());
     user.set_user_id(get_user_id());
+    user.set_zone_id(get_zone_id());
     user.set_data_version(data_version_);
 
     if (always || player_data_.is_dirty()) {
@@ -142,3 +147,10 @@ void player_cache::set_session(std::shared_ptr<session> session_ptr) {
 std::shared_ptr<session> player_cache::get_session() { return session_.lock(); }
 
 bool player_cache::has_session() const { return false == session_.expired(); }
+
+void player_cache::load_and_move_login_info(hello::table_login COPP_MACRO_RV_REF lg, const std::string& ver) {
+    login_info_.Swap(&lg);
+    login_info_version_ = ver;
+
+    login_info_.set_zone_id(get_zone_id());
+}

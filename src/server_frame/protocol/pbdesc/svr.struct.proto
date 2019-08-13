@@ -26,7 +26,6 @@ message client_session_index {
 
 message account_information {
     uint32         account_type = 1;  // @see EnAccountTypeID
-    uint32         zone_id      = 2;  // 大区ID
     string         access       = 11; // 可能有的属性（【上一次的】校验码）
     DPlayerProfile profile      = 31; // 用户账号属性
     uint32         channel_id   = 36; // 渠道号

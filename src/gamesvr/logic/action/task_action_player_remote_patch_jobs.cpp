@@ -24,7 +24,7 @@ int task_action_player_remote_patch_jobs::operator()() {
         return hello::err::EN_SYS_PARAM;
     }
 
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), param_.user->get_user_id());
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), param_.user->get_zone_id(), param_.user->get_user_id());
     router_player_cache::ptr_t cache = router_player_manager::me()->get_cache(key);
 
     // 缓存已被移除，当前player可能是上下文缓存，忽略patch

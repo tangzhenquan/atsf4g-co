@@ -48,8 +48,8 @@ int task_action_router_close_manager_set::operator()() {
 
         router_manager_base *mgr = router_manager_set::me()->get_manager(obj->get_key().type_id);
         if (UTIL_CONFIG_NULLPTR == mgr) {
-            WLOGERROR("router close task save router object %s(%u:0x%llx) but can not find manager", obj->name(), obj->get_key().type_id,
-                      obj->get_key().object_id_ull());
+            WLOGERROR("router close task save router object %s(%u:%u:0x%llx) but can not find manager", obj->name(), obj->get_key().type_id,
+                      obj->get_key().zone_id, obj->get_key().object_id_ull());
             ++failed_count_;
             continue;
         }

@@ -37,7 +37,7 @@ namespace rpc {
                 }
             } // namespace detail
 
-            int get(const char *openid, hello::table_login &rsp, std::string &version) {
+            int get(const char *openid, uint32_t zone_id, hello::table_login &rsp, std::string &version) {
                 task_manager::task_t *task = task_manager::task_t::this_task();
                 if (!task) {
                     WLOGERROR("current not in a task");
@@ -45,7 +45,7 @@ namespace rpc {
                 }
 
                 user_table_key_t user_key;
-                size_t writen_len = format_user_key(user_key, RPC_DB_TABLE_NAME, openid);
+                size_t writen_len = format_user_key(user_key, RPC_DB_TABLE_NAME, openid, zone_id);
                 if (writen_len <= 0) {
                     WLOGERROR("format db cmd failed, cmd %s", user_key);
                     return hello::err::EN_DB_SEND_FAILED;
@@ -81,7 +81,7 @@ namespace rpc {
                 return hello::err::EN_SUCCESS;
             }
 
-            int set(const char *openid, hello::table_login &rsp, std::string &version) {
+            int set(const char *openid, uint32_t zone_id, hello::table_login &rsp, std::string &version) {
                 task_manager::task_t *task = task_manager::task_t::this_task();
                 if (!task) {
                     WLOGERROR("current not in a task");
@@ -93,7 +93,7 @@ namespace rpc {
                 }
 
                 user_table_key_t user_key;
-                size_t writen_len = format_user_key(user_key, RPC_DB_TABLE_NAME, openid);
+                size_t writen_len = format_user_key(user_key, RPC_DB_TABLE_NAME, openid, zone_id);
                 if (writen_len <= 0) {
                     WLOGERROR("format db cmd failed, cmd %s", user_key);
                     return hello::err::EN_DB_SEND_FAILED;

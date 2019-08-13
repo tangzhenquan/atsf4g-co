@@ -30,7 +30,7 @@ public:
     typedef base_type::flag_guard                            flag_guard;
 
 public:
-    router_player_cache(uint64_t user_id, const std::string &openid);
+    router_player_cache(uint64_t user_id, uint32_t zone_id, const std::string &openid);
     explicit router_player_cache(const key_t &key);
 
     virtual const char *name() const UTIL_CONFIG_OVERRIDE;

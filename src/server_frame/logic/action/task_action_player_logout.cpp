@@ -32,7 +32,7 @@ int task_action_player_logout::operator()() {
             user->dump(user_tb, true);
 
             std::string db_version = user->get_version();
-            int res = rpc::db::player::set(user->get_user_id(), user_tb, db_version);
+            int res = rpc::db::player::set(user->get_user_id(), user->get_zone_id(), user_tb, db_version);
             if (res >= 0 && !db_version.empty()) {
                 user->set_version(db_version);
             }

@@ -26,23 +26,23 @@ public:
     typedef base_type::store_ptr_t                                                          store_ptr_t;
     typedef router_player_manager                                                           self_type;
 
-    typedef std::function<router_player_cache::object_ptr_t(uint64_t, const std::string &)> create_object_fn_t;
+    typedef std::function<router_player_cache::object_ptr_t(uint64_t, uint32_t, const std::string &)> create_object_fn_t;
 
 public:
     router_player_manager();
     virtual const char *name() const UTIL_CONFIG_OVERRIDE;
 
-    bool remove_player_object(uint64_t user_id, priv_data_t priv_data);
+    bool remove_player_object(uint64_t user_id, uint32_t zone_id, priv_data_t priv_data);
 
-    bool remove_player_object(uint64_t user_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data);
+    bool remove_player_object(uint64_t user_id, uint32_t zone_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data);
 
-    bool remove_player_cache(uint64_t user_id, priv_data_t priv_data);
+    bool remove_player_cache(uint64_t user_id, uint32_t zone_id, priv_data_t priv_data);
 
-    bool remove_player_cache(uint64_t user_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data);
+    bool remove_player_cache(uint64_t user_id, uint32_t zone_id, std::shared_ptr<router_object_base> cache, priv_data_t priv_data);
 
     void set_create_object_fn(create_object_fn_t fn);
 
-    router_player_cache::object_ptr_t create_player_object(uint64_t user_id, const std::string &openid);
+    router_player_cache::object_ptr_t create_player_object(uint64_t user_id, uint32_t zone_id, const std::string &openid);
 
 private:
     virtual void on_evt_remove_object(const key_t &key, const ptr_t &cache, priv_data_t priv_data) UTIL_CONFIG_OVERRIDE;

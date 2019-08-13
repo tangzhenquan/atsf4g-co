@@ -80,9 +80,9 @@ public:
     virtual bool is_writable() const UTIL_CONFIG_OVERRIDE;
 
     // 初始化，默认数据
-    virtual void init(uint64_t user_id, const std::string &openid) UTIL_CONFIG_OVERRIDE;
+    virtual void init(uint64_t user_id, uint32_t zone_id, const std::string &openid) UTIL_CONFIG_OVERRIDE;
 
-    static ptr_t create(uint64_t user_id, const std::string &openid);
+    static ptr_t create(uint64_t user_id, uint32_t zone_id, const std::string &openid);
 
     // 创建默认角色数据
     virtual void create_init(uint32_t version_type) UTIL_CONFIG_OVERRIDE;

@@ -31,7 +31,7 @@ public:
      * @brief 保存用户数据
      * @param user_id user_id
      */
-    bool save(uint64_t user_id);
+    bool save(uint64_t user_id, uint32_t zone_id);
 
     /**
      * @brief 加载指定玩家数据。
@@ -41,21 +41,21 @@ public:
      * @param user_id
      * @return null 或者 user指针
      */
-    player_ptr_t load(uint64_t user_id, bool force = false);
+    player_ptr_t load(uint64_t user_id, uint32_t zone_id, bool force = false);
 
     size_t size() const;
 
-    player_ptr_t create(uint64_t user_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver);
+    player_ptr_t create(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver);
     template<typename TPLAYER>
-    const std::shared_ptr<TPLAYER> create_as(uint64_t user_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver) {
-        return std::static_pointer_cast<TPLAYER>(create(user_id, openid, login_tb, login_ver));
+    const std::shared_ptr<TPLAYER> create_as(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver) {
+        return std::static_pointer_cast<TPLAYER>(create(user_id, zone_id, openid, login_tb, login_ver));
     }
 
-    player_ptr_t find(uint64_t user_id) const;
+    player_ptr_t find(uint64_t user_id, uint32_t zone_id) const;
 
     template<typename TPLAYER>
-    const std::shared_ptr<TPLAYER> find_as(uint64_t user_id) const {
-        return std::static_pointer_cast<TPLAYER>(find(user_id));
+    const std::shared_ptr<TPLAYER> find_as(uint64_t user_id, uint32_t zone_id) const {
+        return std::static_pointer_cast<TPLAYER>(find(user_id, zone_id));
     }
 };
 

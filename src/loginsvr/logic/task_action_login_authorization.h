@@ -59,6 +59,7 @@ private:
 private:
     bool                    is_new_player_;
     uint32_t                strategy_type_;
+    uint32_t                zone_id_;
     std::string             version_;
     std::string             final_open_id_;
     uint64_t                final_user_id_;

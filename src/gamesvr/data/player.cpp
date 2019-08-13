@@ -32,18 +32,18 @@ bool player::is_writable() const {
     return can_be_writable() && is_inited();
 }
 
-void player::init(uint64_t user_id, const std::string &openid) {
-    base_type::init(user_id, openid);
+void player::init(uint64_t user_id, uint32_t zone_id, const std::string &openid) {
+    base_type::init(user_id, zone_id, openid);
 
     // all manager init
     // ptr_t self = shared_from_this();
 }
 
-player::ptr_t player::create(uint64_t user_id, const std::string &openid) {
+player::ptr_t player::create(uint64_t user_id, uint32_t zone_id, const std::string &openid) {
     fake_constructor ctorp;
     ptr_t            ret = std::make_shared<player>(ctorp);
     if (ret) {
-        ret->init(user_id, openid);
+        ret->init(user_id, zone_id, openid);
     }
 
     return ret;

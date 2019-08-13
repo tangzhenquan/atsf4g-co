@@ -21,7 +21,7 @@ bool player_manager::remove(player_manager::player_ptr_t u, bool force_kickoff) 
         return false;
     }
 
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), u->get_user_id());
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), u->get_zone_id(), u->get_user_id());
 
     router_player_cache::ptr_t cache = router_player_manager::me()->get_cache(key);
     // 先保存用户数据，防止重复保存
@@ -35,14 +35,14 @@ bool player_manager::remove(player_manager::player_ptr_t u, bool force_kickoff) 
 
     // 这里会触发保存
     if (force_kickoff) {
-        return router_player_manager::me()->remove_player_cache(u->get_user_id(), cache, NULL);
+        return router_player_manager::me()->remove_player_cache(u->get_user_id(), u->get_zone_id(), cache, NULL);
     } else {
-        return router_player_manager::me()->remove_player_object(u->get_user_id(), NULL);
+        return router_player_manager::me()->remove_player_object(u->get_user_id(), u->get_zone_id(), NULL);
     }
 }
 
-bool player_manager::save(uint64_t user_id) {
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), user_id);
+bool player_manager::save(uint64_t user_id, uint32_t zone_id) {
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), zone_id, user_id);
     router_player_cache::ptr_t cache = router_player_manager::me()->get_cache(key);
 
     if (!cache || !cache->is_writable()) {
@@ -51,15 +51,15 @@ bool player_manager::save(uint64_t user_id) {
 
     int res = cache->save(NULL);
     if (res < 0) {
-        WLOGERROR("save player_cache %llu failed, res: %d", static_cast<unsigned long long>(user_id), res);
+        WLOGERROR("save player_cache %u:%llu failed, res: %d", zone_id, static_cast<unsigned long long>(user_id), res);
         return false;
     }
 
     return true;
 }
 
-player_manager::player_ptr_t player_manager::load(uint64_t user_id, bool force) {
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), user_id);
+player_manager::player_ptr_t player_manager::load(uint64_t user_id, uint32_t zone_id, bool force) {
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), zone_id, user_id);
     router_player_cache::ptr_t cache = router_player_manager::me()->get_cache(key);
 
     if (force || !cache) {
@@ -78,14 +78,14 @@ player_manager::player_ptr_t player_manager::load(uint64_t user_id, bool force) 
 
 size_t player_manager::size() const { return router_player_manager::me()->size(); }
 
-player_manager::player_ptr_t player_manager::create(uint64_t user_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver) {
+player_manager::player_ptr_t player_manager::create(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver) {
     if (0 == user_id || openid.empty()) {
         WLOGERROR("can not create player_cache without user id or open id");
         return NULL;
     }
 
-    if (find(user_id)) {
-        WLOGERROR("player_cache %llu already exists, can not create again", static_cast<unsigned long long>(user_id));
+    if (find(user_id, zone_id)) {
+        WLOGERROR("player_cache %u:%llu already exists, can not create again", zone_id, static_cast<unsigned long long>(user_id));
         return NULL;
     }
 
@@ -95,19 +95,19 @@ player_manager::player_ptr_t player_manager::create(uint64_t user_id, const std:
         return NULL;
     }
 
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), user_id);
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), zone_id, user_id);
     router_player_cache::ptr_t cache;
     router_player_private_type priv_data(&login_tb, &login_ver);
 
     int res = router_player_manager::me()->mutable_object(cache, key, &priv_data);
     if (res < 0 || !cache) {
-        WLOGERROR("pull player_cache %s(%llu) object failed, res: %d", openid.c_str(), static_cast<unsigned long long>(user_id), res);
+        WLOGERROR("pull player_cache %s(%u:%llu) object failed, res: %d", openid.c_str(), zone_id, static_cast<unsigned long long>(user_id), res);
         return NULL;
     }
 
     player_ptr_t ret = cache->get_object();
     if (!ret) {
-        WLOGERROR("player_cache %s(%llu) already exists(data version=%u), can not create again", openid.c_str(), static_cast<unsigned long long>(user_id),
+        WLOGERROR("player_cache %s(%u:%llu) already exists(data version=%u), can not create again", openid.c_str(), zone_id, static_cast<unsigned long long>(user_id),
                   ret->get_data_version());
         return NULL;
     }
@@ -124,16 +124,18 @@ player_manager::player_ptr_t player_manager::create(uint64_t user_id, const std:
         // 初始化完成，保存一次
         res = cache->save(NULL);
         if (res < 0) {
-            WLOGERROR("save player_cache %s(%llu) object failed, res: %d", openid.c_str(), static_cast<unsigned long long>(user_id), res);
+            WLOGERROR("save player_cache %s(%u:%llu) object failed, res: %d", openid.c_str(), zone_id, static_cast<unsigned long long>(user_id), res);
             return NULL;
         }
+
+        WLOGINFO("create player %s(%u:%llu) success", openid.c_str(), zone_id, static_cast<unsigned long long>(user_id));
     }
 
     return ret;
 }
 
-player_manager::player_ptr_t player_manager::find(uint64_t user_id) const {
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), user_id);
+player_manager::player_ptr_t player_manager::find(uint64_t user_id, uint32_t zone_id) const {
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), zone_id, user_id);
     router_player_cache::ptr_t cache = router_player_manager::me()->get_cache(key);
 
     if (cache && cache->is_writable()) {

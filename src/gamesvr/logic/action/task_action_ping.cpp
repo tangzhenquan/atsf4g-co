@@ -53,7 +53,7 @@ int task_action_ping::operator()() {
         hello::table_login tb;
         do {
             std::string login_ver;
-            int res = rpc::db::login::get(user->get_open_id().c_str(), tb, login_ver);
+            int res = rpc::db::login::get(user->get_open_id().c_str(), user->get_zone_id(), tb, login_ver);
             if (res < 0) {
                 WLOGERROR("call login rpc Get method failed, user %s, res: %d", user->get_open_id().c_str(), res);
                 break;
@@ -83,9 +83,11 @@ int task_action_ping::operator()() {
                 set_rsp_code(hello::EN_ERR_LOGIN_SPEED_WARNING);
             }
             // 保存封号结果
-            res = rpc::db::login::set(user->get_open_id().c_str(), tb, login_ver);
+            res = rpc::db::login::set(user->get_open_id().c_str(), user->get_zone_id(), tb, login_ver);
             if (res < 0) {
-                WLOGERROR("call login rpc Set method failed, user %s, res: %d", user->get_open_id().c_str(), res);
+                WLOGERROR("call login rpc Set method failed, user %s, zone id: %u, res: %d", user->get_open_id().c_str(), user->get_zone_id(), res);
+            } else {
+                user->load_and_move_login_info(COPP_MACRO_STD_MOVE(tb), login_ver);
             }
         } while (false);
 

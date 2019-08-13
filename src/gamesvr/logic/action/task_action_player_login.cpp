@@ -26,11 +26,12 @@
 
 
 task_action_player_login::task_action_player_login(dispatcher_start_data_t COPP_MACRO_RV_REF param)
-    : task_action_cs_req_base(COPP_MACRO_STD_MOVE(param)), is_new_player_(false) {}
+    : task_action_cs_req_base(COPP_MACRO_STD_MOVE(param)), is_new_player_(false), zone_id_(0) {}
 task_action_player_login::~task_action_player_login() {}
 
 int task_action_player_login::operator()() {
     is_new_player_ = false;
+    zone_id_ = logic_config::me()->get_cfg_logic().zone_id;
 
     // 1. 包校验
     msg_cref_type req = get_request();
@@ -40,11 +41,12 @@ int task_action_player_login::operator()() {
         return hello::err::EN_SUCCESS;
     }
 
-    int                        res      = 0;
+    int res = 0;
+
     const ::hello::CSLoginReq &msg_body = req.body().mcs_login_req();
 
     // 先查找用户缓存，使用缓存。如果缓存正确则不需要拉取login表和user表
-    player::ptr_t user = player_manager::me()->find_as<player>(msg_body.user_id());
+    player::ptr_t user = player_manager::me()->find_as<player>(msg_body.user_id(), zone_id_);
     if (user && user->get_login_info().login_code() == msg_body.login_code() &&
         util::time::time_utility::get_now() <= static_cast<time_t>(user->get_login_info().login_code_expired()) && user->is_inited()) {
         WLOGDEBUG("player %s(%llu) relogin using login code", user->get_open_id().c_str(), user->get_user_id_llu());
@@ -78,7 +80,7 @@ int task_action_player_login::operator()() {
 
     hello::table_login tb;
     std::string        version;
-    res = rpc::db::login::get(msg_body.open_id().c_str(), tb, version);
+    res = rpc::db::login::get(msg_body.open_id().c_str(), zone_id_, tb, version);
     if (res < 0) {
         WLOGERROR("player %s not found", msg_body.open_id().c_str());
         set_rsp_code(hello::EN_ERR_INVALID_PARAM);
@@ -116,11 +118,10 @@ int task_action_player_login::operator()() {
 
     if (!user || !user->is_inited()) {
         if (!user) {
-            user           = player_manager::me()->create_as<player>(msg_body.user_id(), msg_body.open_id(), tb, version);
+            user           = player_manager::me()->create_as<player>(msg_body.user_id(), zone_id_, msg_body.open_id(), tb, version);
             is_new_player_ = user && user->get_version() == "1";
         } else {
-            user->get_login_info().Swap(&tb);
-            user->get_login_version().swap(version);
+            user->load_and_move_login_info(COPP_MACRO_STD_MOVE(tb), version);
         }
         // ============ 在这之后tb不再有效 ============
 
@@ -131,8 +132,7 @@ int task_action_player_login::operator()() {
 
         // TODO Log
     } else {
-        user->get_login_info().Swap(&tb);
-        user->get_login_version().swap(version);
+        user->load_and_move_login_info(COPP_MACRO_STD_MOVE(tb), version);
         // ======== 这里之后tb不再有效 ========
     }
 
@@ -176,7 +176,7 @@ int task_action_player_login::on_success() {
         return get_ret_code();
     }
 
-    player::ptr_t user = player_manager::me()->find_as<player>(req.body().mcs_login_req().user_id());
+    player::ptr_t user = player_manager::me()->find_as<player>(req.body().mcs_login_req().user_id(), zone_id_);
     if (!user) {
         WLOGERROR("login success but user not found");
         return get_ret_code();
@@ -227,7 +227,7 @@ int task_action_player_login::on_failed() {
     msg_cref_type req = get_request();
 
     if (req.has_body() && req.body().has_mcs_login_req()) {
-        player::ptr_t user = player_manager::me()->find_as<player>(req.body().mcs_login_req().user_id());
+        player::ptr_t user = player_manager::me()->find_as<player>(req.body().mcs_login_req().user_id(), zone_id_);
         // 如果创建了未初始化的GameUser对象，则需要移除
         if (user && !user->is_inited()) {
             user->clear_dirty_cache();

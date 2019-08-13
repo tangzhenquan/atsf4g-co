@@ -36,7 +36,7 @@ int task_action_router_transfer::operator()() {
         return hello::err::EN_SUCCESS;
     }
 
-    router_manager_base::key_t          key(req_body.object().object_type_id(), req_body.object().object_inst_id());
+    router_manager_base::key_t          key(req_body.object().object_type_id(), req_body.object().object_zone_id(), req_body.object().object_inst_id());
     std::shared_ptr<router_object_base> obj = mgr->get_base_cache(key);
 
     // 如果本地版本号更高就不用远程拉取了
