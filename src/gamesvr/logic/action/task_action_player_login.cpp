@@ -49,7 +49,7 @@ int task_action_player_login::operator()() {
     player::ptr_t user = player_manager::me()->find_as<player>(msg_body.user_id(), zone_id_);
     if (user && user->get_login_info().login_code() == msg_body.login_code() &&
         util::time::time_utility::get_now() <= static_cast<time_t>(user->get_login_info().login_code_expired()) && user->is_inited()) {
-        WLOGDEBUG("player %s(%llu) relogin using login code", user->get_open_id().c_str(), user->get_user_id_llu());
+        WPLOGDEBUG(*user, "relogin using login code");
 
         // 获取当前Session
         std::shared_ptr<session> cur_sess = get_session();
@@ -74,7 +74,7 @@ int task_action_player_login::operator()() {
         }
         cur_sess->set_player(user);
 
-        WLOGDEBUG("player %s(%llu) relogin curr data version:%s", user->get_open_id().c_str(), user->get_user_id_llu(), user->get_version().c_str());
+        WPLOGDEBUG(*user, "relogin curr data version:%s", user->get_version().c_str());
         return hello::err::EN_SUCCESS;
     }
 
@@ -96,14 +96,14 @@ int task_action_player_login::operator()() {
 
     // 2. 校验登入码
     if (util::time::time_utility::get_now() > tb.login_code_expired()) {
-        WLOGERROR("player %s(%llu) login code expired", msg_body.open_id().c_str(), static_cast<unsigned long long>(msg_body.user_id()));
+        WLOGERROR("player %s(%u:%llu) login code expired", msg_body.open_id().c_str(), zone_id_, static_cast<unsigned long long>(msg_body.user_id()));
         set_rsp_code(hello::EN_ERR_LOGIN_VERIFY);
         return hello::err::EN_SUCCESS;
     }
 
     if (0 != UTIL_STRFUNC_STRCMP(msg_body.login_code().c_str(), tb.login_code().c_str())) {
-        WLOGERROR("player %s(%llu) login code error(expected: %s, real: %s)", msg_body.open_id().c_str(), static_cast<unsigned long long>(msg_body.user_id()),
-                  tb.login_code().c_str(), msg_body.login_code().c_str());
+        WLOGERROR("player %s(%u:%llu) login code error(expected: %s, real: %s)", msg_body.open_id().c_str(), 
+            zone_id_, static_cast<unsigned long long>(msg_body.user_id()), tb.login_code().c_str(), msg_body.login_code().c_str());
         set_rsp_code(hello::EN_ERR_LOGIN_VERIFY);
         return hello::err::EN_SUCCESS;
     }
@@ -150,7 +150,7 @@ int task_action_player_login::operator()() {
 
     my_sess->set_player(user);
 
-    WLOGDEBUG("player %s(%llu) login curr data version:%s", user->get_open_id().c_str(), user->get_user_id_llu(), user->get_version().c_str());
+    WPLOGDEBUG(*user, "login curr data version:%s", user->get_version().c_str());
 
     // 9. 登入成功
     // TODO Log
@@ -214,7 +214,7 @@ int task_action_player_login::on_success() {
 
             int res = task_manager::me()->start_task(tid, start_data);
             if (res < 0) {
-                WLOGERROR("start task_action_player_async_jobs for player %s(%llu) failed, res: %d", user->get_open_id().c_str(), user->get_user_id_llu(), res);
+                WPLOGERROR(*user, "start task_action_player_async_jobs failed, res: %d", res);
             }
         }
     }

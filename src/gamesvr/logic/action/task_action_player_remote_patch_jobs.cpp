@@ -67,7 +67,7 @@ int task_action_player_remote_patch_jobs::operator()() {
     //     // 保存玩家数据
     //     ret = cache->save(NULL);
     //     if (ret < 0) {
-    //         WLOGERROR("save player %s(%llu) failed, res: %d", param_.user->get_open_id().c_str(), param_.user->get_user_id_llu(), res);
+    //         WPLOGERROR(*param_.user, "save failed, res: %d", res);
     //         break;
     //     }
     //
@@ -86,8 +86,9 @@ int task_action_player_remote_patch_jobs::operator()() {
 }
 
 int task_action_player_remote_patch_jobs::on_success() {
-    WLOGDEBUG("player %s(%llu) do task_action_player_remote_patch_jobs success", param_.user ? param_.user->get_open_id().c_str() : "UNKNOWN",
-              param_.user ? param_.user->get_user_id_llu() : 0);
+    if (param_.user) {
+        WPLOGDEBUG(*param_.user, "do task_action_player_remote_patch_jobs success");
+    }
 
     // 尝试再启动一次，启动排队后的任务
     if (is_writable_ && param_.user) {
@@ -106,8 +107,9 @@ int task_action_player_remote_patch_jobs::on_success() {
 }
 
 int task_action_player_remote_patch_jobs::on_failed() {
-    WLOGERROR("player %s(%llu) do task_action_player_remote_patch_jobs failed, res: %d", param_.user ? param_.user->get_open_id().c_str() : "UNKNOWN",
-              param_.user ? param_.user->get_user_id_llu() : 0, get_ret_code());
+    if (param_.user) {
+        WPLOGERROR(*param_.user, "do task_action_player_remote_patch_jobs failed, res: %d", get_ret_code());
+    }
 
     // 尝试再启动一次，启动排队后的任务
     if (is_writable_ && param_.user) {

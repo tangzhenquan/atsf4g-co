@@ -26,8 +26,8 @@ int task_action_player_async_jobs::operator()() {
 }
 
 int task_action_player_async_jobs::on_success() {
-    WLOGDEBUG("player %s(%llu) do task_action_player_async_jobs success", param_.user ? param_.user->get_open_id().c_str() : "UNKNOWN",
-              param_.user ? param_.user->get_user_id_llu() : 0);
+    WLOGDEBUG("player %s(%u:%llu) do task_action_player_async_jobs success", param_.user ? param_.user->get_open_id().c_str() : "UNKNOWN",
+              param_.user ? param_.user->get_zone_id() : 0, param_.user ? param_.user->get_user_id_llu() : 0);
 
     // 启动玩家数据异步命令patch任务
     if (param_.user) {
@@ -37,7 +37,7 @@ int task_action_player_async_jobs::on_success() {
 }
 
 int task_action_player_async_jobs::on_failed() {
-    WLOGERROR("player %s(%llu) do task_action_player_async_jobs failed, res: %d", param_.user ? param_.user->get_open_id().c_str() : "UNKNOWN",
-              param_.user ? param_.user->get_user_id_llu() : 0, get_ret_code());
+    WLOGERROR("player %s(%u%llu) do task_action_player_async_jobs failed, res: %d", param_.user ? param_.user->get_open_id().c_str() : "UNKNOWN",
+              param_.user ? param_.user->get_zone_id() : 0, param_.user ? param_.user->get_user_id_llu() : 0, get_ret_code());
     return get_ret_code();
 }

@@ -166,8 +166,8 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
         set_router_server_id(obj->get_login_info().router_server_id(), obj->get_login_info().router_version());
     } else if (self_bus_id != get_router_server_id()) {
         // 不在这个进程上
-        WLOGERROR("player_cache %s(%llu) is in server 0x%llx but try to pull in server 0x%llx", obj->get_open_id().c_str(), obj->get_user_id_llu(),
-                  get_router_server_id_llu(), static_cast<unsigned long long>(self_bus_id));
+        WLOGERROR("player_cache %s(%u:%llu) is in server 0x%llx but try to pull in server 0x%llx", obj->get_open_id().c_str(), obj->get_zone_id(), 
+            obj->get_user_id_llu(), get_router_server_id_llu(), static_cast<unsigned long long>(self_bus_id));
 
         return hello::err::EN_ROUTER_IN_OTHER_SERVER;
     }
@@ -193,7 +193,7 @@ int router_player_cache::save_object(void *priv_data) {
         if (hello::err::EN_DB_OLD_VERSION == res) {
             res = rpc::db::login::get(obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_login_info(), obj->get_login_version());
             if (res < 0) {
-                WLOGERROR("player_cache %s(%llu) try load login data failed.", obj->get_open_id().c_str(), obj->get_user_id_llu());
+                WLOGERROR("player_cache %s(%u:%llu) try load login data failed.", obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_user_id_llu());
                 return res;
             }
         }
@@ -203,8 +203,8 @@ int router_player_cache::save_object(void *priv_data) {
         }
 
         if (0 == obj->get_login_info().router_server_id() && 0 != get_router_server_id()) {
-            WLOGERROR("player_cache %s(%llu) login bus id error(expected: 0x%llx, real: 0x%llx)", obj->get_open_id().c_str(), obj->get_user_id_llu(),
-                      get_router_server_id_llu(), static_cast<unsigned long long>(obj->get_login_info().router_server_id()));
+            WLOGERROR("player_cache %s(%u:%llu) login bus id error(expected: 0x%llx, real: 0x%llx)", obj->get_open_id().c_str(), obj->get_zone_id(), 
+                obj->get_user_id_llu(), get_router_server_id_llu(), static_cast<unsigned long long>(obj->get_login_info().router_server_id()));
 
             uint64_t old_router_server_id = obj->get_login_info().router_server_id();
             uint32_t old_router_ver       = obj->get_login_info().router_version();
@@ -305,7 +305,7 @@ int router_player_cache::save_object(void *priv_data) {
     hello::table_user user_tb;
     obj->dump(user_tb, true);
 
-    WLOGDEBUG("player_cache %s(%llu) save curr data version:%s", obj->get_open_id().c_str(), obj->get_user_id_llu(), obj->get_version().c_str());
+    WLOGDEBUG("player_cache %s(%u:%llu) save curr data version:%s", obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_user_id_llu(), obj->get_version().c_str());
 
     // RPC save to DB
     res = rpc::db::player::set(obj->get_user_id(), obj->get_zone_id(), user_tb, obj->get_version());
@@ -318,7 +318,7 @@ int router_player_cache::save_object(void *priv_data) {
     }
 
     if (res < 0) {
-        WLOGERROR("player_cache %s(%llu) try save db failed. res:%d version:%s", obj->get_open_id().c_str(), obj->get_user_id_llu(), res,
+        WLOGERROR("player_cache %s(%u:%llu) try save db failed. res:%d version:%s", obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_user_id_llu(), res,
                   obj->get_version().c_str());
     }
 

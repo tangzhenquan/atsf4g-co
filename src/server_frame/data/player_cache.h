@@ -188,4 +188,24 @@ private:
     player_cache_dirty_wrapper<hello::player_options>       player_options_;
 };
 
+
+// 玩家日志输出工具
+#ifdef _MSC_VER
+#define WPLOGTRACE(PLAYER, fmt, ...) WLOGTRACE("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#define WPLOGDEBUG(PLAYER, fmt, ...) WLOGDEBUG("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#define WPLOGNOTICE(PLAYER, fmt, ...) WLOGNOTICE("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#define WPLOGINFO(PLAYER, fmt, ...) WLOGINFO("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#define WPLOGWARNING(PLAYER, fmt, ...) WLOGWARNING("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#define WPLOGERROR(PLAYER, fmt, ...) WLOGERROR("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#define WPLOGFATAL(PLAYER, fmt, ...) WLOGFATAL("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), __VA_ARGS__)
+#else
+#define WPLOGTRACE(PLAYER, fmt, args...) WLOGTRACE("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#define WPLOGDEBUG(PLAYER, fmt, args...) WLOGDEBUG("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#define WPLOGNOTICE(PLAYER, fmt, args...) WLOGNOTICE("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#define WPLOGINFO(PLAYER, fmt, args...) WLOGINFO("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#define WPLOGWARNING(PLAYER, fmt, args...) WLOGWARNING("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#define WPLOGERROR(PLAYER, fmt, args...) WLOGERROR("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#define WPLOGFATAL(PLAYER, fmt, args...) WLOGFATAL("player %s(%u:%llu) " fmt, (PLAYER).get_open_id().c_str(), (PLAYER).get_zone_id(), (PLAYER).get_user_id_llu(), ##args)
+#endif
+
 #endif

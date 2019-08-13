@@ -15,7 +15,7 @@
 player_cache::player_cache(fake_constructor &) : user_id_(0), data_version_(0) {
 }
 
-player_cache::~player_cache() { WLOGDEBUG("player %s(%llu) destroyed", openid_id_.c_str(), static_cast<unsigned long long>(user_id_)); }
+player_cache::~player_cache() { WPLOGDEBUG(*this, "destroyed"); }
 
 bool player_cache::can_be_writable() const {
     // player cache always can not be writable

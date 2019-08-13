@@ -190,7 +190,7 @@ void player::try_patch_remote_command() {
 
         int res = task_manager::me()->start_task(tid, start_data);
         if (res < 0) {
-            WLOGERROR("start task_action_player_remote_patch_jobs for player %s(%llu) failed, res: %d", get_open_id().c_str(), get_user_id_llu(), res);
+            WLOGERROR("start task_action_player_remote_patch_jobs for player %s(%u:%llu) failed, res: %d", get_open_id().c_str(), get_zone_id(), get_user_id_llu(), res);
             remote_command_patch_task_.reset();
             return;
         }

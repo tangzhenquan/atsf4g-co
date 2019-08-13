@@ -31,20 +31,20 @@ int task_action_player_kickoff::operator()() {
     const std::string player_open_id = req_msg.head().player_open_id();
     player::ptr_t user = player_manager::me()->find_as<player>(player_user_id, player_zone_id);
     if (!user) {
-        WLOGERROR("user %s(%llu) not found, maybe already logout.", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id));
+        WLOGERROR("user %s(%u:%llu) not found, maybe already logout.", player_open_id.c_str(), player_zone_id, static_cast<unsigned long long>(player_user_id));
 
         // 尝试保存用户数据
         hello::table_login user_lg;
         std::string version;
         int res = rpc::db::login::get(player_open_id.c_str(), player_zone_id, user_lg, version);
         if (res < 0) {
-            WLOGERROR("user %s(%llu) try load login data failed.", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id));
+            WLOGERROR("user %s(%u:%llu) try load login data failed.", player_open_id.c_str(), player_zone_id, static_cast<unsigned long long>(player_user_id));
             set_rsp_code(hello::err::EN_DB_REPLY_ERROR);
             return hello::err::EN_SUCCESS;
         }
 
         if (user_lg.router_server_id() != logic_config::me()->get_self_bus_id()) {
-            WLOGERROR("user %s(%llu) login pd error(expected: 0x%llx, real: 0x%llx)", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id),
+            WLOGERROR("user %s(%u:%llu) login pd error(expected: 0x%llx, real: 0x%llx)", player_open_id.c_str(), player_zone_id, static_cast<unsigned long long>(player_user_id),
                       static_cast<unsigned long long>(user_lg.router_server_id()), static_cast<unsigned long long>(logic_config::me()->get_self_bus_id()));
             set_rsp_code(hello::EN_ERR_SYSTEM);
             return hello::err::EN_SUCCESS;
@@ -53,7 +53,7 @@ int task_action_player_kickoff::operator()() {
         user_lg.set_router_server_id(0);
         res = rpc::db::login::set(player_open_id.c_str(), player_zone_id, user_lg, version);
         if (res < 0) {
-            WLOGERROR("user %s(%llu) try load login data failed.", player_open_id.c_str(), static_cast<unsigned long long>(player_user_id));
+            WLOGERROR("user %s(%u:%llu) try load login data failed.", player_open_id.c_str(), player_zone_id, static_cast<unsigned long long>(player_user_id));
             set_rsp_code(hello::err::EN_DB_SEND_FAILED);
             return hello::err::EN_SUCCESS;
         }
@@ -73,7 +73,7 @@ int task_action_player_kickoff::operator()() {
     }
 
     if (!player_manager::me()->remove(user, true)) {
-        WLOGERROR("kickoff user %s(%llu) failed", user->get_open_id().c_str(), user->get_user_id_llu());
+        WLOGERROR("kickoff user %s(%u:%llu) failed", user->get_open_id().c_str(), player_zone_id, user->get_user_id_llu());
         set_rsp_code(hello::EN_ERR_SYSTEM);
         return hello::err::EN_SUCCESS;
     }
