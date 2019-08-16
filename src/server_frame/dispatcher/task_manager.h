@@ -196,7 +196,10 @@ public:
     inline const stack_pool_t::ptr_t &get_stack_pool() const { return stack_pool_; }
     inline const mgr_ptr_t &          get_native_manager() const { return native_mgr_; }
 
+    bool is_busy() const;
 private:
+    bool check_sys_config() const;
+    
     /**
      * @brief 创建任务
      * @param task 协程任务
@@ -208,6 +211,10 @@ private:
     int report_create_error(const char *fn_name);
 
 private:
+    time_t              stat_interval_;
+    time_t              stat_last_checkpoint_;
+    size_t              conf_busy_count_;
+    size_t              conf_busy_warn_count_;
     mgr_ptr_t           native_mgr_;
     stack_pool_t::ptr_t stack_pool_;
 };

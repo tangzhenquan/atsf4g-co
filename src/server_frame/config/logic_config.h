@@ -51,7 +51,14 @@ public:
         time_t task_nomsg_timeout;
         time_t task_csmsg_timeout;
         time_t task_paymsg_timeout;
+        time_t task_stats_interval;
         size_t task_stack_size;
+        size_t task_stack_gc_once_number;
+        size_t task_stack_mmap_count;     // check sys mmap configure(linux: only, >=max(task_stack_busy_count, task_stack_pool_max_count)*2+task_stack_keep_count)
+        size_t task_stack_pool_max_count;
+        size_t task_stack_busy_count;
+        size_t task_stack_keep_count;
+        size_t task_stack_busy_warn_count;
 
         size_t      player_max_online_number;
         std::string player_default_openid;

@@ -86,14 +86,28 @@ void logic_config::_load_logic(util::config::ini_loader &loader) {
     loader.dump_to("logic.session.login_ban_time", cfg_logic_.session_login_ban_time);
     loader.dump_to("logic.session.tick_sec", cfg_logic_.session_tick_sec);
 
-    cfg_logic_.task_stack_size     = 1024 * 1024; // 默认1MB
-    cfg_logic_.task_csmsg_timeout  = 5;           // 5s
-    cfg_logic_.task_nomsg_timeout  = 1800;        // 1800s for auto task
-    cfg_logic_.task_paymsg_timeout = 300;         // 300s for pay task
+    cfg_logic_.task_stack_size           = 1024 * 1024; // default for 1MB
+    cfg_logic_.task_csmsg_timeout        = 5;           // 5s
+    cfg_logic_.task_nomsg_timeout        = 1800;        // 1800s for auto task
+    cfg_logic_.task_paymsg_timeout       = 300;         // 300s for pay task
+    cfg_logic_.task_stats_interval       = 60;          // 60s for stats interval
+    cfg_logic_.task_stack_gc_once_number = 10;
+    cfg_logic_.task_stack_mmap_count     = 60000;       // check sys mmap configure(linux: only, >=task_stack_busy_count*2+task_stack_keep_count)
+    cfg_logic_.task_stack_pool_max_count = 25000;
+    cfg_logic_.task_stack_busy_count     = 20000;
+    cfg_logic_.task_stack_keep_count     = 10000;
+    cfg_logic_.task_stack_busy_warn_count= 15000;
     loader.dump_to("logic.task.stack.size", cfg_logic_.task_stack_size);
     loader.dump_to("logic.task.csmsg.timeout", cfg_logic_.task_csmsg_timeout);
     loader.dump_to("logic.task.nomsg.timeout", cfg_logic_.task_nomsg_timeout);
-    loader.dump_to("logic.task.paymsg.timeout", cfg_logic_.task_paymsg_timeout);
+    loader.dump_to("logic.task.stats.interval", cfg_logic_.task_paymsg_timeout);
+    load_int_compare(loader, "logic.task.stack.gc_once_number", cfg_logic_.task_stack_gc_once_number, 10, 0);
+    load_int_compare(loader, "logic.task.stack.pool_max_count", cfg_logic_.task_stack_pool_max_count, 25000, 0);
+    load_int_compare(loader, "logic.task.stack.mmap_count", cfg_logic_.task_stack_mmap_count, 60000, 0);
+    load_int_compare(loader, "logic.task.stack.busy_count", cfg_logic_.task_stack_busy_count, 20000, 0);
+    load_int_compare(loader, "logic.task.stack.keep_count", cfg_logic_.task_stack_keep_count, 10000, 100);
+    load_int_compare(loader, "logic.task.stack.busy_warn_count", cfg_logic_.task_stack_busy_warn_count, 15000, 0);
+    
 
     cfg_logic_.heartbeat_interval        = 120;   // 120s for every ping/pong
     cfg_logic_.heartbeat_tolerance       = 20;    // 20s for network latency tolerance

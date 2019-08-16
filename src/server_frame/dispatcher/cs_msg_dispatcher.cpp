@@ -72,7 +72,8 @@ int32_t cs_msg_dispatcher::dispatch(const atbus::protocol::msg &msg, const void 
         session_key.bus_id     = msg.body.forward->from;
         session_key.session_id = req_msg.head.session_id;
 
-        if (!session_manager::me()->find(session_key)) {
+        std::shared_ptr<session> sess = session_manager::me()->find(session_key);
+        if (!sess) {
             WLOGERROR("session [0x%llx, 0x%llx] not found, try to kickoff", static_cast<unsigned long long>(session_key.bus_id),
                       static_cast<unsigned long long>(session_key.session_id));
             ret = hello::err::EN_SYS_NOTFOUND;
@@ -92,6 +93,14 @@ int32_t cs_msg_dispatcher::dispatch(const atbus::protocol::msg &msg, const void 
 
         cs_msg.mutable_head()->set_session_bus_id(session_key.bus_id);
         cs_msg.mutable_head()->set_session_id(session_key.session_id);
+
+        if (task_manager::me()->is_busy()) {
+            cs_msg.mutable_head()->set_error_code(hello::EN_ERR_SYSTEM_BUSY);
+            sess->send_msg_to_client(cs_msg);
+            WLOGINFO("server busy and send msg back to session [0x%llx, 0x%llx]", static_cast<unsigned long long>(session_key.bus_id),
+                      static_cast<unsigned long long>(session_key.session_id));
+            break;
+        }
 
         ret = on_recv_msg(start_data.message, start_data.private_data);
         if (ret < 0) {

@@ -156,6 +156,8 @@ enum EnErrorCode {
                             [(error_code.description) = "无法连接到服务器"];
     EN_ERR_MAINTENANCE = -113
                          [(error_code.description) = "服务器正在维护"];
+    EN_ERR_SYSTEM_BUSY = -114
+                         [(error_code.description) = "服务器系统繁忙，请稍后重试"];
 
     // openapi
     EN_ERR_OPENAPI_LIMIT = -201
