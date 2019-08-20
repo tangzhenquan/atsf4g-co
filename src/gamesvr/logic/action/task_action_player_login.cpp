@@ -48,7 +48,7 @@ int task_action_player_login::operator()() {
     // 先查找用户缓存，使用缓存。如果缓存正确则不需要拉取login表和user表
     player::ptr_t user = player_manager::me()->find_as<player>(msg_body.user_id(), zone_id_);
     if (user && user->get_login_info().login_code() == msg_body.login_code() &&
-        util::time::time_utility::get_now() <= static_cast<time_t>(user->get_login_info().login_code_expired()) && user->is_inited()) {
+        util::time::time_utility::get_now() <= static_cast<time_t>(user->get_login_info().login_code_expired()) && user->is_writable()) {
         WPLOGDEBUG(*user, "relogin using login code");
 
         // 获取当前Session

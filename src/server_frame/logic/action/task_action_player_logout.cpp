@@ -2,6 +2,8 @@
 // Created by owent on 2016/10/6.
 //
 
+#include <log/log_wrapper.h>
+
 #include <protocol/pbdesc/svr.const.err.pb.h>
 
 #include <rpc/db/player.h>
@@ -9,7 +11,9 @@
 #include <data/player_cache.h>
 #include <data/session.h>
 #include <logic/session_manager.h>
+#include <logic/player_manager.h>
 
+#include <utility/protobuf_mini_dumper.h>
 
 #include "task_action_player_logout.h"
 
@@ -27,14 +31,9 @@ int task_action_player_logout::operator()() {
         player_cache::ptr_t user = s->get_player();
         // 如果玩家数据是缓存，不是实际登入点，则不用保存
         if (user && user->is_writable()) {
-
-            hello::table_user user_tb;
-            user->dump(user_tb, true);
-
-            std::string db_version = user->get_version();
-            int res = rpc::db::player::set(user->get_user_id(), user->get_zone_id(), user_tb, db_version);
-            if (res >= 0 && !db_version.empty()) {
-                user->set_version(db_version);
+            int res = player_manager::me()->remove(user, false);
+            if (res < 0) {
+                WPLOGERROR(*user, "logout failed, res: %d(%s)", res, protobuf_mini_dumper_get_error_msg(res));
             }
         }
     }
