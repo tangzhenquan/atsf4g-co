@@ -29,9 +29,6 @@ include("${PROJECT_SERVER_FRAME_BAS_DIR}/protocol/generate_proto_source.cmake")
 list(REMOVE_DUPLICATES SRC_LIST)
 
 source_group_by_dir(SRC_LIST)
-if ( NOT MSVC AND NOT APPLE )
-    add_definitions(-shared)
-endif()
 
 # these service will use atgateway protocol
 include_directories(${ATFRAMEWORK_SERVICE_GATEWAY_PROTOCOL_DIR})
