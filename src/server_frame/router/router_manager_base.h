@@ -40,6 +40,7 @@ public:
 
     inline bool is_closing() const { return is_closing_; }
 
+    virtual void on_stop();
 protected:
     int send_msg_raw(router_object_base &obj, hello::SSMsg &msg);
 
@@ -49,8 +50,6 @@ protected:
 private:
     uint32_t type_id_;
     bool     is_closing_;
-
-    friend class router_manager_set;
 };
 
 

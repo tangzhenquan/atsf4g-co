@@ -122,7 +122,7 @@ int router_manager_set::stop() {
     is_closing_ = true;
     for (int i = 0; i < hello::EnRouterObjectType_ARRAYSIZE; ++i) {
         if (NULL != mgrs_[i]) {
-            mgrs_[i]->is_closing_ = is_closing_;
+            mgrs_[i]->on_stop();
         }
     }
 
@@ -318,6 +318,10 @@ bool router_manager_set::insert_timer(router_manager_base *mgr, const std::share
         return false;
     }
 
+    if (is_closing()) {
+        return false;
+    }
+
     router_manager_base *checked_mgr = get_manager(mgr->get_type_id());
     if (checked_mgr != mgr) {
         WLOGERROR("router_manager_set has registered %u to %s, but try to setup timer of %s", mgr->get_type_id(),
@@ -375,7 +379,9 @@ int router_manager_set::register_manager(router_manager_base *b) {
     mgrs_[type] = b;
 
     // copy some flags
-    b->is_closing_ = is_closing_;
+    if (is_closing()) {
+        b->on_stop();
+    }
     return hello::err::EN_SUCCESS;
 }
 

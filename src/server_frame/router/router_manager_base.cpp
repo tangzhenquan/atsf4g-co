@@ -76,3 +76,7 @@ int router_manager_base::send_msg_raw(router_object_base &obj, hello::SSMsg &msg
 
     return ss_msg_dispatcher::me()->send_to_proc(obj.get_router_server_id(), msg);
 }
+
+void router_manager_base::on_stop() {
+    is_closing_ = false;
+}

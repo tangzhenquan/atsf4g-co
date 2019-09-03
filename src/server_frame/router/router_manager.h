@@ -58,6 +58,17 @@ public:
         return std::dynamic_pointer_cast<router_object_base>(get_cache(key));
     }
 
+    virtual void on_stop() UTIL_CONFIG_OVERRIDE {
+        router_manager_base::on_stop();
+
+        // unbind LRU timer
+        for (typename std::unordered_map<key_t, ptr_t>::iterator iter = caches_.begin(); iter != caches_.end(); ++iter) {
+            if (iter->second) {
+                iter->second->unset_timer_ref();
+            }
+        }
+    }
+
     ptr_t get_cache(const key_t &key) const {
         typename std::unordered_map<key_t, ptr_t>::const_iterator iter = caches_.find(key);
         if (iter == caches_.end()) {
