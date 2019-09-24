@@ -94,7 +94,7 @@ int task_action_ss_req_base::hook_run() {
             // 路由消息转发
             int32_t res = 0;
             if (0 != obj->get_router_server_id()) {
-                int32_t res = mgr->send_msg(*obj, get_request());
+                res = mgr->send_msg(*obj, get_request());
 
                 // 如果路由转发成功，需要禁用掉回包和通知事件，也不需要走逻辑处理了
                 if (res < 0) {
@@ -125,6 +125,17 @@ int task_action_ss_req_base::hook_run() {
 uint64_t task_action_ss_req_base::get_request_bus_id() const {
     msg_cref_type msg = get_request();
     return msg.head().bus_id();
+}
+
+hello::SSMsgBody &task_action_ss_req_base::get_request_body() {
+    hello::SSMsg& req_msg = get_request();
+    if (!req_msg.body_bin().empty() && (!req_msg.has_body() || req_msg.body().body_oneof_case() == hello::SSMsgBody::BODY_ONEOF_NOT_SET)) {
+        if(false == req_msg.mutable_body()->ParseFromString(req_msg.body_bin())) {
+            WLOGERROR("task %s [0x%llx] unpack message body failed, msg: %s", name(), get_task_id_llu(), req_msg.mutable_body()->InitializationErrorString().c_str());
+        }
+    }
+
+    return *req_msg.mutable_body();
 }
 
 task_action_ss_req_base::msg_ref_type task_action_ss_req_base::add_rsp_msg(uint64_t dst_pd) {

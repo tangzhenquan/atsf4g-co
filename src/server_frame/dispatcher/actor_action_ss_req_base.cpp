@@ -26,6 +26,17 @@ uint64_t actor_action_ss_req_base::get_request_bus_id() const {
     return msg.head().bus_id();
 }
 
+hello::SSMsgBody &actor_action_ss_req_base::get_request_body() {
+    hello::SSMsg& req_msg = get_request();
+    if (!req_msg.body_bin().empty() && (!req_msg.has_body() || req_msg.body().body_oneof_case() == hello::SSMsgBody::BODY_ONEOF_NOT_SET)) {
+        if(false == req_msg.mutable_body()->ParseFromString(req_msg.body_bin())) {
+            WLOGERROR("task %s [%p] unpack message body failed, msg: %s", name(), this, req_msg.mutable_body()->InitializationErrorString().c_str());
+        }
+    }
+
+    return *req_msg.mutable_body();
+}
+
 actor_action_ss_req_base::msg_ref_type actor_action_ss_req_base::add_rsp_msg(uint64_t dst_pd) {
     rsp_msgs_.push_back(msg_type());
     msg_ref_type msg = rsp_msgs_.back();

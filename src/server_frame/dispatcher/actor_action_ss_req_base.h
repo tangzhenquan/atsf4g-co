@@ -36,6 +36,7 @@ public:
     virtual ~actor_action_ss_req_base();
 
     uint64_t get_request_bus_id() const;
+    hello::SSMsgBody &get_request_body();
 
     msg_ref_type add_rsp_msg(uint64_t dst_pd = 0);
 

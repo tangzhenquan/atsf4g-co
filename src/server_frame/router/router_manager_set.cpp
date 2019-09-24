@@ -120,11 +120,6 @@ int router_manager_set::stop() {
     }
 
     is_closing_ = true;
-    for (int i = 0; i < hello::EnRouterObjectType_ARRAYSIZE; ++i) {
-        if (NULL != mgrs_[i]) {
-            mgrs_[i]->on_stop();
-        }
-    }
 
     // prepare to start cleanup task
 
@@ -164,6 +159,13 @@ int router_manager_set::stop() {
 
                 ctor_param.pending_list->push_back(obj);
             }
+        }
+    }
+
+    // cleanup router manager now, it will also cleanup timers_
+    for (int i = 0; i < hello::EnRouterObjectType_ARRAYSIZE; ++i) {
+        if (NULL != mgrs_[i]) {
+            mgrs_[i]->on_stop();
         }
     }
 
