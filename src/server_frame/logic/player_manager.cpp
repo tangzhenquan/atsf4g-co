@@ -29,7 +29,7 @@ bool player_manager::remove(player_manager::player_ptr_t u, bool force_kickoff) 
         return true;
     }
 
-    if (!force_kickoff || !cache->is_writable()) {
+    if (!force_kickoff && !cache->is_writable()) {
         return true;
     }
 
