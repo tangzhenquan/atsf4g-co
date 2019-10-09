@@ -12,7 +12,7 @@
 #include "session.h"
 
 
-player_cache::player_cache(fake_constructor &) : user_id_(0), data_version_(0) {
+player_cache::player_cache(fake_constructor &) : user_id_(0), zone_id_(0), data_version_(0) {
 }
 
 player_cache::~player_cache() { WPLOGDEBUG(*this, "destroyed"); }
