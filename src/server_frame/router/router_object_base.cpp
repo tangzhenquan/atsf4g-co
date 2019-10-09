@@ -89,7 +89,8 @@ router_object_base::router_object_base(const key_t &k)
 }
 
 router_object_base::router_object_base(key_t &&k)
-    : key_(k), last_save_time_(0), last_visit_time_(0), router_svr_id_(0), router_svr_ver_(0), timer_sequence_(0), flags_(0) {
+    : key_(k), last_save_time_(0), last_visit_time_(0), router_svr_id_(0), router_svr_ver_(0), timer_sequence_(0), timer_list_(NULL), saving_sequence_(0),
+      saved_sequence_(0), flags_(0) {
 
     // 创建时初始化最后访问时间
     refresh_visit_time();
