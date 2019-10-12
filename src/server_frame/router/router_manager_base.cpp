@@ -19,6 +19,12 @@ router_manager_base::router_manager_base(uint32_t type_id) : stat_size_(0), type
 }
 router_manager_base::~router_manager_base() { router_manager_set::me()->unregister_manager(this); }
 
+bool router_manager_base::is_auto_mutable_object() const { return false; }
+
+bool router_manager_base::is_auto_mutable_cache() const { return true; }
+
+uint64_t router_manager_base::get_default_router_server_id(const router_object_base &router_cache) const { return 0; }
+
 int router_manager_base::send_msg(router_object_base &obj, hello::SSMsg &msg) {
     // 如果正在转移过程中，追加到pending列表
     if (obj.check_flag(router_object_base::flag_t::EN_ROFT_TRANSFERING)) {
@@ -61,8 +67,8 @@ int router_manager_base::send_msg_raw(router_object_base &obj, hello::SSMsg &msg
     }
 
     if (0 == obj.get_router_server_id()) {
-        WLOGERROR("router object (type=%u) %u:%u:0x%llx has no valid router server", get_type_id(), obj.get_key().type_id,
-                  obj.get_key().zone_id, static_cast<unsigned long long>(obj.get_key().object_id_ull()));
+        WLOGERROR("router object (type=%u) %u:%u:0x%llx has no valid router server", get_type_id(), obj.get_key().type_id, obj.get_key().zone_id,
+                  static_cast<unsigned long long>(obj.get_key().object_id_ull()));
         return hello::err::EN_ROUTER_NOT_IN_SERVER;
     }
 
@@ -77,6 +83,4 @@ int router_manager_base::send_msg_raw(router_object_base &obj, hello::SSMsg &msg
     return ss_msg_dispatcher::me()->send_to_proc(obj.get_router_server_id(), msg);
 }
 
-void router_manager_base::on_stop() {
-    is_closing_ = false;
-}
+void router_manager_base::on_stop() { is_closing_ = false; }

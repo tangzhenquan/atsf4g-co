@@ -32,6 +32,9 @@ public:
     virtual bool remove_cache(const key_t &key, std::shared_ptr<router_object_base> cache, void *priv_data)  = 0;
     virtual bool remove_object(const key_t &key, std::shared_ptr<router_object_base> cache, void *priv_data) = 0;
 
+    virtual bool     is_auto_mutable_object() const;
+    virtual bool     is_auto_mutable_cache() const;
+    virtual uint64_t get_default_router_server_id(const router_object_base &router_cache) const;
 
     int send_msg(router_object_base &obj, hello::SSMsg &msg);
     int send_msg(const key_t &key, hello::SSMsg &msg);
@@ -41,6 +44,7 @@ public:
     inline bool is_closing() const { return is_closing_; }
 
     virtual void on_stop();
+
 protected:
     int send_msg_raw(router_object_base &obj, hello::SSMsg &msg);
 

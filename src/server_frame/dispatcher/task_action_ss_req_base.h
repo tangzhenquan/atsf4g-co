@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "dispatcher_type_defines.h"
 
 #include "task_action_base.h"
@@ -38,7 +40,7 @@ public:
 
     virtual int hook_run() UTIL_CONFIG_OVERRIDE;
 
-    uint64_t get_request_bus_id() const;
+    uint64_t          get_request_bus_id() const;
     hello::SSMsgBody &get_request_body();
 
     msg_ref_type add_rsp_msg(uint64_t dst_pd = 0);
@@ -48,6 +50,10 @@ public:
 
 protected:
     virtual void send_rsp_msg() UTIL_CONFIG_OVERRIDE;
+
+    virtual bool is_router_offline_ignored(); // 忽略路由对象不在线
+
+    std::pair<bool, int> filter_router_msg();
 
 private:
     std::list<msg_type> rsp_msgs_;
