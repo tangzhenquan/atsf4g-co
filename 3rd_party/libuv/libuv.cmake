@@ -3,36 +3,37 @@ if (NOT 3RD_PARTY_LIBUV_BASE_DIR)
     set (3RD_PARTY_LIBUV_BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif()
 
-set (3RD_PARTY_LIBUV_DEFAULT_VERSION "v1.30.1")
+set (3RD_PARTY_LIBUV_PKG_DIR "${3RD_PARTY_LIBUV_BASE_DIR}/pkg")
 
-if (NOT Libuv_ROOT AND NOT LIBUV_ROOT AND EXISTS "${3RD_PARTY_LIBUV_BASE_DIR}/prebuilt/include")
-    set (Libuv_ROOT "${3RD_PARTY_LIBUV_BASE_DIR}/prebuilt/${PLATFORM_BUILD_PLATFORM_NAME}")
-endif ()
+set (3RD_PARTY_LIBUV_DEFAULT_VERSION "1.32.0")
+set (3RD_PARTY_LIBUV_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/prebuilt/${PLATFORM_BUILD_PLATFORM_NAME}")
 
-find_package(Libuv)
+if(NOT EXISTS ${3RD_PARTY_LIBUV_PKG_DIR})
+    file(MAKE_DIRECTORY ${3RD_PARTY_LIBUV_PKG_DIR})
+endif()
+
+# force to use prebuilt when using mingw
+# if (MINGW)
+#     set(LIBUV_ROOT ${3RD_PARTY_LIBUV_ROOT_DIR})
+# endif()
+
+FindConfigurePackage(
+    PACKAGE Libuv
+    BUILD_WITH_CMAKE
+    CMAKE_FLAGS "-DCMAKE_POSITION_INDEPENDENT_CODE=YES" "-DBUILD_SHARED_LIBS=OFF" "-DBUILD_TESTING=OFF"
+    MAKE_FLAGS "-j8"
+    WORKING_DIRECTORY "${3RD_PARTY_LIBUV_PKG_DIR}"
+    BUILD_DIRECTORY "${3RD_PARTY_LIBUV_PKG_DIR}/libuv-v${3RD_PARTY_LIBUV_DEFAULT_VERSION}/build_jobs_${PLATFORM_BUILD_PLATFORM_NAME}"
+    PREFIX_DIRECTORY "${3RD_PARTY_LIBUV_ROOT_DIR}"
+    SRC_DIRECTORY_NAME "libuv-v${3RD_PARTY_LIBUV_DEFAULT_VERSION}"
+    TAR_URL "http://dist.libuv.org/dist/v${3RD_PARTY_LIBUV_DEFAULT_VERSION}/libuv-v${3RD_PARTY_LIBUV_DEFAULT_VERSION}.tar.gz"
+)
+
 if(Libuv_FOUND)
-    EchoWithColor(COLOR GREEN "-- Dependency: Libuv prebuilt found.(${Libuv_LIBRARIES})")
+    EchoWithColor(COLOR GREEN "-- Dependency: Libuv found.(${Libuv_LIBRARIES})")
 else()
-    set (Libuv_ROOT "${3RD_PARTY_LIBUV_BASE_DIR}/prebuilt")
-    set (3RD_PARTY_LIBUV_REPO_DIR "${3RD_PARTY_LIBUV_BASE_DIR}/repo-${3RD_PARTY_LIBUV_DEFAULT_VERSION}")
-    if (NOT EXISTS ${3RD_PARTY_LIBUV_REPO_DIR})
-        find_package(Git)
-        execute_process(COMMAND ${GIT_EXECUTABLE} clone -b ${3RD_PARTY_LIBUV_DEFAULT_VERSION} "https://github.com/libuv/libuv.git" ${3RD_PARTY_LIBUV_REPO_DIR}
-            WORKING_DIRECTORY ${3RD_PARTY_ATFRAME_UTILS_BASE_DIR}
-        )
-    endif ()
-
-    if (EXISTS "${3RD_PARTY_LIBUV_REPO_DIR}/CMakeLists.txt")
-        file(MAKE_DIRECTORY "${3RD_PARTY_LIBUV_REPO_DIR}/build_obj_dir")
-        execute_process(COMMAND ${CMAKE_COMMAND} ${3RD_PARTY_LIBUV_REPO_DIR} "-DCMAKE_INSTALL_PREFIX=${Libuv_ROOT}" -DCMAKE_C_FLAGS="-fPIC"
-            WORKING_DIRECTORY "${3RD_PARTY_LIBUV_REPO_DIR}/build_obj_dir"
-        )
-        execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install --config ${CMAKE_BUILD_TYPE}
-            WORKING_DIRECTORY "${3RD_PARTY_LIBUV_REPO_DIR}/build_obj_dir"
-        )
-        unset (Libuv_FOUND CACHE)
-        find_package(Libuv)
-    endif()
+    EchoWithColor(COLOR RED "-- Dependency: Libuv is required")
+    message(FATAL_ERROR "Libuv not found")
 endif()
 
 if (NOT Libuv_FOUND)

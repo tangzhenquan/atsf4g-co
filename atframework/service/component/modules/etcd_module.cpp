@@ -225,10 +225,10 @@ namespace atframe {
 
             if (is_timeout) {
                 is_failed = true;
-                for (size_t i = 0; false == is_failed && i < keepalive_actors.size(); ++i) {
+                for (size_t i = 0; i < keepalive_actors.size(); ++i) {
                     size_t retry_times = keepalive_actors[i]->get_check_times();
                     if (etcd_ctx_.get_stats().continue_error_requests > retry_times) {
-                        retry_times = etcd_ctx_.get_stats().continue_error_requests > retry_times;
+                        retry_times = etcd_ctx_.get_stats().continue_error_requests;
                     }
                     WLOGERROR("etcd_keepalive request %s timeout, retry %llu times (with %d ticks).", keepalive_actors[i]->get_path().c_str(),
                               static_cast<unsigned long long>(retry_times), ticks);
