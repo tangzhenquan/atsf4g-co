@@ -2,7 +2,7 @@
 # =========== 3rdparty jemalloc ==================
 set (3RD_PARTY_JEMALLOC_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 set (3RD_PARTY_JEMALLOC_PKG_DIR "${CMAKE_CURRENT_LIST_DIR}/pkg")
-set (3RD_PARTY_JEMALLOC_PKG_VERSION 5.2.0)
+set (3RD_PARTY_JEMALLOC_PKG_VERSION 5.2.1)
 set (3RD_PARTY_JEMALLOC_MODE "release")
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -30,6 +30,7 @@ if (NOT MSVC)
         MAKE_FLAGS "-j4"
         PREBUILD_COMMAND "./autogen.sh"
         WORKING_DIRECTORY "${3RD_PARTY_JEMALLOC_PKG_DIR}"
+        BUILD_DIRECTORY "${3RD_PARTY_JEMALLOC_PKG_DIR}/jemalloc-${3RD_PARTY_JEMALLOC_PKG_VERSION}/build_jobs_${PLATFORM_BUILD_PLATFORM_NAME}"
         PREFIX_DIRECTORY "${3RD_PARTY_JEMALLOC_ROOT_DIR}"
         TAR_URL "https://github.com/jemalloc/jemalloc/releases/download/${3RD_PARTY_JEMALLOC_PKG_VERSION}/jemalloc-${3RD_PARTY_JEMALLOC_PKG_VERSION}.tar.bz2"
     )
