@@ -109,11 +109,31 @@ int task_action_base::operator()(void *priv_data) {
     }
 
     if (hello::err::EN_SUCCESS == ret_code_) {
-        ret_code_ = hello::err::EN_SYS_UNKNOWN;
+        if (task->is_timeout()) {
+            ret_code_ = hello::err::EN_SYS_TIMEOUT;
+        } else if (task->is_faulted()) {
+            ret_code_ = hello::err::EN_SYS_RPC_TASK_KILLED;
+        } else if (task->is_canceled()) {
+            ret_code_ = hello::err::EN_SYS_RPC_TASK_CANCELLED;
+        } else if (task->is_exiting()) {
+            ret_code_ = hello::err::EN_SYS_RPC_TASK_EXITING;
+        } else {
+            ret_code_ = hello::err::EN_SYS_UNKNOWN;
+        }
     }
 
     if (hello::EN_SUCCESS == rsp_code_) {
-        rsp_code_ = hello::EN_ERR_UNKNOWN;
+        if (task->is_timeout()) {
+            rsp_code_ = hello::EN_ERR_TIMEOUT;
+        } else if (task->is_faulted()) {
+            rsp_code_ = hello::EN_ERR_SYSTEM;
+        } else if (task->is_canceled()) {
+            rsp_code_ = hello::EN_ERR_SYSTEM;
+        } else if (task->is_exiting()) {
+            rsp_code_ = hello::EN_ERR_SYSTEM;
+        } else {
+            rsp_code_ = hello::EN_ERR_UNKNOWN;
+        }
     }
 
     WLOGERROR("task %s [0x%llx] ret code %d, rsp code %d\n", name(), get_task_id_llu(), ret_code_, rsp_code_);

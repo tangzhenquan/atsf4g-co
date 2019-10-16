@@ -6,6 +6,7 @@
 #include <logic/player_manager.h>
 #include <time/time_utility.h>
 
+#include <utility/protobuf_mini_dumper.h>
 
 #include <dispatcher/ss_msg_dispatcher.h>
 
@@ -37,6 +38,8 @@ int task_action_ss_req_base::hook_run() {
         if (false == res.first) {
             return res.second;
         }
+
+        WLOGDEBUG("task %s [0x%llx] receive router message body:\n%s", name(), get_task_id_llu(), protobuf_mini_dumper_get_readable(get_request_body()));
     }
 
     return base_type::hook_run();
