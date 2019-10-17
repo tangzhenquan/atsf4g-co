@@ -238,6 +238,24 @@ namespace detail {
         }
 
         uint64_t self_bus_id = logic_config::me()->get_self_bus_id();
+        // 可能本地缓存的路由信息过期，路由节点返回0的话说明最后一次登记时对象离线了，这时候只能尝试去数据库获取一次新的信息
+        if (0 == obj->get_router_server_id() && !mgr.is_auto_mutable_object() && !obj->is_writable()) {
+            uint64_t renew_router_server_id = 0;
+            uint32_t renew_router_version   = 0;
+            res                             = mgr.pull_online_server(key, renew_router_server_id, renew_router_version);
+            if (res < 0) {
+                return filter_router_msg_res_t(false, true, res);
+            }
+
+            if (0 == renew_router_server_id) {
+                return filter_router_msg_res_t(false, false, hello::err::EN_ROUTER_NOT_IN_SERVER);
+            }
+
+            if (!obj->is_writable() && 0 == obj->get_router_server_id()) {
+                obj->set_router_server_id(renew_router_server_id, renew_router_version);
+            }
+        }
+
         if (0 == obj->get_router_server_id()) {
             filter_router_msg_res_t auto_res = auto_mutable_router_object(self_bus_id, mgr, key, obj);
             if (auto_res.result < 0) {

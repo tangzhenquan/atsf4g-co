@@ -44,6 +44,8 @@ public:
 
     router_player_cache::object_ptr_t create_player_object(uint64_t user_id, uint32_t zone_id, const std::string &openid);
 
+    virtual int pull_online_server(const key_t &key, uint64_t &router_svr_id, uint32_t &router_svr_ver) UTIL_CONFIG_OVERRIDE;
+
 private:
     virtual void on_evt_remove_object(const key_t &key, const ptr_t &cache, priv_data_t priv_data) UTIL_CONFIG_OVERRIDE;
 

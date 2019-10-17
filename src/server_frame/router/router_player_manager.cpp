@@ -7,6 +7,9 @@
 #include <logic/session_manager.h>
 #include <proto_base.h>
 
+#include <rpc/db/login.h>
+#include <rpc/db/player.h>
+
 #include "router_player_manager.h"
 
 router_player_manager::router_player_manager() : base_type(hello::EN_ROT_PLAYER) {}
@@ -68,4 +71,34 @@ void router_player_manager::on_evt_remove_object(const key_t &key, const ptr_t &
     }
 
     base_type::on_evt_remove_object(key, cache, priv_data);
+}
+
+int router_player_manager::pull_online_server(const key_t &key, uint64_t &router_svr_id, uint32_t &router_svr_ver) {
+    router_svr_id  = 0;
+    router_svr_ver = 0;
+
+    hello::table_login local_login_tb;
+    std::string        local_login_ver;
+    hello::table_user  tbu;
+
+    // ** 如果login表和user表的jey保持一致的话也可以直接从login表取
+    int ret = rpc::db::player::get_basic(key.object_id, key.zone_id, tbu);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = rpc::db::login::get(tbu.open_id().c_str(), key.zone_id, local_login_tb, local_login_ver);
+    if (ret < 0) {
+        return ret;
+    }
+
+    router_svr_id  = local_login_tb.router_server_id();
+    router_svr_ver = local_login_tb.router_version();
+
+    ptr_t cache = get_cache(key);
+    if (cache && !cache->is_writable()) {
+        cache->set_router_server_id(router_svr_id, router_svr_ver);
+    }
+
+    return ret;
 }
