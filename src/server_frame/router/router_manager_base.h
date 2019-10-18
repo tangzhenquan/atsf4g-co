@@ -45,7 +45,7 @@ public:
 
     virtual void on_stop();
 
-    virtual int pull_online_server(const key_t &key, uint64_t &router_svr_id, uint32_t &router_svr_ver);
+    virtual int pull_online_server(const key_t &key, uint64_t &router_svr_id, uint64_t &router_svr_ver);
 
 protected:
     int send_msg_raw(router_object_base &obj, hello::SSMsg &msg);

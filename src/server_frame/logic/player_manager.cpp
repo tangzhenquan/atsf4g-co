@@ -21,7 +21,15 @@ bool player_manager::remove(player_manager::player_ptr_t u, bool force_kickoff) 
         return false;
     }
 
-    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), u->get_zone_id(), u->get_user_id());
+    return remove(u->get_user_id(), u->get_zone_id(), force_kickoff);
+}
+
+bool player_manager::remove(uint64_t user_id, uint32_t zone_id, bool force_kickoff) {
+    if (0 == user_id) {
+        return false;
+    }
+
+    router_player_cache::key_t key(router_player_manager::me()->get_type_id(), zone_id, user_id);
 
     router_player_cache::ptr_t cache = router_player_manager::me()->get_cache(key);
     // 先保存用户数据，防止重复保存
@@ -35,9 +43,9 @@ bool player_manager::remove(player_manager::player_ptr_t u, bool force_kickoff) 
 
     // 这里会触发保存
     if (force_kickoff) {
-        return router_player_manager::me()->remove_player_cache(u->get_user_id(), u->get_zone_id(), cache, NULL);
+        return router_player_manager::me()->remove_player_cache(user_id, zone_id, cache, NULL);
     } else {
-        return router_player_manager::me()->remove_player_object(u->get_user_id(), u->get_zone_id(), NULL);
+        return router_player_manager::me()->remove_player_object(user_id, zone_id, NULL);
     }
 }
 
@@ -78,7 +86,8 @@ player_manager::player_ptr_t player_manager::load(uint64_t user_id, uint32_t zon
 
 size_t player_manager::size() const { return router_player_manager::me()->size(); }
 
-player_manager::player_ptr_t player_manager::create(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver) {
+player_manager::player_ptr_t player_manager::create(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb,
+                                                    std::string &login_ver) {
     if (0 == user_id || openid.empty()) {
         WLOGERROR("can not create player_cache without user id or open id");
         return NULL;
@@ -107,8 +116,8 @@ player_manager::player_ptr_t player_manager::create(uint64_t user_id, uint32_t z
 
     player_ptr_t ret = cache->get_object();
     if (!ret) {
-        WLOGERROR("player_cache %s(%u:%llu) already exists(data version=%u), can not create again", openid.c_str(), zone_id, static_cast<unsigned long long>(user_id),
-                  ret->get_data_version());
+        WLOGERROR("player_cache %s(%u:%llu) already exists(data version=%u), can not create again", openid.c_str(), zone_id,
+                  static_cast<unsigned long long>(user_id), ret->get_data_version());
         return NULL;
     }
 

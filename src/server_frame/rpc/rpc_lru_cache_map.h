@@ -144,6 +144,7 @@ namespace rpc {
                         task_manager::task_ptr_t self_task(task_manager::task_t::this_task());
                         self_task->await(out->pulling_task);
                         if (self_task->is_timeout()) {
+                            out.reset();
                             return hello::err::EN_SYS_TIMEOUT;
                         }
                     }
@@ -154,12 +155,14 @@ namespace rpc {
             }
 
             if (retry_times <= 0) {
+                out.reset();
                 return hello::err::EN_SYS_RPC_RETRY_TIMES_EXCEED;
             }
 
             // 尝试拉取，成功的话放进缓存
             auto res = pool_.insert_key_value(key, value_cache_t(key));
             if (!res.second) {
+                out.reset();
                 return hello::err::EN_SYS_MALLOC;
             }
 

@@ -115,9 +115,7 @@ static int app_handle_on_send_fail(atapp::app &app, atapp::app::app_id_t src_pd,
         break;
     }
 
-    default: {
-        break;
-    }
+    default: { break; }
     }
 
     return ret;
@@ -136,12 +134,13 @@ static int app_handle_on_disconnected(atapp::app &app, atbus::endpoint &ep, int 
 
 class main_service_module : public atapp::module_impl {
 private:
-    static router_player_cache::object_ptr_t create_player_fn(uint64_t user_id, uint32_t zone_id, const std::string & openid) {
+    static router_player_cache::object_ptr_t create_player_fn(uint64_t user_id, uint32_t zone_id, const std::string &openid) {
         return std::static_pointer_cast<player_cache>(player::create(user_id, zone_id, openid));
     }
 
 public:
     virtual int init() {
+        stop_log_tm_ = 0;
         WLOGINFO("============ server initialize ============");
         INIT_CALL(logic_config, get_app()->get_id());
         INIT_CALL(excel::config_manager);
@@ -182,7 +181,11 @@ public:
     }
 
     virtual int stop() {
-        WLOGINFO("============ server stop ============");
+        time_t now = util::time::time_utility::get_now();
+        if (now != stop_log_tm_) {
+            stop_log_tm_ = now;
+            WLOGINFO("============ server stop ============");
+        }
         int ret = router_manager_set::me()->stop();
         if (ret < 0) {
             WLOGERROR("router_manager_set stop failed, res: %d", ret);
@@ -213,6 +216,9 @@ public:
 
         return ret;
     }
+
+private:
+    time_t stop_log_tm_;
 };
 
 int main(int argc, char *argv[]) {

@@ -31,7 +31,7 @@ task_action_player_login::~task_action_player_login() {}
 
 int task_action_player_login::operator()() {
     is_new_player_ = false;
-    zone_id_ = logic_config::me()->get_cfg_logic().zone_id;
+    zone_id_       = logic_config::me()->get_cfg_logic().zone_id;
 
     // 1. 包校验
     msg_cref_type req = get_request();
@@ -78,6 +78,10 @@ int task_action_player_login::operator()() {
         return hello::err::EN_SUCCESS;
     }
 
+    // 如果有缓存要强制失效，因为可能其他地方登入了，这时候也不能复用缓存
+    player_manager::me()->remove(msg_body.user_id(), zone_id_, true);
+    user.reset();
+
     hello::table_login tb;
     std::string        version;
     res = rpc::db::login::get(msg_body.open_id().c_str(), zone_id_, tb, version);
@@ -102,8 +106,8 @@ int task_action_player_login::operator()() {
     }
 
     if (0 != UTIL_STRFUNC_STRCMP(msg_body.login_code().c_str(), tb.login_code().c_str())) {
-        WLOGERROR("player %s(%u:%llu) login code error(expected: %s, real: %s)", msg_body.open_id().c_str(), 
-            zone_id_, static_cast<unsigned long long>(msg_body.user_id()), tb.login_code().c_str(), msg_body.login_code().c_str());
+        WLOGERROR("player %s(%u:%llu) login code error(expected: %s, real: %s)", msg_body.open_id().c_str(), zone_id_,
+                  static_cast<unsigned long long>(msg_body.user_id()), tb.login_code().c_str(), msg_body.login_code().c_str());
         set_rsp_code(hello::EN_ERR_LOGIN_VERIFY);
         return hello::err::EN_SUCCESS;
     }
@@ -116,24 +120,13 @@ int task_action_player_login::operator()() {
         WLOGERROR("session not found");
     }
 
-    if (!user || !user->is_inited()) {
-        if (!user) {
-            user           = player_manager::me()->create_as<player>(msg_body.user_id(), zone_id_, msg_body.open_id(), tb, version);
-            is_new_player_ = user && user->get_version() == "1";
-        } else {
-            user->load_and_move_login_info(COPP_MACRO_STD_MOVE(tb), version);
-        }
-        // ============ 在这之后tb不再有效 ============
+    user           = player_manager::me()->create_as<player>(msg_body.user_id(), zone_id_, msg_body.open_id(), tb, version);
+    is_new_player_ = user && user->get_version() == "1";
+    // ============ 在这之后tb不再有效 ============
 
-        if (!user) {
-            set_rsp_code(hello::EN_ERR_USER_NOT_FOUND);
-            return hello::err::EN_SUCCESS;
-        }
-
-        // TODO Log
-    } else {
-        user->load_and_move_login_info(COPP_MACRO_STD_MOVE(tb), version);
-        // ======== 这里之后tb不再有效 ========
+    if (!user) {
+        set_rsp_code(hello::EN_ERR_USER_NOT_FOUND);
+        return hello::err::EN_SUCCESS;
     }
 
     user->set_client_info(req.body().mcs_login_req().client_info());

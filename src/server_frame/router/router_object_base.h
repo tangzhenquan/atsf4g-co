@@ -209,12 +209,21 @@ public:
      * @brief 获取路由版本号
      * @return 路由版本号
      */
-    inline uint32_t get_router_version() const { return router_svr_ver_; };
+    inline uint64_t get_router_version() const { return router_svr_ver_; };
 
-    inline void set_router_server_id(uint64_t r, uint32_t v) {
+    inline void set_router_server_id(uint64_t r, uint64_t v) {
         router_svr_id_  = r;
         router_svr_ver_ = v;
     }
+
+    /**
+    template <typename TR, typename TV>
+    inline void set_router_server_id(TR r, TV v) {
+        router_svr_id_  = r;
+        router_svr_ver_ = v;
+        static_assert(std::is_same<TR, uint64_t>::value && std::is_same<TV, uint64_t>::value, "invalid call");
+    }
+    **/
 
     inline std::list<hello::SSMsg> &      get_transfer_pending_list() { return transfer_pending_; }
     inline const std::list<hello::SSMsg> &get_transfer_pending_list() const { return transfer_pending_; }
@@ -254,7 +263,7 @@ private:
     time_t                                     last_save_time_;
     time_t                                     last_visit_time_;
     uint64_t                                   router_svr_id_;
-    uint32_t                                   router_svr_ver_;
+    uint64_t                                   router_svr_ver_;
     uint32_t                                   timer_sequence_;
     std::list<router_system_timer_t> *         timer_list_;
     std::list<router_system_timer_t>::iterator timer_iter_;

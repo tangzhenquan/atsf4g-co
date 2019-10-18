@@ -85,7 +85,7 @@ int router_manager_base::send_msg_raw(router_object_base &obj, hello::SSMsg &msg
 
 void router_manager_base::on_stop() { is_closing_ = false; }
 
-int router_manager_base::pull_online_server(const key_t &, uint64_t &router_svr_id, uint32_t &router_svr_ver) {
+int router_manager_base::pull_online_server(const key_t &, uint64_t &router_svr_id, uint64_t &router_svr_ver) {
     router_svr_id  = 0;
     router_svr_ver = 0;
     return 0;

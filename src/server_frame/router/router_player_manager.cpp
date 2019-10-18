@@ -73,10 +73,11 @@ void router_player_manager::on_evt_remove_object(const key_t &key, const ptr_t &
     base_type::on_evt_remove_object(key, cache, priv_data);
 }
 
-int router_player_manager::pull_online_server(const key_t &key, uint64_t &router_svr_id, uint32_t &router_svr_ver) {
+int router_player_manager::pull_online_server(const key_t &key, uint64_t &router_svr_id, uint64_t &router_svr_ver) {
     router_svr_id  = 0;
     router_svr_ver = 0;
 
+    /**
     hello::table_login local_login_tb;
     std::string        local_login_ver;
     hello::table_user  tbu;
@@ -101,4 +102,7 @@ int router_player_manager::pull_online_server(const key_t &key, uint64_t &router
     }
 
     return ret;
+    */
+
+    return 0;
 }

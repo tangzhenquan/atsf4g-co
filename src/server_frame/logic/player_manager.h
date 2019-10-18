@@ -22,9 +22,17 @@ public:
     /**
      * @brief 移除用户
      * @param user user指针
-     * @param force 强制移除，不进入离线缓存
+     * @param force_kickoff 强制移除，不进入离线缓存
      */
     bool remove(player_ptr_t user, bool force_kickoff = false);
+
+    /**
+     * @brief 移除用户
+     * @param user_id user_id
+     * @param zone_id zone_id
+     * @param force_kickoff 强制移除，不进入离线缓存
+     */
+    bool remove(uint64_t user_id, uint32_t zone_id, bool force_kickoff = false);
 
 
     /**
@@ -46,14 +54,15 @@ public:
     size_t size() const;
 
     player_ptr_t create(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver);
-    template<typename TPLAYER>
-    const std::shared_ptr<TPLAYER> create_as(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb, std::string &login_ver) {
+    template <typename TPLAYER>
+    const std::shared_ptr<TPLAYER> create_as(uint64_t user_id, uint32_t zone_id, const std::string &openid, hello::table_login &login_tb,
+                                             std::string &login_ver) {
         return std::static_pointer_cast<TPLAYER>(create(user_id, zone_id, openid, login_tb, login_ver));
     }
 
     player_ptr_t find(uint64_t user_id, uint32_t zone_id) const;
 
-    template<typename TPLAYER>
+    template <typename TPLAYER>
     const std::shared_ptr<TPLAYER> find_as(uint64_t user_id, uint32_t zone_id) const {
         return std::static_pointer_cast<TPLAYER>(find(user_id, zone_id));
     }

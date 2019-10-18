@@ -14,9 +14,13 @@
 
 #include "router_object_base.h"
 
-bool router_object_base::key_t::operator==(const key_t &r) const UTIL_CONFIG_NOEXCEPT { return object_id == r.object_id && zone_id == r.zone_id && type_id == r.type_id; }
+bool router_object_base::key_t::operator==(const key_t &r) const UTIL_CONFIG_NOEXCEPT {
+    return object_id == r.object_id && zone_id == r.zone_id && type_id == r.type_id;
+}
 
-bool router_object_base::key_t::operator!=(const key_t &r) const UTIL_CONFIG_NOEXCEPT { return object_id != r.object_id || zone_id != r.zone_id || type_id != r.type_id; }
+bool router_object_base::key_t::operator!=(const key_t &r) const UTIL_CONFIG_NOEXCEPT {
+    return object_id != r.object_id || zone_id != r.zone_id || type_id != r.type_id;
+}
 
 bool router_object_base::key_t::operator<(const key_t &r) const UTIL_CONFIG_NOEXCEPT {
     if (type_id != r.type_id) {
@@ -117,7 +121,7 @@ int router_object_base::remove_object(void *priv_data, uint64_t transfer_to_svr_
 
     // 移除实体需要设置路由BUS ID为0并保存一次
     uint64_t old_router_server_id = get_router_server_id();
-    uint32_t old_router_ver       = get_router_version();
+    uint64_t old_router_ver       = get_router_version();
 
     if (transfer_to_svr_id != get_router_server_id()) {
         set_router_server_id(transfer_to_svr_id, old_router_ver + 1);

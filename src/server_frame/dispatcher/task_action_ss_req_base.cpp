@@ -2,6 +2,8 @@
 // Created by owt50 on 2016/9/26.
 //
 
+#include <std/explicit_declare.h>
+
 #include <log/log_wrapper.h>
 #include <logic/player_manager.h>
 #include <time/time_utility.h>
@@ -205,8 +207,8 @@ namespace detail {
         return filter_router_msg_res_t(true, true, hello::err::EN_SUCCESS);
     }
 
-    static filter_router_msg_res_t try_filter_router_msg(uint64_t request_bus_id, hello::SSMsg &request_msg, router_manager_base &mgr,
-                                                         router_manager_base::key_t key, std::shared_ptr<router_object_base> &obj) {
+    static filter_router_msg_res_t try_filter_router_msg(EXPLICIT_UNUSED_ATTR int retry_times, uint64_t request_bus_id, hello::SSMsg &request_msg,
+                                                         router_manager_base &mgr, router_manager_base::key_t key, std::shared_ptr<router_object_base> &obj) {
         obj.reset();
 
         const hello::SSRouterHead &router = request_msg.head().router();
@@ -241,7 +243,7 @@ namespace detail {
         // 可能本地缓存的路由信息过期，路由节点返回0的话说明最后一次登记时对象离线了，这时候只能尝试去数据库获取一次新的信息
         if (0 == obj->get_router_server_id() && !mgr.is_auto_mutable_object() && !obj->is_writable()) {
             uint64_t renew_router_server_id = 0;
-            uint32_t renew_router_version   = 0;
+            uint64_t renew_router_version   = 0;
             res                             = mgr.pull_online_server(key, renew_router_server_id, renew_router_version);
             if (res < 0) {
                 return filter_router_msg_res_t(false, true, res);
@@ -251,7 +253,7 @@ namespace detail {
                 return filter_router_msg_res_t(false, false, hello::err::EN_ROUTER_NOT_IN_SERVER);
             }
 
-            if (!obj->is_writable() && 0 == obj->get_router_server_id()) {
+            if (!obj->is_writable() && 0 == obj->get_router_server_id() && renew_router_version > obj->get_router_version()) {
                 obj->set_router_server_id(renew_router_server_id, renew_router_version);
             }
         }
@@ -261,22 +263,6 @@ namespace detail {
             if (auto_res.result < 0) {
                 return auto_res;
             }
-        }
-
-        // 如果本地路由版本号大于来源，通知来源更新路由表
-        if (obj && obj->get_router_version() > router.router_version()) {
-            hello::SSRouterUpdateSync sync_msg;
-            hello::SSRouterHead *     router_head = sync_msg.mutable_object();
-            if (NULL != router_head) {
-                router_head->set_router_src_bus_id(obj->get_router_server_id());
-                router_head->set_router_version(obj->get_router_version());
-                router_head->set_object_type_id(key.type_id);
-                router_head->set_object_inst_id(key.object_id);
-                router_head->set_object_zone_id(key.zone_id);
-            }
-
-            // 只通知直接来源
-            rpc::router::robj::send_update_sync(request_bus_id, sync_msg);
         }
 
         // 如果和本地的路由缓存匹配则break直接开始消息处理
@@ -304,7 +290,9 @@ namespace detail {
 } // namespace detail
 
 std::pair<bool, int> task_action_ss_req_base::filter_router_msg() {
-    const hello::SSRouterHead &router = get_request().head().router();
+    // request 可能会被move走，所以这里copy一份
+    hello::SSRouterHead router;
+    protobuf_copy_message(router, get_request().head().router());
 
     // find router manager in router set
     router_manager_base *mgr = router_manager_set::me()->get_manager(router.object_type_id());
@@ -321,7 +309,7 @@ std::pair<bool, int> task_action_ss_req_base::filter_router_msg() {
 
     // 最多重试3次，故障恢复过程中可能发生抢占，这时候正常情况下第二次就应该会成功
     while ((++retry_times) <= 3) {
-        detail::filter_router_msg_res_t res = detail::try_filter_router_msg(get_request_bus_id(), get_request(), *mgr, key, obj);
+        detail::filter_router_msg_res_t res = detail::try_filter_router_msg(retry_times, get_request_bus_id(), get_request(), *mgr, key, obj);
         if (res.is_on_current_server) {
             return std::make_pair(true, res.result);
         }
@@ -333,7 +321,7 @@ std::pair<bool, int> task_action_ss_req_base::filter_router_msg() {
         if (last_result >= 0) {
             disable_rsp_msg();
             disable_finish_evt();
-            return std::make_pair(false, last_result);
+            break;
         }
 
         // 某些情况下不需要重试
@@ -342,13 +330,31 @@ std::pair<bool, int> task_action_ss_req_base::filter_router_msg() {
         }
     }
 
+    // 如果本地路由版本号大于来源，通知来源更新路由表
+    if (obj && obj->get_router_version() > router.router_version()) {
+        hello::SSRouterUpdateSync sync_msg;
+        hello::SSRouterHead *     router_head = sync_msg.mutable_object();
+        if (NULL != router_head) {
+            router_head->set_router_src_bus_id(obj->get_router_server_id());
+            router_head->set_router_version(obj->get_router_version());
+            router_head->set_object_type_id(key.type_id);
+            router_head->set_object_inst_id(key.object_id);
+            router_head->set_object_zone_id(key.zone_id);
+        }
+
+        // 只通知直接来源
+        rpc::router::robj::send_update_sync(get_request_bus_id(), sync_msg);
+    }
+
     // 失败则要回发转发失败
     set_rsp_code(last_result);
 
     // 如果忽略路由节点不在线,直接返回0即可
     if (hello::err::EN_ROUTER_NOT_IN_SERVER == last_result && is_router_offline_ignored()) {
         last_result = 0;
-    } else if (obj) {
+    }
+
+    if (obj && last_result < 0) {
         obj->send_transfer_msg_failed(COPP_MACRO_STD_MOVE(get_request()));
     }
     return std::make_pair(false, last_result);

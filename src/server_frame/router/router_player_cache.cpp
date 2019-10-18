@@ -20,11 +20,12 @@ router_player_private_type::router_player_private_type() : login_tb(NULL), login
 router_player_private_type::router_player_private_type(hello::table_login *tb, std::string *ver) : login_tb(tb), login_ver(ver) {}
 
 router_player_cache::router_player_cache(uint64_t user_id, uint32_t zone_id, const std::string &openid)
-    : base_type(router_player_manager::me()->create_player_object(user_id, zone_id, openid), 
-      key_t(router_player_manager::me()->get_type_id(), zone_id, user_id)) {}
+    : base_type(router_player_manager::me()->create_player_object(user_id, zone_id, openid),
+                key_t(router_player_manager::me()->get_type_id(), zone_id, user_id)) {}
 
 // 这个时候openid无效，后面需要再init一次
-router_player_cache::router_player_cache(const key_t &key) : base_type(router_player_manager::me()->create_player_object(key.object_id, key.zone_id, ""), key) {}
+router_player_cache::router_player_cache(const key_t &key)
+    : base_type(router_player_manager::me()->create_player_object(key.object_id, key.zone_id, ""), key) {}
 
 const char *router_player_cache::name() const { return "[player  router cache]"; }
 
@@ -146,7 +147,7 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
     // 如果router server id是0则设置为本地的登入地址
     if (0 == get_router_server_id()) {
         uint64_t old_router_server_id = obj->get_login_info().router_server_id();
-        uint32_t old_router_ver       = obj->get_login_info().router_version();
+        uint64_t old_router_ver       = obj->get_login_info().router_version();
 
         obj->get_login_info().set_router_server_id(self_bus_id);
         obj->get_login_info().set_router_version(old_router_ver + 1);
@@ -166,8 +167,8 @@ int router_player_cache::pull_object(router_player_private_type &priv_data) {
         set_router_server_id(obj->get_login_info().router_server_id(), obj->get_login_info().router_version());
     } else if (self_bus_id != get_router_server_id()) {
         // 不在这个进程上
-        WLOGERROR("player_cache %s(%u:%llu) is in server 0x%llx but try to pull in server 0x%llx", obj->get_open_id().c_str(), obj->get_zone_id(), 
-            obj->get_user_id_llu(), get_router_server_id_llu(), static_cast<unsigned long long>(self_bus_id));
+        WLOGERROR("player_cache %s(%u:%llu) is in server 0x%llx but try to pull in server 0x%llx", obj->get_open_id().c_str(), obj->get_zone_id(),
+                  obj->get_user_id_llu(), get_router_server_id_llu(), static_cast<unsigned long long>(self_bus_id));
 
         return hello::err::EN_ROUTER_IN_OTHER_SERVER;
     }
@@ -183,7 +184,7 @@ int router_player_cache::save_object(void *priv_data) {
         return hello::err::EN_ROUTER_ACCESS_DENY;
     }
 
-    uint64_t            self_bus_id = logic_config::me()->get_self_bus_id();
+    uint64_t self_bus_id = logic_config::me()->get_self_bus_id();
     // RPC read from DB(以后可以优化掉)
     int res = 0;
     // 异常的玩家数据记录，自动修复一下
@@ -203,11 +204,11 @@ int router_player_cache::save_object(void *priv_data) {
         }
 
         if (0 == obj->get_login_info().router_server_id() && 0 != get_router_server_id()) {
-            WLOGERROR("player_cache %s(%u:%llu) login bus id error(expected: 0x%llx, real: 0x%llx)", obj->get_open_id().c_str(), obj->get_zone_id(), 
-                obj->get_user_id_llu(), get_router_server_id_llu(), static_cast<unsigned long long>(obj->get_login_info().router_server_id()));
+            WLOGERROR("player_cache %s(%u:%llu) login bus id error(expected: 0x%llx, real: 0x%llx)", obj->get_open_id().c_str(), obj->get_zone_id(),
+                      obj->get_user_id_llu(), get_router_server_id_llu(), static_cast<unsigned long long>(obj->get_login_info().router_server_id()));
 
             uint64_t old_router_server_id = obj->get_login_info().router_server_id();
-            uint32_t old_router_ver       = obj->get_login_info().router_version();
+            uint64_t old_router_ver       = obj->get_login_info().router_version();
 
             obj->get_login_info().set_router_server_id(get_router_server_id());
             obj->get_login_info().set_router_version(old_router_ver + 1);
@@ -233,7 +234,7 @@ int router_player_cache::save_object(void *priv_data) {
         // 登出流程
         if (0 == get_router_server_id()) {
             uint64_t old_router_server_id = obj->get_login_info().router_server_id();
-            uint32_t old_router_ver       = obj->get_login_info().router_version();
+            uint64_t old_router_ver       = obj->get_login_info().router_version();
 
             obj->get_login_info().set_router_server_id(0);
             obj->get_login_info().set_router_version(old_router_ver + 1);
@@ -257,7 +258,7 @@ int router_player_cache::save_object(void *priv_data) {
             }
         } else if (obj->get_session()) { // 续期login code
             uint64_t old_router_server_id = obj->get_login_info().router_server_id();
-            uint32_t old_router_ver       = obj->get_login_info().router_version();
+            uint64_t old_router_ver       = obj->get_login_info().router_version();
 
             if (get_router_server_id() != old_router_server_id) {
                 obj->get_login_info().set_router_server_id(get_router_server_id());
@@ -305,7 +306,8 @@ int router_player_cache::save_object(void *priv_data) {
     hello::table_user user_tb;
     obj->dump(user_tb, true);
 
-    WLOGDEBUG("player_cache %s(%u:%llu) save curr data version:%s", obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_user_id_llu(), obj->get_version().c_str());
+    WLOGDEBUG("player_cache %s(%u:%llu) save curr data version:%s", obj->get_open_id().c_str(), obj->get_zone_id(), obj->get_user_id_llu(),
+              obj->get_version().c_str());
 
     // RPC save to DB
     res = rpc::db::player::set(obj->get_user_id(), obj->get_zone_id(), user_tb, obj->get_version());
