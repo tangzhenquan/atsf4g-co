@@ -33,7 +33,9 @@ EchoWithColor(COLOR GREEN "-- Build Type: ${CMAKE_BUILD_TYPE}")
 include("${CMAKE_CURRENT_LIST_DIR}/project/cmake/ProjectTools.cmake")
 
 # installer directory
-set (PROJECT_INSTALL_BAS_DIR "${PROJECT_BINARY_DIR}/${PROJECT_BUILD_NAME}")
+if (NOT PROJECT_INSTALL_BAS_DIR)
+    set (PROJECT_INSTALL_BAS_DIR "${PROJECT_BINARY_DIR}/${PROJECT_BUILD_NAME}" CACHE PATH "Publish resource directory when building")
+endif ()
 if(NOT EXISTS ${PROJECT_INSTALL_BAS_DIR})
     file(MAKE_DIRECTORY ${PROJECT_INSTALL_BAS_DIR})
     message(STATUS "create ${PROJECT_INSTALL_BAS_DIR} for build target.")
