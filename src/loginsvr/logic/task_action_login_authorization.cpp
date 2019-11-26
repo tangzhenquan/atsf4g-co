@@ -30,14 +30,13 @@
 UTIL_ENV_AUTO_SET(std::string) task_action_login_authorization::white_skip_openids_;
 
 task_action_login_authorization::task_action_login_authorization(dispatcher_start_data_t COPP_MACRO_RV_REF param)
-    : task_action_cs_req_base(COPP_MACRO_STD_MOVE(param)), is_new_player_(false), strategy_type_(hello::EN_VERSION_DEFAULT), 
-      zone_id_(0), final_user_id_(0) {}
+    : task_action_cs_req_base(COPP_MACRO_STD_MOVE(param)), is_new_player_(false), strategy_type_(hello::EN_VERSION_DEFAULT), zone_id_(0), final_user_id_(0) {}
 task_action_login_authorization::~task_action_login_authorization() {}
 
 int task_action_login_authorization::operator()() {
     is_new_player_ = false;
     strategy_type_ = hello::EN_VERSION_DEFAULT;
-    zone_id_ = logic_config::me()->get_cfg_logic().zone_id;
+    zone_id_       = logic_config::me()->get_cfg_logic().zone_id;
 
     session::ptr_t my_sess = get_session();
     if (!my_sess) {
@@ -188,8 +187,8 @@ int task_action_login_authorization::operator()() {
 
         // 7. 如果在线则尝试踢出
         if (0 != login_data_.router_server_id()) {
-            int32_t ret = rpc::game::player::send_kickoff(login_data_.router_server_id(), login_data_.user_id(), zone_id_, 
-                                                            login_data_.open_id(), ::atframe::gateway::close_reason_t::EN_CRT_KICKOFF);
+            int32_t ret = rpc::game::player::send_kickoff(login_data_.router_server_id(), login_data_.user_id(), zone_id_, login_data_.open_id(),
+                                                          ::atframe::gateway::close_reason_t::EN_CRT_KICKOFF);
             if (ret) {
                 WLOGERROR("user %s send msg to 0x%llx fail: %d", login_data_.open_id().c_str(), static_cast<unsigned long long>(login_data_.router_server_id()),
                           ret);
@@ -237,7 +236,7 @@ int task_action_login_authorization::operator()() {
     // 新用户则创建
     if (hello::err::EN_DB_RECORD_NOT_FOUND == res) {
         // 生成容易识别的数字UUID
-        int64_t player_uid = rpc::db::uuid::generate_global_unique_id(hello::config::EN_GUIT_PLAYER_ID);
+        int64_t player_uid = rpc::db::uuid::generate_global_unique_id(hello::config::EN_GUIT_PLAYER_ID, 0, 0);
         if (player_uid <= 0) {
             WLOGERROR("call generate_global_unique_id failed, openid:%s, res:%d", msg_body.open_id().c_str(), static_cast<int>(player_uid));
             set_rsp_code(hello::EN_ERR_LOGIN_CREATE_PLAYER_FAILED);

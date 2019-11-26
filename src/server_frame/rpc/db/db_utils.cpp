@@ -5,8 +5,8 @@
 #include <assert.h>
 #include <std/thread.h>
 
-#include <log/log_wrapper.h>
 #include <common/string_oprs.h>
+#include <log/log_wrapper.h>
 
 #include <hiredis/hiredis.h>
 
@@ -26,9 +26,9 @@ namespace rpc {
                 static THREAD_TLS char ret[PROJECT_RPC_DB_BUFFER_LENGTH];
                 return ret;
             }
-        }
-    }
-}
+        } // namespace detail
+    }     // namespace db
+} // namespace rpc
 
 #else
 
@@ -37,7 +37,7 @@ namespace rpc {
     namespace db {
         namespace detail {
             static pthread_once_t gt_get_pack_tls_once = PTHREAD_ONCE_INIT;
-            static pthread_key_t gt_get_pack_tls_key;
+            static pthread_key_t  gt_get_pack_tls_key;
 
             static void dtor_pthread_get_log_tls(void *p) {
                 char *buffer_block = reinterpret_cast<char *>(p);
@@ -57,9 +57,9 @@ namespace rpc {
                 }
                 return buffer_block;
             }
-        }
-    }
-}
+        } // namespace detail
+    }     // namespace db
+} // namespace rpc
 
 #endif
 
@@ -90,7 +90,7 @@ namespace rpc {
             }
 
             size_t free_buf_len = PROJECT_RPC_DB_BUFFER_LENGTH - used_buf_len;
-            void *start_addr = reinterpret_cast<void *>(free_buffer_);
+            void * start_addr   = reinterpret_cast<void *>(free_buffer_);
             if (NULL == align_alloc<size_t>(start_addr, free_buf_len)) {
                 WLOGERROR("buffer length extended when padding");
                 assert(false);
@@ -105,7 +105,7 @@ namespace rpc {
 
             free_buffer_ = reinterpret_cast<char *>(start_addr) + sz;
 
-            segment_value_[used_] = reinterpret_cast<char *>(start_addr);
+            segment_value_[used_]  = reinterpret_cast<char *>(start_addr);
             segment_length_[used_] = sz;
             ++used_;
             return reinterpret_cast<char *>(start_addr);
@@ -146,7 +146,7 @@ namespace rpc {
 
         bool redis_args::push(uint8_t v) {
             char td[12] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%u", static_cast<unsigned int>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%u", static_cast<unsigned int>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -162,7 +162,7 @@ namespace rpc {
 
         bool redis_args::push(int8_t v) {
             char td[12] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%d", static_cast<int>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%d", static_cast<int>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -178,7 +178,7 @@ namespace rpc {
 
         bool redis_args::push(uint16_t v) {
             char td[12] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%u", static_cast<unsigned int>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%u", static_cast<unsigned int>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -194,7 +194,7 @@ namespace rpc {
 
         bool redis_args::push(int16_t v) {
             char td[12] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%d", static_cast<int>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%d", static_cast<int>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -210,7 +210,7 @@ namespace rpc {
 
         bool redis_args::push(uint32_t v) {
             char td[12] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%u", static_cast<unsigned int>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%u", static_cast<unsigned int>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -226,7 +226,7 @@ namespace rpc {
 
         bool redis_args::push(int32_t v) {
             char td[12] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%d", static_cast<int>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%d", static_cast<int>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -242,7 +242,7 @@ namespace rpc {
 
         bool redis_args::push(uint64_t v) {
             char td[24] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%llu", static_cast<unsigned long long>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%llu", static_cast<unsigned long long>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -258,7 +258,7 @@ namespace rpc {
 
         bool redis_args::push(int64_t v) {
             char td[24] = {0};
-            int sz = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%lld", static_cast<long long>(v));
+            int  sz     = UTIL_STRFUNC_SNPRINTF(td, sizeof(td), "%lld", static_cast<long long>(v));
             if (sz < 0) {
                 WLOGERROR("snprintf failed, res: %d", sz);
                 return false;
@@ -278,9 +278,9 @@ namespace rpc {
                 return hello::err::EN_SYS_PARAM;
             }
 
-            bool has_failed = false;
-            const ::google::protobuf::Reflection *reflect = msg.GetReflection();
-            const google::protobuf::Descriptor *desc = msg.GetDescriptor();
+            bool                                  has_failed = false;
+            const ::google::protobuf::Reflection *reflect    = msg.GetReflection();
+            const google::protobuf::Descriptor *  desc       = msg.GetDescriptor();
 
             if (REDIS_REPLY_ARRAY != reply->type) {
                 WLOGDEBUG("unpack message %s failed, reply type %d is not a array.", msg.GetDescriptor()->full_name().c_str(), reply->type);
@@ -292,7 +292,7 @@ namespace rpc {
             }
 
             for (size_t i = 0; i < reply->elements - 1; i += 2) {
-                const redisReply *key = reply->element[i];
+                const redisReply *key   = reply->element[i];
                 const redisReply *value = reply->element[i + 1];
 
                 if (REDIS_REPLY_STRING != key->type || NULL == key->str) {
@@ -457,10 +457,10 @@ namespace rpc {
 
 #define CASE_PB_INT_TO_REDIS_DATA(pbtype, cpptype, cppformat, func)                                                                                      \
     case pbtype: {                                                                                                                                       \
-        cpptype vint = static_cast<cpptype>(reflect->func(msg, fds[i]));                                                                                 \
-        char vstr[24] = {0};                                                                                                                             \
-        int intlen = UTIL_STRFUNC_SNPRINTF(vstr, sizeof(vstr), cppformat, vint);                                                                         \
-        data_allocated = args.alloc(static_cast<size_t>(intlen));                                                                                        \
+        cpptype vint     = static_cast<cpptype>(reflect->func(msg, fds[i]));                                                                             \
+        char    vstr[24] = {0};                                                                                                                          \
+        int     intlen   = UTIL_STRFUNC_SNPRINTF(vstr, sizeof(vstr), cppformat, vint);                                                                   \
+        data_allocated   = args.alloc(static_cast<size_t>(intlen));                                                                                      \
         if (NULL == data_allocated || intlen < 0) {                                                                                                      \
             WLOGERROR("pack message %s failed, alloc %s,len=%d value failed", msg.GetDescriptor()->full_name().c_str(), fds[i]->name().c_str(), intlen); \
             args.dealloc();                                                                                                                              \
@@ -479,7 +479,7 @@ namespace rpc {
                 // 字符串直接保存
                 case google::protobuf::FieldDescriptor::CPPTYPE_STRING: {
                     const std::string *seg_val;
-                    std::string empty;
+                    std::string        empty;
                     if (reflect->HasField(msg, fds[i])) {
                         seg_val = &reflect->GetStringReference(msg, fds[i], NULL);
                     } else {
@@ -505,8 +505,8 @@ namespace rpc {
 
                 // message需要序列化
                 case google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE: {
-                    const ::google::protobuf::Message &seg_val = reflect->GetMessage(msg, fds[i]);
-                    size_t dump_len = static_cast<size_t>(seg_val.ByteSize());
+                    const ::google::protobuf::Message &seg_val  = reflect->GetMessage(msg, fds[i]);
+                    size_t                             dump_len = seg_val.ByteSizeLong();
 
                     data_allocated = args.alloc(dump_len);
                     if (NULL == data_allocated) {
@@ -551,5 +551,5 @@ namespace rpc {
 
             return hello::err::EN_SUCCESS;
         }
-    }
-}
+    } // namespace db
+} // namespace rpc

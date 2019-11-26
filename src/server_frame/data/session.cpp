@@ -52,7 +52,7 @@ void session::set_player(std::shared_ptr<player_cache> u) { player_ = u; }
 std::shared_ptr<player_cache> session::get_player() const { return player_.lock(); }
 
 int32_t session::send_msg_to_client(hello::CSMsg &msg) {
-    size_t msg_buf_len = static_cast<size_t>(msg.ByteSize());
+    size_t msg_buf_len = msg.ByteSizeLong();
     size_t tls_buf_len = atframe::gateway::proto_base::get_tls_length(atframe::gateway::proto_base::tls_buffer_t::EN_TBT_CUSTOM);
     if (msg_buf_len > tls_buf_len) {
         WLOGERROR("send to gateway [0x%llx, 0x%llx] failed: require %llu, only have %llu", static_cast<unsigned long long>(id_.bus_id),
@@ -75,7 +75,7 @@ int32_t session::send_msg_to_client(const void *msg_data, size_t msg_size) {
 }
 
 int32_t session::broadcast_msg_to_client(uint64_t bus_id, const hello::CSMsg &msg) {
-    size_t msg_buf_len = static_cast<size_t>(msg.ByteSize());
+    size_t msg_buf_len = msg.ByteSizeLong();
     size_t tls_buf_len = atframe::gateway::proto_base::get_tls_length(atframe::gateway::proto_base::tls_buffer_t::EN_TBT_CUSTOM);
     if (msg_buf_len > tls_buf_len) {
         WLOGERROR("broadcast to gateway [0x%llx] failed: require %llu, only have %llu", static_cast<unsigned long long>(bus_id),

@@ -51,7 +51,7 @@ ss_msg_dispatcher::msg_type_t ss_msg_dispatcher::pick_msg_type_id(msg_raw_t &raw
 
 int32_t ss_msg_dispatcher::send_to_proc(uint64_t bus_id, const hello::SSMsg &ss_msg) {
 
-    size_t msg_buf_len = static_cast<size_t>(ss_msg.ByteSize());
+    size_t msg_buf_len = ss_msg.ByteSizeLong();
     size_t tls_buf_len = atframe::gateway::proto_base::get_tls_length(atframe::gateway::proto_base::tls_buffer_t::EN_TBT_CUSTOM);
     if (msg_buf_len > tls_buf_len) {
         WLOGERROR("send to proc [0x%llx] failed: require %llu, only have %llu", static_cast<unsigned long long>(bus_id),

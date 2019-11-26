@@ -34,11 +34,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/project/cmake/ProjectTools.cmake")
 
 # installer directory
 if (NOT PROJECT_INSTALL_BAS_DIR)
-<<<<<<< HEAD
-    set (PROJECT_INSTALL_BAS_DIR "${PROJECT_BINARY_DIR}/${PROJECT_BUILD_NAME}" CACHE PATH "Publish resource directory when building")
-=======
     set (PROJECT_INSTALL_BAS_DIR "${PROJECT_BINARY_DIR}/${PROJECT_BUILD_NAME}")
->>>>>>> master
 endif ()
 if(NOT EXISTS ${PROJECT_INSTALL_BAS_DIR})
     file(MAKE_DIRECTORY ${PROJECT_INSTALL_BAS_DIR})

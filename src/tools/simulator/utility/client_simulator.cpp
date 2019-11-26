@@ -39,8 +39,8 @@ std::string client_simulator::pick_message_name(const msg_t &msg) const {
 std::string client_simulator::dump_message(const msg_t &msg) { return msg.DebugString(); }
 
 int client_simulator::pack_message(const msg_t &msg, void *buffer, size_t &sz) const {
-    int msz = msg.ByteSize();
-    if (msz < 0 || sz < static_cast<size_t>(msz)) {
+    size_t msz = msg.ByteSizeLong();
+    if (sz < msz) {
         util::cli::shell_stream ss(std::cerr);
         ss() << util::cli::shell_font_style::SHELL_FONT_COLOR_RED << "package message require " << msz << " bytes, but only has " << sz << " bytes"
              << std::endl;
@@ -62,10 +62,7 @@ int client_simulator::unpack_message(msg_t &msg, const void *buffer, size_t sz) 
     return 0;
 }
 
-int client_simulator::tick() {
-
-    return 0;
-}
+int client_simulator::tick() { return 0; }
 
 client_simulator *client_simulator::cast(simulator_base *b) { return dynamic_cast<client_simulator *>(b); }
 
