@@ -34,7 +34,11 @@ include("${CMAKE_CURRENT_LIST_DIR}/project/cmake/ProjectTools.cmake")
 
 # installer directory
 if (NOT PROJECT_INSTALL_BAS_DIR)
+<<<<<<< HEAD
     set (PROJECT_INSTALL_BAS_DIR "${PROJECT_BINARY_DIR}/${PROJECT_BUILD_NAME}" CACHE PATH "Publish resource directory when building")
+=======
+    set (PROJECT_INSTALL_BAS_DIR "${PROJECT_BINARY_DIR}/${PROJECT_BUILD_NAME}")
+>>>>>>> master
 endif ()
 if(NOT EXISTS ${PROJECT_INSTALL_BAS_DIR})
     file(MAKE_DIRECTORY ${PROJECT_INSTALL_BAS_DIR})
@@ -54,7 +58,15 @@ file(MAKE_DIRECTORY ${PROJECT_INSTALL_SHARED_DIR})
 file(MAKE_DIRECTORY ${PROJECT_INSTALL_RES_PBD_DIR})
 
 ########################################################################
-string(TOLOWER "${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR}" PLATFORM_BUILD_PLATFORM_NAME)
+if (ANDROID_ABI)
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}-${ANDROID_ABI}" PLATFORM_BUILD_PLATFORM_NAME)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
+elseif (CMAKE_OSX_ARCHITECTURES)
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}-${CMAKE_OSX_ARCHITECTURES}" PLATFORM_BUILD_PLATFORM_NAME)
+else ()
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" PLATFORM_BUILD_PLATFORM_NAME)
+endif ()
 
 if(MINGW)
     if("" STREQUAL "$ENV{MINGW_MOUNT_POINT}")
