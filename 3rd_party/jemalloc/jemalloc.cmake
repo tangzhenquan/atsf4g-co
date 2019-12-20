@@ -28,7 +28,7 @@ if (NOT MSVC)
         BUILD_WITH_CONFIGURE
         CONFIGURE_FLAGS "--enable-static=no --enable-prof --enable-valgrind --enable-lazy-lock --enable-xmalloc --enable-mremap --enable-utrace --enable-munmap ${3RD_PARTY_JEMALLOC_BUILD_OPTIONS}"
         MAKE_FLAGS "-j4"
-        PREBUILD_COMMAND "./autogen.sh"
+        # PREBUILD_COMMAND "./autogen.sh"
         WORKING_DIRECTORY "${3RD_PARTY_JEMALLOC_PKG_DIR}"
         BUILD_DIRECTORY "${3RD_PARTY_JEMALLOC_PKG_DIR}/jemalloc-${3RD_PARTY_JEMALLOC_PKG_VERSION}/build_jobs_${PLATFORM_BUILD_PLATFORM_NAME}"
         PREFIX_DIRECTORY "${3RD_PARTY_JEMALLOC_ROOT_DIR}"
