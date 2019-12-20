@@ -21,39 +21,39 @@ namespace atframe {
          * @see https://coreos.com/etcd/docs/latest/dev-guide/api_reference_v3.html
          * @see https://coreos.com/etcd/docs/latest/dev-guide/apispec/swagger/rpc.swagger.json
          * @note KeyValue: { "key": "KEY", "create_revision": "number", "mod_revision": "number", "version": "number", "value": "", "lease": "number" }
-         *   Get data => curl http://localhost:2379/v3beta/kv/range -X POST -d '{"key": "KEY", "range_end": ""}'
+         *   Get data => curl http://localhost:2379/v3/kv/range -X POST -d '{"key": "KEY", "range_end": ""}'
          *       # Response {"kvs": [{...}], "more": "bool", "count": "COUNT"}
-         *   Set data => curl http://localhost:2379/v3beta/kv/put -X POST -d '{"key": "KEY", "value": "", "lease": "number", "prev_kv": "bool"}'
-         *   Renew data => curl http://localhost:2379/v3beta/kv/put -X POST -d '{"key": "KEY", "value": "", "prev_kv": "bool", "ignore_lease": true}'
+         *   Set data => curl http://localhost:2379/v3/kv/put -X POST -d '{"key": "KEY", "value": "", "lease": "number", "prev_kv": "bool"}'
+         *   Renew data => curl http://localhost:2379/v3/kv/put -X POST -d '{"key": "KEY", "value": "", "prev_kv": "bool", "ignore_lease": true}'
          *       # Response {"header":{...}, "prev_kv": {...}}
-         *   Delete data => curl http://localhost:2379/v3beta/kv/deleterange -X POST -d '{"key": "KEY", "range_end": "", "prev_kv": "bool"}'
+         *   Delete data => curl http://localhost:2379/v3/kv/deleterange -X POST -d '{"key": "KEY", "range_end": "", "prev_kv": "bool"}'
          *       # Response {"header":{...}, "deleted": "number", "prev_kvs": [{...}]}
          *
-         *   Watch => curl http://localhost:2379/v3beta/watch -XPOST -d '{"create_request":  {"key": "WATCH KEY", "range_end": "", "prev_kv": true} }'
+         *   Watch => curl http://localhost:2379/v3/watch -XPOST -d '{"create_request":  {"key": "WATCH KEY", "range_end": "", "prev_kv": true} }'
          *       # Response {"header":{...},"watch_id":"ID","created":"bool", "canceled": "bool", "compact_revision": "REVISION", "events": [{"type":
          *                  "PUT=0|DELETE=1", "kv": {...}, prev_kv": {...}"}]}
          *
-         *   Allocate Lease => curl http://localhost:2379/v3beta/lease/grant -XPOST -d '{"TTL": 5, "ID": 0}'
+         *   Allocate Lease => curl http://localhost:2379/v3/lease/grant -XPOST -d '{"TTL": 5, "ID": 0}'
          *       # Response {"header":{...},"ID":"ID","TTL":"5"}
-         *   Keepalive Lease => curl http://localhost:2379/v3beta/lease/keepalive -XPOST -d '{"ID": 0}'
+         *   Keepalive Lease => curl http://localhost:2379/v3/lease/keepalive -XPOST -d '{"ID": 0}'
          *       # Response {"header":{...},"ID":"ID","TTL":"5"}
-         *   Revoke Lease => curl http://localhost:2379/v3beta/kv/lease/revoke -XPOST -d '{"ID": 0}'
+         *   Revoke Lease => curl http://localhost:2379/v3/kv/lease/revoke -XPOST -d '{"ID": 0}'
          *       # Response {"header":{...}}
          *
-         *   List members => curl http://localhost:2379/v3beta/cluster/member/list -XPOST -d '{}'
+         *   List members => curl http://localhost:2379/v3/cluster/member/list -XPOST -d '{}'
          *       # Response {"header":{...},"members":[{"ID":"ID","name":"NAME","peerURLs":["peer url"],"clientURLs":["client url"]}]}
          *
          *   Authorization Header => curl -H "Authorization: TOKEN"
-         *   Authorization => curl http://localhost:2379/v3beta/auth/authenticate -XPOST -d '{"name": "username", "password": "pass"}'
+         *   Authorization => curl http://localhost:2379/v3/auth/authenticate -XPOST -d '{"name": "username", "password": "pass"}'
          *       # Response {"header":{...}, "token": "TOKEN"}
          *       # Return 401 if auth token invalid
          *       # Return 400 with {"error": "etcdserver: user name is empty", "code": 3} if need TOKEN
          *       # Return 400 with {"error": "etcdserver: authentication failed, ...", "code": 3} if username of password invalid
          *   Authorization Enable:
-         *       curl -L http://127.0.0.1:2379/v3beta/auth/user/add -XPOST -d '{"name": "root", "password": "3d91123233ffd36825bf2aca17808bfe"}'
-         *       curl -L http://127.0.0.1:2379/v3beta/auth/role/add -XPOST -d '{"name": "root"}'
-         *       curl -L http://127.0.0.1:2379/v3beta/auth/user/grant -XPOST -d '{"user": "root", "role": "root"}'
-         *       curl -L http://127.0.0.1:2379/v3beta/auth/enable -XPOST -d '{}'
+         *       curl -L http://127.0.0.1:2379/v3/auth/user/add -XPOST -d '{"name": "root", "password": "3d91123233ffd36825bf2aca17808bfe"}'
+         *       curl -L http://127.0.0.1:2379/v3/auth/role/add -XPOST -d '{"name": "root"}'
+         *       curl -L http://127.0.0.1:2379/v3/auth/user/grant -XPOST -d '{"user": "root", "role": "root"}'
+         *       curl -L http://127.0.0.1:2379/v3/auth/enable -XPOST -d '{}'
          */
 
 #define ETCD_API_V3_ERROR_HTTP_CODE_AUTH 401
@@ -62,18 +62,18 @@ namespace atframe {
 // @see https://godoc.org/google.golang.org/grpc/codes
 #define ETCD_API_V3_ERROR_GRPC_CODE_UNAUTHENTICATED 16
 
-#define ETCD_API_V3_MEMBER_LIST "/v3beta/cluster/member/list"
-#define ETCD_API_V3_AUTH_AUTHENTICATE "/v3beta/auth/authenticate"
+#define ETCD_API_V3_MEMBER_LIST "/v3/cluster/member/list"
+#define ETCD_API_V3_AUTH_AUTHENTICATE "/v3/auth/authenticate"
 
-#define ETCD_API_V3_KV_GET "/v3beta/kv/range"
-#define ETCD_API_V3_KV_SET "/v3beta/kv/put"
-#define ETCD_API_V3_KV_DELETE "/v3beta/kv/deleterange"
+#define ETCD_API_V3_KV_GET "/v3/kv/range"
+#define ETCD_API_V3_KV_SET "/v3/kv/put"
+#define ETCD_API_V3_KV_DELETE "/v3/kv/deleterange"
 
-#define ETCD_API_V3_WATCH "/v3beta/watch"
+#define ETCD_API_V3_WATCH "/v3/watch"
 
-#define ETCD_API_V3_LEASE_GRANT "/v3beta/lease/grant"
-#define ETCD_API_V3_LEASE_KEEPALIVE "/v3beta/lease/keepalive"
-#define ETCD_API_V3_LEASE_REVOKE "/v3beta/kv/lease/revoke"
+#define ETCD_API_V3_LEASE_GRANT "/v3/lease/grant"
+#define ETCD_API_V3_LEASE_KEEPALIVE "/v3/lease/keepalive"
+#define ETCD_API_V3_LEASE_REVOKE "/v3/kv/lease/revoke"
 
         namespace details {
             const std::string &get_default_user_agent() {
