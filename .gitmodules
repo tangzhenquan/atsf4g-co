@@ -3,13 +3,13 @@
 	url = https://github.com/owt5008137/libiniloader.git
 [submodule "atframework/libatframe_utils/repo"]
 	path = atframework/libatframe_utils/repo
-	url = https://github.com/atframework/atframe_utils.git
+	url = https://github.com/tangzhenquan/atframe_utils.git
 [submodule "atframework/libatbus/repo"]
 	path = atframework/libatbus/repo
-	url = https://github.com/atframework/libatbus.git
+	url = https://github.com/tangzhenquan/libatbus.git
 [submodule "atframework/libatapp/repo"]
 	path = atframework/libatapp/repo
-	url = https://github.com/atframework/libatapp.git
+	url = https://github.com/tangzhenquan/libatapp.git
 [submodule "3rd_party/libcopp/repo"]
 	path = 3rd_party/libcopp/repo
 	url = https://github.com/owt5008137/libcopp.git
