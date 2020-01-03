@@ -12,6 +12,7 @@
 #include <atframe/atapp.h>
 #include <common/file_system.h>
 #include <time/time_utility.h>
+#include <libatbus_protocol.h>
 
 #include "atproxy_manager.h"
 
@@ -43,6 +44,16 @@ struct app_handle_on_disconnected {
         return 0;
     }
 };
+struct app_handle_on_msg {
+    std::reference_wrapper<atframe::proxy::atproxy_manager> atproxy_mgr_module;
+    app_handle_on_msg(atframe::proxy::atproxy_manager &mod) : atproxy_mgr_module(mod) {}
+    int operator()(atapp::app &, const atapp::app::msg_t &msg, const void *, size_t ) {
+        WLOGINFO("receive a message(from 0x%llx, type=%d) ", static_cast<unsigned long long>(msg.head.src_bus_id), msg.head.type);
+        return 0;
+    }
+
+};
+
 
 int main(int argc, char *argv[]) {
     atapp::app                                       app;
@@ -73,6 +84,7 @@ int main(int argc, char *argv[]) {
     app.set_evt_on_send_fail(app_handle_on_send_fail);
     app.set_evt_on_app_connected(app_handle_on_connected(*proxy_mgr_mod));
     app.set_evt_on_app_disconnected(app_handle_on_disconnected(*proxy_mgr_mod));
+    app.set_evt_on_recv_msg(app_handle_on_msg(*proxy_mgr_mod));
 
     // run
     return app.run(uv_default_loop(), argc, (const char **)argv, NULL);

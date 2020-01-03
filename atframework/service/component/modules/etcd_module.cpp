@@ -835,5 +835,10 @@ namespace atframe {
 
             return ret;
         }
+        std::string etcd_module::node_info_t::String() {
+            std::string ret;
+            etcd_module::pack(*this, ret);
+            return ret;
+        }
     } // namespace component
 } // namespace atframe

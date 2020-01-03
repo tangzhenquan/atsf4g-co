@@ -45,6 +45,7 @@ namespace atframe {
                 std::string            version;
 
                 node_action_t::type action;
+                std::string String();
             };
 
             struct node_list_t {
@@ -164,6 +165,8 @@ namespace atframe {
             std::list<watcher_list_callback_t>             watcher_by_id_callbacks_;
             std::list<watcher_list_callback_t>             watcher_by_name_callbacks_;
         };
+
+
     } // namespace component
 } // namespace atframe
 
