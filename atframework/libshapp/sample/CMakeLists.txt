@@ -37,7 +37,9 @@ endif()
 add_executable(${ATSF4G_APP_NAME} ${ATSF4G_APP_SRC_LIST} )
 target_link_libraries(${ATSF4G_APP_NAME}
         shapp
+        ${PROJECT_LIB_LINK}
         ${ATFRAMEWORK_ATBUS_LINK_NAME}
         ${ATFRAMEWORK_ATFRAME_UTILS_LINK_NAME}
+        ${3RD_PARTY_LIBUV_LINK_NAME}
         ${COMPILER_OPTION_EXTERN_CXX_LIBS}
         )
