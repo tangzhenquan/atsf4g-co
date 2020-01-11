@@ -13,7 +13,7 @@
 #include <common/file_system.h>
 #include <time/time_utility.h>
 #include <libatbus_protocol.h>
-
+#include "protocols/libatproxy_proto.h"
 #include "atproxy_manager.h"
 
 static int app_handle_on_send_fail(atapp::app &, atapp::app::app_id_t src_pd, atapp::app::app_id_t dst_pd, const atbus::protocol::msg &) {
@@ -54,6 +54,19 @@ struct app_handle_on_msg {
 
 };
 
+struct app_handle_on_custom_route {
+    std::reference_wrapper<atframe::proxy::atproxy_manager> atproxy_mgr_module;
+    app_handle_on_custom_route(atframe::proxy::atproxy_manager &mod) : atproxy_mgr_module(mod) {}
+    int operator()(atapp::app &, const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids ) {
+
+        std::stringstream ss ;
+        ss << data;
+        bus_ids.push_back(123);
+        WLOGINFO("receive a custom_route_data:%s ", ss.str().c_str());
+        return 0;
+    }
+};
+
 
 int main(int argc, char *argv[]) {
     atapp::app                                       app;
@@ -85,6 +98,7 @@ int main(int argc, char *argv[]) {
     app.set_evt_on_app_connected(app_handle_on_connected(*proxy_mgr_mod));
     app.set_evt_on_app_disconnected(app_handle_on_disconnected(*proxy_mgr_mod));
     app.set_evt_on_recv_msg(app_handle_on_msg(*proxy_mgr_mod));
+    app.set_evt_on_on_custom_route(app_handle_on_custom_route(*proxy_mgr_mod));
 
     // run
     return app.run(uv_default_loop(), argc, (const char **)argv, NULL);
