@@ -2,11 +2,11 @@
 #define ATFRAME_LIBSHAPP_SHAPP_CONF_H
 #pragma once
 
-
-
 #include "libatbus.h"
 #include <string>
 #include <vector>
+
+
 namespace shapp{
     struct app_conf {
         // bus configure
