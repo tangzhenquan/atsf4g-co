@@ -15,6 +15,7 @@
 #include <libatbus_protocol.h>
 #include "protocols/libatproxy_proto.h"
 #include "atproxy_manager.h"
+#include "node_proxy.h"
 
 static int app_handle_on_send_fail(atapp::app &, atapp::app::app_id_t src_pd, atapp::app::app_id_t dst_pd, const atbus::protocol::msg &) {
     WLOGERROR("send data from 0x%llx to 0x%llx failed", static_cast<unsigned long long>(src_pd), static_cast<unsigned long long>(dst_pd));
@@ -46,24 +47,26 @@ struct app_handle_on_disconnected {
 };
 struct app_handle_on_msg {
     std::reference_wrapper<atframe::proxy::atproxy_manager> atproxy_mgr_module;
-    app_handle_on_msg(atframe::proxy::atproxy_manager &mod) : atproxy_mgr_module(mod) {}
-    int operator()(atapp::app &, const atapp::app::msg_t &msg, const void *, size_t ) {
+    std::reference_wrapper<atframe::proxy::node_proxy> node_proxy_module;
+    app_handle_on_msg(atframe::proxy::atproxy_manager &mod, atframe::proxy::node_proxy &node_proxy_mod) : atproxy_mgr_module(mod), node_proxy_module(node_proxy_mod) {}
+    int operator()(atapp::app &app, const atapp::app::msg_t &msg, const void * buffer, size_t l) {
         WLOGINFO("receive a message(from 0x%llx, type=%d) ", static_cast<unsigned long long>(msg.head.src_bus_id), msg.head.type);
-        return 0;
+        return  node_proxy_module.get().on_msg(app, msg, buffer, l);
+
     }
 
 };
 
 struct app_handle_on_custom_route {
-    std::reference_wrapper<atframe::proxy::atproxy_manager> atproxy_mgr_module;
-    app_handle_on_custom_route(atframe::proxy::atproxy_manager &mod) : atproxy_mgr_module(mod) {}
-    int operator()(atapp::app &, const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids ) {
+    std::reference_wrapper<atframe::proxy::node_proxy> node_proxy_module;
+    app_handle_on_custom_route(atframe::proxy::node_proxy &node_proxy_mod) : node_proxy_module(node_proxy_mod) {}
+    int operator()(atapp::app & app , const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids ) {
 
-        std::stringstream ss ;
+        /*std::stringstream ss ;
         ss << data;
         bus_ids.push_back(123);
-        WLOGINFO("receive a custom_route_data:%s ", ss.str().c_str());
-        return 0;
+        WLOGINFO("receive a custom_route_data:%s ", ss.str().c_str());*/
+        return node_proxy_module.get().on_custom_route(app, data, bus_ids);
     }
 };
 
@@ -82,6 +85,12 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    std::shared_ptr<atframe::proxy::node_proxy> node_proxy_mod = std::make_shared<atframe::proxy::node_proxy>(etcd_mod);
+    if (!proxy_mgr_mod) {
+        fprintf(stderr, "create node_proxy_mod failed\n");
+        return -1;
+    }
+
     // project directory
     {
         std::string proj_dir;
@@ -92,13 +101,14 @@ int main(int argc, char *argv[]) {
     // setup module
     app.add_module(etcd_mod);
     app.add_module(proxy_mgr_mod);
+    app.add_module(node_proxy_mod);
 
     // setup message handle
     app.set_evt_on_send_fail(app_handle_on_send_fail);
     app.set_evt_on_app_connected(app_handle_on_connected(*proxy_mgr_mod));
     app.set_evt_on_app_disconnected(app_handle_on_disconnected(*proxy_mgr_mod));
-    app.set_evt_on_recv_msg(app_handle_on_msg(*proxy_mgr_mod));
-    app.set_evt_on_on_custom_route(app_handle_on_custom_route(*proxy_mgr_mod));
+    app.set_evt_on_recv_msg(app_handle_on_msg(*proxy_mgr_mod, *node_proxy_mod));
+    app.set_evt_on_on_custom_route(app_handle_on_custom_route(*node_proxy_mod));
 
     // run
     return app.run(uv_default_loop(), argc, (const char **)argv, NULL);

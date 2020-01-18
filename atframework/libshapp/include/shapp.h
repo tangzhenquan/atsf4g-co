@@ -69,8 +69,9 @@ namespace shapp {
         typedef std::function<int(app &, atbus::endpoint &, int)> callback_fn_on_connected_t;
         typedef std::function<int(app &, atbus::endpoint &, int)> callback_fn_on_disconnected_t;
         typedef std::function<int(app &)> callback_fn_on_all_module_inited_t;
-        typedef std::function<int(app &, const atbus::protocol::custom_route_data&, std::vector<uint64_t >& )>
-                callback_fn_on_custom_route_t;
+        /*typedef std::function<int(app &, const atbus::protocol::custom_route_data&, std::vector<uint64_t >& )>
+                callback_fn_on_custom_route_t;*/
+        typedef std::function<int(app &, int)> callback_fn_on_available_t;
 
     public:
         app();
@@ -78,6 +79,7 @@ namespace shapp {
 
 
         int run(uv_loop_t *ev_loop, const app_conf& conf);
+        int run();
         int init(uv_loop_t *ev_loop, const app_conf& conf);
         int run_noblock(uint64_t max_event_count = 20000);
         int stop();
@@ -116,6 +118,8 @@ namespace shapp {
 
         void set_evt_on_all_module_inited(callback_fn_on_all_module_inited_t fn);
 
+        void set_evt_on_available(callback_fn_on_available_t fn);
+
         //void set_evt_on_on_custom_route(callback_fn_on_custom_route_t fn);
 
         const callback_fn_on_msg_t &get_evt_on_recv_msg() const;
@@ -128,10 +132,15 @@ namespace shapp {
 
         const callback_fn_on_all_module_inited_t &get_evt_on_all_module_inited() const;
 
+        const callback_fn_on_available_t &get_callback_fn_on_available() const ;
+
         //const callback_fn_on_custom_route_t &get_evt_on_on_custom_route() const;
 
         app_id_t get_id() const;
         const std::string &get_app_name() const;
+
+        const app_conf& get_conf() const;
+
 
     private:
         static void ev_stop_timeout(uv_timer_t *handle);
@@ -177,6 +186,8 @@ namespace shapp {
         callback_fn_on_connected_t evt_on_app_connected_;
         callback_fn_on_disconnected_t evt_on_app_disconnected_;
         callback_fn_on_all_module_inited_t evt_on_all_module_inited_;
+        callback_fn_on_available_t evt_on_available_;
+
 
 
         // stat

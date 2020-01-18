@@ -32,5 +32,8 @@ target_link_libraries("${ATSF4G_APP_NAME}"
 )
 
 if (MSVC)
-    set_property(TARGET ${ATSF4G_APP_NAME} PROPERTY FOLDER "atframework/service")
+    set_property(TARGET ${ATSF4G_APP_NAME} PROPERTY FOLDER "atframework/atproxy")
 endif (MSVC)
+
+
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libatproxy_cli")

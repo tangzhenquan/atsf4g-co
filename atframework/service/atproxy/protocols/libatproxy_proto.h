@@ -1,6 +1,6 @@
 
-#ifndef ATFRAME_SERVICE_PROXY_PROTOCOL_PROTO_H
-#define ATFRAME_SERVICE_PROXY_PROTOCOL_PROTO_H
+#ifndef ATFRAME_SERVICE_ATPROXY_PROTOCOLS_LIBATPROXY_PROTO_H
+#define ATFRAME_SERVICE_ATPROXY_PROTOCOLS_LIBATPROXY_PROTO_H
 #pragma once
 
 #pragma once
@@ -22,7 +22,7 @@ enum ATFRAME_PROXY_PROTOCOL_CMD {
 MSGPACK_ADD_ENUM(ATFRAME_PROXY_PROTOCOL_CMD);
 
 namespace atframe {
-    namespace atproxy {
+    namespace proxy {
 
         struct ss_msg_head {
             ATFRAME_PROXY_PROTOCOL_CMD cmd; // ID: 0
@@ -42,9 +42,37 @@ namespace atframe {
         };
 
         struct ss_reg {
-            int pad = 0;
+            uint64_t bus_id;
+            std::vector<std::string> tags;
+            std::string engine_version;
+            std::string type_name;
+            std::string name;
 
-            MSGPACK_DEFINE(pad);
+            ss_reg():bus_id(0){}
+
+            MSGPACK_DEFINE(bus_id, tags, engine_version, type_name, name);
+
+            template <typename CharT, typename Traits>
+            friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, const ss_reg &mh) {
+                os << "{" << std::endl << "    bus_id: " << mh.bus_id << std::endl << "    engine_version: " << mh.engine_version << std::endl ;
+
+                if (!mh.tags.empty()) {
+                    os << "      tags: ";
+                    for (size_t i = 0; i < mh.tags.size(); ++i) {
+                        if (0 != i) {
+                            os << ", ";
+                        }
+                        os << mh.tags[i];
+                    }
+                    os << std::endl;
+                }
+
+                os <<  "    type_name: " << mh.type_name << std::endl;
+                os <<  "    name: " << mh.name << std::endl;
+
+                os << "    }";
+                return os;
+            }
         };
 
 
@@ -76,15 +104,12 @@ namespace atframe {
                     return ret;
                 }
 
-                /*ret->session_ids.clear();
-                ret->content.ptr = buffer;
-                ret->content.size = s;*/
                 return ret;
             }
 
 
             template <typename CharT, typename Traits>
-            friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, const ss_msg_body &mb) {
+            friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, const ss_msg_body &) {
                 os << "{" << std::endl;
 
 
@@ -125,8 +150,8 @@ namespace msgpack {
     MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         namespace adaptor {
             template <>
-            struct convert<atframe::atproxy::ss_msg> {
-                msgpack::object const &operator()(msgpack::object const &o, atframe::atproxy::ss_msg &v) const {
+            struct convert<atframe::proxy::ss_msg> {
+                msgpack::object const &operator()(msgpack::object const &o, atframe::proxy::ss_msg &v) const {
                     if (o.type != msgpack::type::MAP) throw msgpack::type_error();
                     msgpack::object body_obj;
                     // just like protobuf buffer
@@ -158,9 +183,9 @@ namespace msgpack {
             };
 
             template <>
-            struct pack<atframe::atproxy::ss_msg> {
+            struct pack<atframe::proxy::ss_msg> {
                 template <typename Stream>
-                packer<Stream> &operator()(msgpack::packer<Stream> &o, atframe::atproxy::ss_msg const &v) const {
+                packer<Stream> &operator()(msgpack::packer<Stream> &o, atframe::proxy::ss_msg const &v) const {
                     // packing member variables as an map.
                     o.pack_map(2);
                     o.pack(1);
@@ -189,8 +214,8 @@ namespace msgpack {
             };
 
             template <>
-            struct object_with_zone<atframe::atproxy::ss_msg> {
-                void operator()(msgpack::object::with_zone &o, atframe::atproxy::ss_msg const &v) const {
+            struct object_with_zone<atframe::proxy::ss_msg> {
+                void operator()(msgpack::object::with_zone &o, atframe::proxy::ss_msg const &v) const {
                     o.type = type::MAP;
                     o.via.map.size = 2;
                     o.via.map.ptr = static_cast<msgpack::object_kv *>(o.zone.allocate_align(sizeof(msgpack::object_kv) * o.via.map.size));
@@ -223,4 +248,4 @@ namespace msgpack {
     }
 }
 
-#endif //ATFRAME_SERVICE_PROXY_PROTOCOL_PROTO_H
+#endif //ATFRAME_SERVICE_ATPROXY_PROTOCOLS_LIBATPROXY_PROTO_H

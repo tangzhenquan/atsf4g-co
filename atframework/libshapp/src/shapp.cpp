@@ -109,7 +109,7 @@ namespace shapp {
         }
 
         if (is_closed()) {
-            return EN_ATAPP_ERR_ALREADY_CLOSED;
+            return EN_SHAPP_ERR_ALREADY_CLOSED;
         }
 
         if (false == check_flag(flag_t::INITIALIZED)) {
@@ -124,12 +124,29 @@ namespace shapp {
             ret = run_inner(UV_RUN_DEFAULT);
         }
         return ret;
+    }
 
+    int app::run() {
+        if (check_flag(flag_t::IN_CALLBACK)) {
+            return 0;
+        }
+        if (false == check_flag(flag_t::INITIALIZED)) {
+            return EN_SHAPP_ERR_NOT_INITED;
+        }
+        if (is_closed()) {
+            return EN_SHAPP_ERR_ALREADY_CLOSED;
+        }
+
+        int ret = 0;
+        while (!is_closed()) {
+            ret = run_inner(UV_RUN_DEFAULT);
+        }
+        return ret;
     }
 
     int app::init(uv_loop_t *ev_loop, const app_conf & conf) {
         if (check_flag(flag_t::INITIALIZED)) {
-            return EN_ATAPP_ERR_ALREADY_INITED;
+            return EN_SHAPP_ERR_ALREADY_INITED;
         }
         setup_result_ = 0;
 
@@ -211,7 +228,7 @@ namespace shapp {
                 }
             }
 
-            return EN_ATAPP_ERR_SETUP_TIMER;
+            return EN_SHAPP_ERR_SETUP_TIMER;
         }
 
         set_flag(flag_t::STOPPED, false);
@@ -379,11 +396,11 @@ namespace shapp {
     }
 
     const std::shared_ptr<atbus::node> app::get_bus_node() const {
-        return std::shared_ptr<atbus::node>();
+        return bus_node_;
     }
 
     std::shared_ptr<atbus::node> app::get_bus_node() {
-        return std::shared_ptr<atbus::node>();
+        return bus_node_;
     }
 
     bool app::is_remote_address_available(const std::string & , const std::string & address) const {
@@ -433,12 +450,14 @@ namespace shapp {
     void app::set_evt_on_app_connected(callback_fn_on_connected_t fn) { evt_on_app_connected_ = fn; }
     void app::set_evt_on_app_disconnected(callback_fn_on_disconnected_t fn) { evt_on_app_disconnected_ = fn; }
     void app::set_evt_on_all_module_inited(callback_fn_on_all_module_inited_t fn) { evt_on_all_module_inited_ = fn; }
+    void app::set_evt_on_available(app::callback_fn_on_available_t fn) {evt_on_available_ = fn;}
 
     const app::callback_fn_on_msg_t &app::get_evt_on_recv_msg() const { return evt_on_recv_msg_; }
     const app::callback_fn_on_send_fail_t &app::get_evt_on_send_fail() const { return evt_on_send_fail_; }
     const app::callback_fn_on_connected_t &app::get_evt_on_app_connected() const { return evt_on_app_connected_; }
     const app::callback_fn_on_disconnected_t &app::get_evt_on_app_disconnected() const { return evt_on_app_disconnected_; }
     const app::callback_fn_on_all_module_inited_t &app::get_evt_on_all_module_inited() const { return evt_on_all_module_inited_; }
+    const app::callback_fn_on_available_t &app::get_callback_fn_on_available() const { return  evt_on_available_; }
 
 
 
@@ -529,7 +548,7 @@ namespace shapp {
     }
     int app::run_inner(int run_mode) {
         if (false == check_flag(flag_t::INITIALIZED)) {
-            return EN_ATAPP_ERR_NOT_INITED;
+            return EN_SHAPP_ERR_NOT_INITED;
         }
 
         last_proc_event_count_ = 0;
@@ -594,13 +613,13 @@ namespace shapp {
         std::shared_ptr<atbus::node> connection_node = atbus::node::create();
         if (!connection_node) {
             LOGF_ERROR("create bus node failed.");
-            return EN_ATAPP_ERR_SETUP_ATBUS;
+            return EN_SHAPP_ERR_SETUP_ATBUS;
         }
 
         ret = connection_node->init(conf_.id, &conf_.bus_conf);
         if (ret < 0) {
             WLOGERROR("init bus node failed. ret: %d", ret);
-            return EN_ATAPP_ERR_SETUP_ATBUS;
+            return EN_SHAPP_ERR_SETUP_ATBUS;
         }
 
         // setup all callbacks
@@ -742,7 +761,7 @@ namespace shapp {
             tick_timer_.tick_timer.is_activited = true;
         } else {
             WLOGERROR("setup tick timer failed, res: %d", res);
-            return EN_ATAPP_ERR_SETUP_TIMER;
+            return EN_SHAPP_ERR_SETUP_TIMER;
         }
 
         return 0;
@@ -777,7 +796,7 @@ namespace shapp {
         // call failed callback if it's message transfer
         if (NULL == m) {
             WLOGERROR("app 0x%llx receive a send failure without message", static_cast<unsigned long long>(get_id()));
-            return EN_ATAPP_ERR_SEND_FAILED;
+            return EN_SHAPP_ERR_SEND_FAILED;
         }
 
         WLOGERROR("app 0x%llx receive a send failure from 0x%llx, message cmd: %d, type: %d, ret: %d, sequence: %llu",
@@ -869,6 +888,9 @@ namespace shapp {
 
     int app::bus_evt_callback_on_available(const atbus::node &n, int res) {
         WLOGINFO("bus node 0x%llx initialze done, res: %d", static_cast<unsigned long long>(n.get_id()), res);
+        if (evt_on_available_){
+            return evt_on_available_(std::ref(*this), res);
+        }
         return res;
     }
 
@@ -919,6 +941,10 @@ namespace shapp {
         return 0;
     }
 
+    const app_conf &app::get_conf() const {
+        //return std::cref(conf_);
+        return  conf_;
+    }
 
 
 }

@@ -413,6 +413,41 @@ namespace atframe {
             return true;
         }
 
+        bool etcd_cluster::remove_keepalive(const std::string &path) {
+            if (path.empty()) {
+                return false;
+            }
+
+            if (check_flag(flag_t::CLOSING)) {
+                return false;
+            }
+            std::vector<std::shared_ptr<etcd_keepalive> >::iterator iter = keepalive_actors_.begin();
+            while (iter != keepalive_actors_.end()) {
+                if (iter->get()->get_path() == path) {
+                    iter->get()->close();
+                    iter = keepalive_actors_.erase(iter);
+                    break;
+                }
+                else {
+                    ++iter;
+                }
+            }
+
+            std::vector<std::shared_ptr<etcd_keepalive> >::iterator iter1 = keepalive_retry_actors_.begin();
+            while (iter1 != keepalive_retry_actors_.end()) {
+                if (iter1->get()->get_path() == path) {
+                    iter1->get()->close();
+                    iter1 = keepalive_retry_actors_.erase(iter1);
+                    break;
+                }
+                else {
+                    ++iter1;
+                }
+            }
+            return true;
+        }
+
+
         bool etcd_cluster::add_watcher(const std::shared_ptr<etcd_watcher> &watcher) {
             if (!watcher) {
                 return false;
@@ -433,6 +468,29 @@ namespace atframe {
             watcher_actors_.push_back(watcher);
             return true;
         }
+
+        bool etcd_cluster::remove_watcher(const std::string &path) {
+            if (path.empty()) {
+                return false;
+            }
+
+            if (check_flag(flag_t::CLOSING)) {
+                return false;
+            }
+            std::vector<std::shared_ptr<etcd_watcher> >::iterator iter = watcher_actors_.begin();
+            while (iter != watcher_actors_.end()) {
+                if (iter->get()->get_path() == path) {
+                    iter->get()->close();
+                    iter = watcher_actors_.erase(iter);
+                    break;
+                }
+                else {
+                    ++iter;
+                }
+            }
+            return true;
+        }
+
 
         void etcd_cluster::set_lease(int64_t v, bool force_active_keepalives) {
             int64_t old_v = get_lease();
@@ -1192,6 +1250,8 @@ namespace atframe {
             req->post_data().assign(buffer.GetString(), buffer.GetSize());
             WLOGTRACE("Etcd cluster setup request %p to %s, post data: %s", req.get(), req->get_url().c_str(), req->post_data().c_str());
         }
+
+
 
     } // namespace component
 } // namespace atframe

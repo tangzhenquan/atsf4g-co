@@ -217,6 +217,12 @@ namespace atframe {
             return 0;
         }
 
+        /*int atproxy_manager::on_custom_route(const atapp::app &, const atbus::protocol::custom_route_data &,
+                                             std::vector<uint64_t> &) {
+
+            return 0;
+        }*/
+
         void atproxy_manager::swap(node_info_t &l, node_info_t &r) {
             using std::swap;
             swap(l.etcd_node.id, r.etcd_node.id);
@@ -240,5 +246,7 @@ namespace atframe {
                 set(sender.node);
             }
         }
+
+
     } // namespace proxy
 } // namespace atframe

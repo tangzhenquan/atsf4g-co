@@ -55,6 +55,8 @@ namespace atframe {
 
             int on_disconnected(const ::atapp::app &app, ::atapp::app::app_id_t id);
 
+            //int on_custom_route(const atapp::app &app, const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids );
+
         private:
             void swap(node_info_t &l, node_info_t &r);
             void on_watcher_notify(atframe::component::etcd_module::watcher_sender_one_t &sender);

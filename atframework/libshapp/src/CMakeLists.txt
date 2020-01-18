@@ -20,7 +20,6 @@ if ( NOT MSVC )
     add_definitions(-D_POSIX_MT_)
 endif()
 
-# ============ libatbus - src ============
 add_library(${PROJECT_LIB_LINK} STATIC ${PROJECT_LIB_SRC_LIST})
 
 add_library("${PROJECT_LIB_LINK}_packed" STATIC

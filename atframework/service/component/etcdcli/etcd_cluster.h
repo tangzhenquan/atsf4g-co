@@ -121,6 +121,8 @@ namespace atframe {
             bool add_keepalive(const std::shared_ptr<etcd_keepalive> &keepalive);
             bool add_retry_keepalive(const std::shared_ptr<etcd_keepalive> &keepalive);
             bool add_watcher(const std::shared_ptr<etcd_watcher> &watcher);
+            bool remove_keepalive(const std::string &path);
+            bool remove_watcher(const std::string &path);
 
             // ================== apis of create request for key-value operation ==================
         public:

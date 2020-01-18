@@ -15,6 +15,7 @@ set(ATFRAMEWORK_SERVICE_COMPONENT_LINK_NAME atservice_component)
 
 set(ATFRAMEWORK_SERVICE_GATEWAY_PROTOCOL_DIR "${ATFRAMEWORK_BASE_DIR}/service/atgateway/protocols")
 
+set(ATFRAMEWORK_SERVICE_ATPROXY_PROTOCOL_DIR "${ATFRAMEWORK_BASE_DIR}/service/atproxy/protocols")
 
 # export library
 include("${ATFRAMEWORK_BASE_DIR}/export/export.macro.cmake")
