@@ -3,6 +3,7 @@
 //
 
 #include "node_proxy.h"
+#include "atframe/atapp.h"
 #include "protocols/libatproxy_proto.h"
 
 

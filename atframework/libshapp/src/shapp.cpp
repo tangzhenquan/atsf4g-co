@@ -3,12 +3,13 @@
 //
 #include <stdarg.h>
 #include "std/foreach.h"
+#include <libatbus_protocol.h>
 
 #include "shapp.h"
 #include "shapp_log.h"
-
 #include <common/file_system.h>
 #include <common/string_oprs.h>
+
 
 namespace shapp {
 

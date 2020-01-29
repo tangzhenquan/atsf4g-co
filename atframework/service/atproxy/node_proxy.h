@@ -8,6 +8,12 @@
 #include <modules/etcd_module.h>
 
 
+namespace atbus{
+    namespace protocol{
+        struct custom_route_data;
+    }
+}
+
 namespace atframe {
     namespace proxy {
 

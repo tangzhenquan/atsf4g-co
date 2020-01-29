@@ -2,6 +2,8 @@
 
 #include <shapp_log.h>
 #include <shapp.h>
+#include <libatbus_protocol.h>
+#include <sstream>
 #include "atproxy_cli_module.h"
 #include "config/atframe_service_types.h"
 
