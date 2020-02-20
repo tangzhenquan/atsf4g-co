@@ -36,8 +36,8 @@ typedef const void *libatproxy_cli_message;
 UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf );
 
 
-typedef int32_t (*libatproxy_cli_on_msg_fn_t)(libatproxy_cli_context, libatproxy_cli_message msg, const void *msg_data, uint64_t msg_len, void *priv_data);
-typedef int32_t (*libatproxy_cli_on_send_fail_fn_t)(libatproxy_cli_context, uint64_t src_pd, uint64_t dst_pd, libatproxy_cli_message msg, void *priv_data);
+typedef int32_t (*libatproxy_cli_on_msg_fn_t)(libatproxy_cli_context context, libatproxy_cli_message msg, const void *msg_data, uint64_t msg_len, void *priv_data);
+typedef int32_t (*libatproxy_cli_on_send_fail_fn_t)(libatproxy_cli_context context, uint64_t src_pd, uint64_t dst_pd, libatproxy_cli_message msg, void *priv_data);
 
 
 
@@ -61,7 +61,8 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context co
 // =========================== message ===========================
 UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_src_bus_id(libatproxy_cli_message msg);
 UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_from(libatproxy_cli_message msg);
-UTIL_SYMBOL_EXPORT uint64_t __cdecl llibatproxy_cli_msg_get_forward_to(libatproxy_cli_message msg);
+UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_to(libatproxy_cli_message msg);
+UTIL_SYMBOL_EXPORT uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_cli_message msg);
 
 
 

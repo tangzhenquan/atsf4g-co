@@ -65,7 +65,7 @@ namespace shapp {
         friend class flag_guard_t;
 
         typedef std::function<int(app &, const msg_t &, const void *, size_t)> callback_fn_on_msg_t;
-        typedef std::function<int(app &, app_id_t src_pd, app_id_t dst_pd, const atbus::protocol::msg &m)> callback_fn_on_send_fail_t;
+        typedef std::function<int(app &, app_id_t src_pd, app_id_t dst_pd, const msg_t &m)> callback_fn_on_send_fail_t;
         typedef std::function<int(app &, atbus::endpoint &, int)> callback_fn_on_connected_t;
         typedef std::function<int(app &, atbus::endpoint &, int)> callback_fn_on_disconnected_t;
         typedef std::function<int(app &)> callback_fn_on_all_module_inited_t;

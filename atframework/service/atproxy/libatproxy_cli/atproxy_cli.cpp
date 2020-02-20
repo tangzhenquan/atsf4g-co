@@ -19,6 +19,9 @@
 #define  SHAPP_CONTEXT_IS_NULL(x) (NULL == (x))
 #define  IS_EMPTY(x) ((!x || !x[0]))
 
+#define SHAPP_MESSAGE(x) ((const ::shapp::app::msg_t *)(x))
+#define SHAPP_MESSAGE_IS_NULL(x) (NULL == (x))
+
 static  atframe::proxy::atproxy_cli_module *g_cli_module = NULL;
 
 namespace detail {
@@ -154,7 +157,8 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 ));
     app->set_evt_on_app_disconnected(std::bind<int>(&atframe::proxy::atproxy_cli_module::on_disconnected, g_cli_module,
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3 ));
-
+    app->set_evt_on_send_fail(std::bind<int>(&atframe::proxy::atproxy_cli_module::on_send_fail, g_cli_module,
+                                             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     app->set_evt_on_available(::detail::app_handle_on_available(*cli_mod));
 
 
@@ -176,4 +180,39 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context co
         return EN_ATBUS_ERR_PARAMS;
     }
     return SHAPP_CONTEXT(context)->stop();
+}
+
+UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_src_bus_id(libatproxy_cli_message msg) {
+    if (SHAPP_MESSAGE_IS_NULL(msg)) {
+        return 0;
+    }
+    return SHAPP_MESSAGE(msg)->head.src_bus_id;
+}
+
+UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_from(libatproxy_cli_message msg){
+    if (SHAPP_MESSAGE_IS_NULL(msg)) {
+        return 0;
+    }
+    if (NULL == SHAPP_MESSAGE(msg)->body.forward) {
+        return 0;
+    }
+
+    return SHAPP_MESSAGE(msg)->body.forward->from;
+}
+
+UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_to(libatproxy_cli_message msg){
+    if (SHAPP_MESSAGE_IS_NULL(msg)) {
+        return 0;
+    }
+    if (NULL == SHAPP_MESSAGE(msg)->body.forward) {
+        return 0;
+    }
+    return SHAPP_MESSAGE(msg)->body.forward->to;
+}
+
+UTIL_SYMBOL_EXPORT uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_cli_message msg){
+    if (SHAPP_MESSAGE_IS_NULL(msg)) {
+        return 0;
+    }
+    return SHAPP_MESSAGE(msg)->head.sequence;
 }

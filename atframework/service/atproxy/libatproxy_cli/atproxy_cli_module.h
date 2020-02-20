@@ -39,6 +39,8 @@ namespace atframe {
 
             int on_available( ::shapp::app &);
 
+            int on_send_fail(::shapp::app & app, ::shapp::app::app_id_t src_pd, ::shapp::app::app_id_t dst_pd, const shapp::app::msg_t &m);
+
         public:
             libatproxy_cli_on_msg_fn_t on_msg_;
             void *on_msg_priv_data_;

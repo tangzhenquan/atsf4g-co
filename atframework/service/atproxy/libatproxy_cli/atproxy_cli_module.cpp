@@ -63,9 +63,17 @@ namespace atframe {
             return 0;
         }
 
-        int atproxy_cli_module::on_msg( shapp::app &, const shapp::app::msg_t & msg, const void *,
-                                       size_t ) {
+        int atproxy_cli_module::on_msg( shapp::app & app, const shapp::app::msg_t & msg, const void * data,
+                                       size_t len ) {
             LOGF_INFO("receive a message(from 0x%llx, type=%d) ", static_cast<unsigned long long>(msg.head.src_bus_id), msg.head.type);
+            if (on_msg_ != NULL){
+
+                libatproxy_cli_context ctx;
+                libatproxy_cli_message m;
+                ctx = &app;
+                m = &msg;
+                return (*on_msg_)(ctx, m, data, len, on_msg_priv_data_);
+            }
             return 0;
         }
 
@@ -82,6 +90,20 @@ namespace atframe {
             ss.str().swap(packed_buffer);
 
             return  get_app()->get_bus_node()->send_data(tid, type, packed_buffer.data(), packed_buffer.size());
+        }
+
+        int atproxy_cli_module::on_send_fail(::shapp::app &app, ::shapp::app::app_id_t src_pd,
+                                             ::shapp::app::app_id_t dst_pd, const shapp::app::msg_t &msg) {
+            LOGF_INFO("on_send_fail(src_pd 0x%llx, dst_pd=0x%llx) ", static_cast<unsigned long long>(src_pd), static_cast<unsigned long long>(dst_pd));
+            if (on_send_fail_ != NULL){
+
+                libatproxy_cli_context ctx;
+                libatproxy_cli_message m;
+                ctx = &app;
+                m = &msg;
+                return (*on_send_fail_)(ctx, src_pd, dst_pd, m,  on_send_fail_priv_data_);
+            }
+            return 0;
         }
 
 
