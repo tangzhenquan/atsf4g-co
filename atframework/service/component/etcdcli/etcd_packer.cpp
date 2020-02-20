@@ -1,3 +1,5 @@
+﻿#define WIN32_LEAN_AND_MEAN
+
 #include <cstring>
 #include <sstream>
 
@@ -292,7 +294,7 @@ namespace atframe {
             rapidjson::Value k;
             rapidjson::Value v;
             k.SetString(key, doc.GetAllocator());
-            v.SetString(base64_val.c_str(), base64_val.size(), doc.GetAllocator());
+            v.SetString(base64_val.c_str(), (rapidjson::SizeType)base64_val.size(), doc.GetAllocator());
             json_val.AddMember(k, v, doc.GetAllocator());
         }
 

@@ -1,3 +1,5 @@
+﻿#define WIN32_LEAN_AND_MEAN
+
 #include <algorithm/base64.h>
 
 #include <common/string_oprs.h>

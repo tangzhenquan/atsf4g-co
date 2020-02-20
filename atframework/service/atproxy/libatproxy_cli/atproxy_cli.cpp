@@ -1,4 +1,4 @@
-
+#define WIN32_LEAN_AND_MEAN
 #include <libatbus.h>
 #include <libatbus_protocol.h>
 #include <shapp.h>
