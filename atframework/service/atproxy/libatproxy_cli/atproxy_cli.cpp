@@ -50,7 +50,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf ){
 
 }
 
-UTIL_SYMBOL_EXPORT void __cdecl libatapp_c_set_on_msg_fn(libatproxy_cli_context context, libatproxy_cli_on_msg_fn_t fn, void *priv_data){
+UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_msg_fn(libatproxy_cli_context context, libatproxy_cli_on_msg_fn_t fn, void *priv_data){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return;
     }
@@ -60,7 +60,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatapp_c_set_on_msg_fn(libatproxy_cli_context 
     }
 }
 
-UTIL_SYMBOL_EXPORT void __cdecl libatapp_c_set_on_send_fail_fn(libatproxy_cli_context context, libatproxy_cli_on_send_fail_fn_t fn, void *priv_data){
+UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_send_fail_fn(libatproxy_cli_context context, libatproxy_cli_on_send_fail_fn_t fn, void *priv_data){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return;
     }
@@ -70,7 +70,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatapp_c_set_on_send_fail_fn(libatproxy_cli_co
     }
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg(libatproxy_cli_context context, uint64_t  bus_id, const void *buffer, uint64_t sz, int32_t require_rsp ){
+UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_context context, uint64_t  bus_id, const void *buffer, uint64_t sz, int32_t require_rsp ){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
