@@ -22,6 +22,9 @@
 #define ETCD_MODULE_BY_NAME_DIR "by_name"
 #define ETCD_MODULE_BY_TAG "by_tag"
 
+#define ETCD_MODULE_BY_CUSTOM "by_custom"
+
+
 namespace atframe {
     namespace component {
         namespace detail {
@@ -411,6 +414,102 @@ namespace atframe {
             return etcd_ctx_.tick();
         }
 
+
+        int etcd_module::reg_custom_node(const node_info_t& node_info){
+            WLOGINFO("reg reg_custom_node %llu", node_info.id);
+            //std::vector<atframe::component::etcd_keepalive::ptr_t> keepalive_actors;
+            std::string                                            keepalive_val;
+            pack(node_info, keepalive_val);
+            atframe::component::etcd_keepalive::ptr_t actor = add_keepalive_actor2(keepalive_val, get_by_custom_type_name_path());
+            if (!actor) {
+                WLOGERROR("create reg_custom_node for get_by_custom_type_name_path index failed.");
+                return -1;
+            }
+            //keepalive_actors.push_back(actor);
+            WLOGINFO("create etcd_keepalive for get_by_custom_type_name_path index %s success", get_by_custom_type_name_path().c_str());
+
+
+            // 执行到首次检测结束
+            bool is_failed  = false;
+            bool is_timeout = false;
+
+            // setup timer for timeout
+            uv_timer_t timeout_timer;
+            uv_timer_init(get_app()->get_bus_node()->get_evloop(), &timeout_timer);
+            timeout_timer.data = &is_timeout;
+
+            uint64_t timeout_ms = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(conf_.etcd_init_timeout).count());
+            uv_timer_start(&timeout_timer, detail::init_timer_timeout_callback, timeout_ms, 0);
+
+            int ticks = 0;
+            while (false == is_failed && false == is_timeout) {
+                util::time::time_utility::update();
+                etcd_ctx_.tick();
+                ++ticks;
+
+                if (actor->is_check_run()){
+                    if (!actor->is_check_passed()){
+                        WLOGERROR("etcd_keepalive lock %s failed.", actor->get_path().c_str());
+                        is_failed = true;
+                    }
+                }
+
+                if (is_failed){
+                    break;
+                }
+
+                uv_run(get_app()->get_bus_node()->get_evloop(), UV_RUN_ONCE);
+
+                if (actor->get_check_times() >= ETCD_MODULE_STARTUP_RETRY_TIMES ||
+                    etcd_ctx_.get_stats().continue_error_requests > ETCD_MODULE_STARTUP_RETRY_TIMES){
+                    size_t retry_times = actor->get_check_times();
+                    if (etcd_ctx_.get_stats().continue_error_requests > retry_times) {
+                        retry_times = etcd_ctx_.get_stats().continue_error_requests > retry_times;
+                    }
+                    WLOGERROR("etcd_keepalive request %s for %llu times (with %d ticks) failed.", actor->get_path().c_str(),
+                              static_cast<unsigned long long>(retry_times), ticks);
+                    is_failed = true;
+                }
+
+                if (is_failed) {
+                    break;
+                }
+            }
+
+            if (is_timeout) {
+                is_failed = true;
+                size_t retry_times = actor->get_check_times();
+                if (etcd_ctx_.get_stats().continue_error_requests > retry_times) {
+                    retry_times = etcd_ctx_.get_stats().continue_error_requests;
+                }
+                WLOGERROR("etcd_keepalive request %s timeout, retry %llu times (with %d ticks).", actor->get_path().c_str(),
+                          static_cast<unsigned long long>(retry_times), ticks);
+
+            }
+
+            // close timer for timeout
+            uv_timer_stop(&timeout_timer);
+            is_timeout = true;
+            uv_close((uv_handle_t *)&timeout_timer, detail::init_timer_closed_callback);
+            while (is_timeout) {
+                uv_run(get_app()->get_bus_node()->get_evloop(), UV_RUN_ONCE);
+            }
+
+            // 初始化失败则回收资源
+            if (is_failed) {
+                stop();
+                reset();
+                return -1;
+            }
+            return 0;
+        }
+
+        int etcd_module::un_reg_custom_node(uint64_t ){
+            return 0;
+        }
+
+
+
         std::string etcd_module::get_by_id_path() const {
             std::stringstream ss;
             ss << conf_.path_prefix << ETCD_MODULE_BY_ID_DIR << "/" << get_app()->get_id();
@@ -470,6 +569,13 @@ namespace atframe {
             ss << conf_.path_prefix << ETCD_MODULE_BY_TAG << "/" << tag_name;
             return ss.str();
         }
+
+        std::string etcd_module::get_by_custom_type_name_path() const{
+            std::stringstream ss;
+            ss << conf_.path_prefix << ETCD_MODULE_BY_CUSTOM ;
+            return ss.str();
+        }
+
 
         int etcd_module::add_watcher_by_id(watcher_list_callback_t fn) {
             if (!fn) {
@@ -816,7 +922,11 @@ namespace atframe {
                 ni.version   = get_app()->get_app_version();
                 pack(ni, val);
             }
+            return add_keepalive_actor2(val, node_path);
+        }
 
+        atframe::component::etcd_keepalive::ptr_t etcd_module::add_keepalive_actor2(const std::string &val, const std::string &node_path){
+            atframe::component::etcd_keepalive::ptr_t ret;
             ret = atframe::component::etcd_keepalive::create(etcd_ctx_, node_path);
             if (!ret) {
                 WLOGERROR("create etcd_keepalive failed.");
@@ -835,7 +945,8 @@ namespace atframe {
 
             return ret;
         }
-        std::string etcd_module::node_info_t::String() {
+
+    std::string etcd_module::node_info_t::String() {
             std::string ret;
             etcd_module::pack(*this, ret);
             return ret;

@@ -3,7 +3,6 @@
 #define ATFRAME_SERVICE_ATPROXY_PROTOCOLS_LIBATPROXY_PROTO_H
 #pragma once
 
-#pragma once
 
 #include <cstddef>
 #include <ostream>

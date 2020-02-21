@@ -43,6 +43,7 @@ typedef int32_t (*libatproxy_cli_on_send_fail_fn_t)(libatproxy_cli_context conte
 
 
 
+UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp = 0);
 UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_msg_fn(libatproxy_cli_context context, libatproxy_cli_on_msg_fn_t fn, void *priv_data);
 UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_send_fail_fn(libatproxy_cli_context context, libatproxy_cli_on_send_fail_fn_t fn, void *priv_data);
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_context context, uint64_t  bus_id, const void *buffer, uint64_t sz, int32_t require_rsp = 0);

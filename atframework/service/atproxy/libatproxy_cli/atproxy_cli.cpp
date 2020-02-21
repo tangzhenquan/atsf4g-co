@@ -77,6 +77,24 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_contex
     return  SHAPP_CONTEXT(context)->get_bus_node()->send_data(bus_id, 0, buffer, sz, require_rsp);
 }
 
+UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp){
+    if (SHAPP_CONTEXT_IS_NULL(context)) {
+        return EN_ATBUS_ERR_PARAMS;
+    }
+    shapp::app *app =  SHAPP_CONTEXT(context);
+    const atbus::endpoint* parent_ep =  app->get_bus_node()->get_parent_endpoint();
+    if (NULL != parent_ep){
+        std::shared_ptr<atbus::protocol::custom_route_data> custom_route_data = std::make_shared<atbus::protocol::custom_route_data>();
+        custom_route_data->type_name = type_name;
+        printf("%d\n", custom_route_data->custom_route_type);
+        return    SHAPP_CONTEXT(context)->get_bus_node()->send_data(parent_ep->get_id(), 0, buffer, sz, require_rsp, custom_route_data);
+    } else{
+        return  shapp::EN_SHAPP_ERR_NO_PARENT;
+    }
+
+
+}
+
 
 
 UTIL_SYMBOL_EXPORT libatproxy_cli_context __cdecl libatproxy_cli_create() {
@@ -162,7 +180,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
     app->set_evt_on_available(::detail::app_handle_on_available(*cli_mod));
 
 
-    return  SHAPP_CONTEXT(context)->init(uv_default_loop(), app_conf);
+    return  app->init(uv_default_loop(), app_conf);
 }
 
 

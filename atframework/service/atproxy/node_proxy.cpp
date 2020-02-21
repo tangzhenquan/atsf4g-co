@@ -15,14 +15,10 @@ namespace atframe {
                 WLOGERROR("etcd mod not found");
                 return -1;
             }
-
-
             return 0;
         }
 
         int node_proxy::tick() {
-
-
             return 0;
         }
 
@@ -65,16 +61,23 @@ namespace atframe {
                     std::stringstream  ss ;
                     ss << *reg;
                     WLOGDEBUG("from server 0x%llx: recv reg:%s ",  static_cast<unsigned long long>(recv_msg.body.forward->from), ss.str().c_str());
+
+                    component::etcd_module::node_info_t node_info;
+                    node_info.type_name = reg->type_name;
+                    node_info.id = reg->bus_id;
+                    node_info.name = reg->name;
+                    node_info.type_name = reg->type_name;
+                    node_info.version = reg->engine_version;
+
+                    int res1 = binded_etcd_mod_->reg_custom_node(node_info);
+                    WLOGINFO("reg_custom_node res:%d", res1);
                     break;
                 }
-
                 default:{
                     WLOGERROR("from server 0x%llx:  recv invalid cmd %d", static_cast<unsigned long long>(recv_msg.body.forward->from), static_cast<int>(msg.head.cmd));
                     break;
                 }
             }
-
-
             return 0;
         }
     }

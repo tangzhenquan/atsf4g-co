@@ -112,11 +112,19 @@ namespace atframe {
 
             virtual int tick() UTIL_CONFIG_OVERRIDE;
 
+            int reg_custom_node(const node_info_t& node_info);
+
+            int un_reg_custom_node(uint64_t id);
+
+
             std::string get_by_id_path() const;
             std::string get_by_type_id_path() const;
             std::string get_by_type_name_path() const;
             std::string get_by_name_path() const;
             std::string get_by_tag_path(const std::string &tag_name) const;
+
+            std::string get_by_custom_type_name_path() const ;
+
 
             std::string get_by_id_watcher_path() const;
             std::string get_by_type_id_watcher_path(uint64_t type_id) const;
@@ -129,6 +137,7 @@ namespace atframe {
             int add_watcher_by_type_name(const std::string &type_name, watcher_one_callback_t fn);
             int add_watcher_by_name(watcher_list_callback_t fn);
             int add_watcher_by_tag(const std::string &tag_name, watcher_one_callback_t fn);
+
 
             inline const ::atframe::component::etcd_cluster &get_raw_etcd_ctx() const { return etcd_ctx_; }
             inline ::atframe::component::etcd_cluster &      get_raw_etcd_ctx() { return etcd_ctx_; }
@@ -156,6 +165,8 @@ namespace atframe {
             };
 
             atframe::component::etcd_keepalive::ptr_t add_keepalive_actor(std::string &val, const std::string &node_path);
+            atframe::component::etcd_keepalive::ptr_t add_keepalive_actor2(const std::string &val, const std::string &node_path);
+
 
         private:
             conf_t                                         conf_;

@@ -10,9 +10,6 @@
 namespace atframe {
     namespace proxy {
 
-
-
-
         int atproxy_cli_module::init() {
 
             LOGF_INFO("atproxy_cli_module init")
