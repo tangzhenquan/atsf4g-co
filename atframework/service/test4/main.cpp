@@ -63,7 +63,7 @@ int main(int , char *[]) {
     signal(SIGTTOU, SIG_IGN); // tty output
 #endif
 
-    libatapp_c_set_on_msg_fn(ctx, on_msg, NULL);
+    libatproxy_cli_set_on_msg_fn(ctx, on_msg, NULL);
 
     //loop
     libatproxy_cli_run(ctx);
