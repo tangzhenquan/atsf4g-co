@@ -945,8 +945,8 @@ namespace shapp {
     }
 
     const app_conf &app::get_conf() const {
-        //return std::cref(conf_);
-        return  conf_;
+        return std::cref(conf_);
+        //return  conf_;
     }
 
 
