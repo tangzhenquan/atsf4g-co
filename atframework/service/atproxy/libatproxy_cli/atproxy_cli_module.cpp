@@ -14,7 +14,7 @@ namespace atframe {
 
             LOGF_INFO("atproxy_cli_module init")
 
-            const atbus::endpoint* parent_ep =  get_app()->get_bus_node()->get_parent_endpoint();
+            /*const atbus::endpoint* parent_ep =  get_app()->get_bus_node()->get_parent_endpoint();
             if (NULL != parent_ep){
                 const shapp::app_conf& conf = get_app()->get_conf();
                 ss_msg msg;
@@ -26,7 +26,7 @@ namespace atframe {
                 msg.body.reg->name = conf.name;
                 msg.body.reg->type_name = conf.type_name;
                 return post_ss_msg( parent_ep->get_id(),::atframe::component::service_type::EN_ATST_ATPROXY, msg);
-            }
+            }*/
 
             return 0;
         }
@@ -43,6 +43,7 @@ namespace atframe {
 
         int atproxy_cli_module::tick() {
             //LOGF_INFO("atproxy_cli_module tick")
+            //定时器
             return 0;
         }
 

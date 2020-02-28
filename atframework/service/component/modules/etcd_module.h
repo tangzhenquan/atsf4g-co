@@ -23,18 +23,20 @@
 #include <etcdcli/etcd_keepalive.h>
 #include <etcdcli/etcd_watcher.h>
 
+#include "etcd_module_utils.h"
+
 namespace atframe {
     namespace component {
         class etcd_module : public ::atapp::module_impl {
         public:
-            struct node_action_t {
+            /*struct node_action_t {
                 enum type {
                     EN_NAT_UNKNOWN = 0,
                     EN_NAT_PUT,
                     EN_NAT_DELETE,
                 };
-            };
-            struct node_info_t {
+            };*/
+            /*struct node_info_t {
                 ::atapp::app::app_id_t id;
                 std::string            name;
                 std::string            hostname;
@@ -46,8 +48,10 @@ namespace atframe {
 
                 node_action_t::type action;
                 std::string String();
-            };
+            };*/
 
+            //typedef node_c_action_t node_action_t;
+            //typedef node_c_info_t node_info_t;
             struct node_list_t {
                 std::list<node_info_t> nodes;
             };
@@ -112,9 +116,9 @@ namespace atframe {
 
             virtual int tick() UTIL_CONFIG_OVERRIDE;
 
-            int reg_custom_node(const node_info_t& node_info);
+            /*int reg_custom_node(const node_info_t& node_info);*/
 
-            int un_reg_custom_node(uint64_t id);
+            /*int un_reg_custom_node(uint64_t id);*/
 
 
             std::string get_by_id_path() const;
@@ -137,14 +141,15 @@ namespace atframe {
             int add_watcher_by_type_name(const std::string &type_name, watcher_one_callback_t fn);
             int add_watcher_by_name(watcher_list_callback_t fn);
             int add_watcher_by_tag(const std::string &tag_name, watcher_one_callback_t fn);
+            int add_watcher_by_path(const std::string &path, watcher_one_callback_t fn);
 
 
             inline const ::atframe::component::etcd_cluster &get_raw_etcd_ctx() const { return etcd_ctx_; }
             inline ::atframe::component::etcd_cluster &      get_raw_etcd_ctx() { return etcd_ctx_; }
 
         private:
-            static bool unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data);
-            static void pack(const node_info_t &out, std::string &json);
+            //static bool unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data);
+            //static void pack(const node_info_t &out, std::string &json);
 
             static int http_callback_on_etcd_closed(util::network::http_request &req);
 

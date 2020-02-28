@@ -18,9 +18,9 @@ namespace atframe {
     namespace proxy {
         class atproxy_manager : public ::atapp::module_impl {
         public:
-            typedef atframe::component::etcd_module::node_action_t node_action_t;
+            typedef atframe::component::node_action_t node_action_t;
             struct node_info_t {
-                atframe::component::etcd_module::node_info_t etcd_node;
+                atframe::component::node_info_t etcd_node;
                 time_t                                       next_action_time;
             };
 
@@ -45,7 +45,7 @@ namespace atframe {
 
             virtual const char *name() const UTIL_CONFIG_OVERRIDE;
 
-            int set(atframe::component::etcd_module::node_info_t &proxy_info);
+            int set(atframe::component::node_info_t &proxy_info);
 
             int remove(::atapp::app::app_id_t id);
 

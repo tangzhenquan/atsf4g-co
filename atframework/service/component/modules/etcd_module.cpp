@@ -28,7 +28,7 @@
 namespace atframe {
     namespace component {
         namespace detail {
-            std::chrono::system_clock::duration convert(const util::config::duration_value &src) {
+            static std::chrono::system_clock::duration convert(const util::config::duration_value &src) {
                 // std::chrono::system_clock::duration ret = std::chrono::seconds(src.sec);
                 // ret += std::chrono::nanoseconds(src.nsec);
                 return std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::seconds(src.sec)) +
@@ -45,7 +45,7 @@ namespace atframe {
                 uv_stop(handle->loop);
             }
 
-            void init_timer_closed_callback(uv_handle_t *handle) {
+            static void init_timer_closed_callback(uv_handle_t *handle) {
                 assert(handle);
                 assert(handle->data);
                 assert(handle->loop);
@@ -415,8 +415,8 @@ namespace atframe {
         }
 
 
-        int etcd_module::reg_custom_node(const node_info_t& node_info){
-            WLOGINFO("reg reg_custom_node %llu", node_info.id);
+        /*int etcd_module::reg_custom_node(const node_info_t& node_info){
+            WLOGINFO("reg reg_custom_node 0x%llx", static_cast<unsigned long long>(node_info.id));
             //std::vector<atframe::component::etcd_keepalive::ptr_t> keepalive_actors;
             std::string                                            keepalive_val;
             pack(node_info, keepalive_val);
@@ -502,11 +502,11 @@ namespace atframe {
                 return -1;
             }
             return 0;
-        }
+        }*/
 
-        int etcd_module::un_reg_custom_node(uint64_t ){
+        /*int etcd_module::un_reg_custom_node(uint64_t ){
             return 0;
-        }
+        }*/
 
 
 
@@ -712,8 +712,28 @@ namespace atframe {
             return 0;
         }
 
+        int etcd_module::add_watcher_by_path(const std::string &path, watcher_one_callback_t fn){
+            if (!fn) {
+                return EN_ATBUS_ERR_PARAMS;
+            }
 
-        bool etcd_module::unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data) {
+            atframe::component::etcd_watcher::ptr_t p = atframe::component::etcd_watcher::create(etcd_ctx_, path, "+1");
+            if (!p) {
+                WLOGERROR("create etcd_watcher by_path failed.");
+                return EN_ATBUS_ERR_MALLOC;
+            }
+
+            etcd_ctx_.add_watcher(p);
+            WLOGINFO("create etcd_watcher for by_path index %s success", path.c_str());
+
+            p->set_evt_handle(watcher_callback_one_wrapper_t(*this, fn));
+            return 0;
+
+        }
+
+
+
+        /*bool etcd_module::unpack(node_info_t &out, const std::string &path, const std::string &json, bool reset_data) {
             if (reset_data) {
                 out.action = node_action_t::EN_NAT_UNKNOWN;
                 out.id     = 0;
@@ -849,7 +869,7 @@ namespace atframe {
             doc.Accept(writer);
 
             json.assign(buffer.GetString(), buffer.GetSize());
-        }
+        }*/
 
         etcd_module::watcher_callback_list_wrapper_t::watcher_callback_list_wrapper_t(etcd_module &m, std::list<watcher_list_callback_t> &cbks)
             : mod(&m), callbacks(&cbks) {}
@@ -863,7 +883,7 @@ namespace atframe {
             for (size_t i = 0; i < body.events.size(); ++i) {
                 const ::atframe::component::etcd_watcher::event_t &evt_data = body.events[i];
                 node_info_t                                        node;
-                if (!unpack(node, evt_data.kv.key, evt_data.kv.value, true)) {
+                if (!etcd_module_utils::unpack(node, evt_data.kv.key, evt_data.kv.value, true)) {
                     continue;
                 }
 
@@ -892,11 +912,11 @@ namespace atframe {
             // decode data
             for (size_t i = 0; i < body.events.size(); ++i) {
                 const ::atframe::component::etcd_watcher::event_t &evt_data = body.events[i];
+
                 node_info_t                                        node;
-                if (!unpack(node, evt_data.kv.key, evt_data.kv.value, true)) {
+                if (!etcd_module_utils::unpack(node, evt_data.kv.key, evt_data.kv.value, true)) {
                     continue;
                 }
-
                 if (evt_data.evt_type == ::atframe::component::etcd_watch_event::EN_WEVT_DELETE) {
                     node.action = node_action_t::EN_NAT_DELETE;
                 } else {
@@ -920,7 +940,7 @@ namespace atframe {
                 ni.type_id   = static_cast<uint64_t>(get_app()->get_type_id());
                 ni.type_name = get_app()->get_type_name();
                 ni.version   = get_app()->get_app_version();
-                pack(ni, val);
+                etcd_module_utils::pack(ni, val);
             }
             return add_keepalive_actor2(val, node_path);
         }
@@ -946,10 +966,5 @@ namespace atframe {
             return ret;
         }
 
-    std::string etcd_module::node_info_t::String() {
-            std::string ret;
-            etcd_module::pack(*this, ret);
-            return ret;
-        }
     } // namespace component
 } // namespace atframe

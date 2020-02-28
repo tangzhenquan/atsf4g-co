@@ -81,9 +81,10 @@ struct app_command_handler_transfer {
             type = params[2]->to_int();
         }
         std::shared_ptr<atbus::protocol::custom_route_data> data = std::make_shared<atbus::protocol::custom_route_data>();
-        data->name = "fuck";
+        data->type_name = params[0]->to_cpp_string().c_str();
         data->tags = {"ssss", "tsss"};
-        app_->get_bus_node()->send_data(params[0]->to_uint64(), type, params[1]->to_cpp_string().c_str(), params[1]->to_cpp_string().size(), false, data);
+        const atbus::endpoint* parent_ep =  app_->get_bus_node()->get_parent_endpoint();
+        app_->get_bus_node()->send_data(parent_ep->get_id(), type, params[1]->to_cpp_string().c_str(), params[1]->to_cpp_string().size(), false, data);
         return 0;
     }
 };

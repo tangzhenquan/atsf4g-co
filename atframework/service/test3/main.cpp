@@ -69,6 +69,7 @@ struct app_command_handler_transfer {
     app_command_handler_transfer(atapp::app &a) : app_(&a) {}
 
     int operator()(util::cli::callback_param params) {
+        WLOGINFO("app_command_handler_transfer xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         if (params.get_params_number() < 2) {
             WLOGERROR("transfer command require at least 2 parameters");
             return 0;
@@ -82,6 +83,56 @@ struct app_command_handler_transfer {
         return 0;
     }
 };
+
+
+
+struct app_command_handler_transfer2 {
+    atapp::app *app_;
+    app_command_handler_transfer2(atapp::app &a) : app_(&a) {}
+
+    int operator()(util::cli::callback_param params) {
+        WLOGINFO("app_command_handler_transfer2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        if (params.get_params_number() < 2) {
+            WLOGERROR("transfer command require at least 2 parameters");
+            return 0;
+        }
+
+        int type = 0;
+        if (params.get_params_number() > 2) {
+            type = params[2]->to_int();
+        }
+        std::shared_ptr<atbus::protocol::custom_route_data> data = std::make_shared<atbus::protocol::custom_route_data>();
+        data->type_name = params[0]->to_cpp_string().c_str();
+        data->tags = {"ssss", "tsss"};
+        app_->get_bus_node()->send_data(0, type, params[1]->to_cpp_string().c_str(), params[1]->to_cpp_string().size(), false, data);
+        return 0;
+    }
+};
+
+struct app_command_handler_transfer3 {
+    atapp::app *app_;
+    app_command_handler_transfer3(atapp::app &a) : app_(&a) {}
+
+    int operator()(util::cli::callback_param params) {
+        WLOGINFO("app_command_handler_transfer3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        if (params.get_params_number() < 2) {
+            WLOGERROR("transfer command require at least 2 parameters");
+            return 0;
+        }
+
+        int type = 0;
+        if (params.get_params_number() > 2) {
+            type = params[2]->to_int();
+        }
+        std::shared_ptr<atbus::protocol::custom_route_data> data = std::make_shared<atbus::protocol::custom_route_data>();
+        data->type_name = params[0]->to_cpp_string().c_str();
+        data->tags = {"ssss", "tsss"};
+        data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST;
+        app_->get_bus_node()->send_data(0, type, params[1]->to_cpp_string().c_str(), params[1]->to_cpp_string().size(), false, data);
+        return 0;
+    }
+};
+
 
 struct app_command_handler_listen {
     atapp::app *app_;
@@ -169,6 +220,11 @@ int main(int argc, char *argv[]) {
             ->set_help_msg("listen      <listen address>                                address(for example: ipv6//:::23456)");
     cmgr->bind_cmd("connect", app_command_handler_connect(app))
             ->set_help_msg("connect     <connect address>                               address(for example: ipv4://127.0.0.1:23456)");
+    cmgr->bind_cmd("transfer2", app_command_handler_transfer2(app))
+            ->set_help_msg("transfer    <target type name> <message> [type=0]              send a message to another atapp");
+
+    cmgr->bind_cmd("transfer3", app_command_handler_transfer3(app))
+            ->set_help_msg("transfer    <target type name> <message> [type=0]              send a message to another atapp");
 
     // setup options
     util::cli::cmd_option::ptr_type opt_mgr = app.get_option_manager();

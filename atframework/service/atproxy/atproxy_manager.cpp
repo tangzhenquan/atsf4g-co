@@ -128,7 +128,7 @@ namespace atframe {
 
         const char *atproxy_manager::name() const { return "atproxy manager"; }
 
-        int atproxy_manager::set(atframe::component::etcd_module::node_info_t &etcd_node) {
+        int atproxy_manager::set(atframe::component::node_info_t &etcd_node) {
             check_info_t ci;
             ci.timeout_sec = util::time::time_utility::get_now();
             ci.proxy_id    = etcd_node.id;
