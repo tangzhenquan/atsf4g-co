@@ -7,7 +7,7 @@
 #include <log/log_wrapper.h>
 #include "utility/random_engine.h"
 
-static const char *	common_type_name = "test";
+/*static const char *	common_type_name = "test";
 
 namespace atframe {
     namespace component {
@@ -99,7 +99,7 @@ namespace atframe {
                 if (res <0 ){
                     return res;
                 }else{
-                    return get_app()->get_bus_node()->send_data(id, 0, buffer, s, require_rsp);
+                    return get_app()->get_bus_node()->send_data(id, 0, buffer, s, require_rsp);+
                 }
             }
             return 0;
@@ -268,4 +268,4 @@ namespace atframe {
 
 
     }
-}
+}*/
