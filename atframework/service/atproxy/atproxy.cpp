@@ -60,13 +60,13 @@ struct app_handle_on_msg {
 struct app_handle_on_custom_route {
     std::reference_wrapper<atframe::proxy::node_proxy> node_proxy_module;
     app_handle_on_custom_route(atframe::proxy::node_proxy &node_proxy_mod) : node_proxy_module(node_proxy_mod) {}
-    int operator()(atapp::app & app , const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids ) {
+    int operator()(atapp::app & app ,  atapp::app::app_id_t src_id , const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids ) {
 
         /*std::stringstream ss ;
         ss << data;
         bus_ids.push_back(123);
         WLOGINFO("receive a custom_route_data:%s ", ss.str().c_str());*/
-        return node_proxy_module.get().on_custom_route(app, data, bus_ids);
+        return node_proxy_module.get().on_custom_route(app,src_id,  data, bus_ids);
     }
 };
 

@@ -70,6 +70,7 @@ namespace atframe {
                 if (false == checker_.is_check_run) {
                     // create a check rpc
                     rpc_.rpc_opr_ = owner_->create_request_kv_get(path_);
+                    WLOGDEBUG("Etcd keepalive %p create get data request to %s", this, path_.c_str());
                     if (!rpc_.rpc_opr_) {
                         ++checker_.retry_times;
                         WLOGERROR("Etcd keepalive %p create get data request to %s failed", this, path_.c_str());
@@ -84,6 +85,7 @@ namespace atframe {
                 // if check passed, set data
                 if (checker_.is_check_run && checker_.is_check_passed) {
                     // create set data rpc
+                    WLOGDEBUG("Etcd keepalive %p create set data request to %s ", this, path_.c_str());
                     rpc_.rpc_opr_ = owner_->create_request_kv_set(path_, value_, true);
                     if (!rpc_.rpc_opr_) {
                         WLOGERROR("Etcd keepalive %p create set data request to %s failed", this, path_.c_str());
@@ -125,7 +127,7 @@ namespace atframe {
             // 服务器错误则重试，预检查请求的404是正常的
             if (0 != req.get_error_code() ||
                 util::network::http_request::status_code_t::EN_ECG_SUCCESS != util::network::http_request::get_status_code_group(req.get_response_code())) {
-                WLOGERROR("Etcd keepalive %p get request failed, error code: %d, http code: %d\n%s", self, req.get_error_code(), req.get_response_code(),
+                WLOGERROR("Etcd keepalive %p get request failed, error code: %d, url:%s, http code: %d\n%s", self, req.get_error_code(), req.get_url().c_str(),  req.get_response_code(),
                           req.get_error_msg());
 
                 self->owner_->add_retry_keepalive(self->shared_from_this());

@@ -2,7 +2,7 @@
 #define ATFRAME_SERVICE_COMPONENT_MODULES_SH_MODULE_H
 #pragma once
 
-#include <atframe/atapp.h>
+/*#include <atframe/atapp.h>
 
 #include "config/compiler_features.h"
 #include "etcd_module.h"
@@ -59,5 +59,5 @@ namespace atframe {
         };
 
     }
-}
+}*/
 #endif //ATFRAME_SERVICE_COMPONENT_MODULES_SH_MODULE_H

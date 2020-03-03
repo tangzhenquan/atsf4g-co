@@ -1,5 +1,5 @@
-#ifndef ATFRAME_SERVICE_COMPONENT_MODULES_ETCD_MODULE_H
-#define ATFRAME_SERVICE_COMPONENT_MODULES_ETCD_MODULE_H
+#ifndef ATFRAME_SERVICE_COMPONENT_MODULES_SHAPP_ETCD_MODULE_H
+#define ATFRAME_SERVICE_COMPONENT_MODULES_SHAPP_ETCD_MODULE_H
 
 #pragma once
 
@@ -9,49 +9,24 @@
 #include <string>
 #include <vector>
 
-
-#include <rapidjson/document.h>
+#include <shapp_module_impl.h>
 
 #include <network/http_request.h>
 #include <random/random_generator.h>
 #include <time/time_utility.h>
 
 
-#include <atframe/atapp_module_impl.h>
-
 #include <etcdcli/etcd_cluster.h>
 #include <etcdcli/etcd_keepalive.h>
 #include <etcdcli/etcd_watcher.h>
+
 
 #include "etcd_module_utils.h"
 
 namespace atframe {
     namespace component {
-        class etcd_module : public ::atapp::module_impl {
+        class shapp_etcd_module: public  ::shapp::module_impl{
         public:
-            /*struct node_action_t {
-                enum type {
-                    EN_NAT_UNKNOWN = 0,
-                    EN_NAT_PUT,
-                    EN_NAT_DELETE,
-                };
-            };*/
-            /*struct node_info_t {
-                ::atapp::app::app_id_t id;
-                std::string            name;
-                std::string            hostname;
-                std::list<std::string> listens;
-                std::string            hash_code;
-                uint64_t               type_id;
-                std::string            type_name;
-                std::string            version;
-
-                node_action_t::type action;
-                std::string String();
-            };*/
-
-            //typedef node_c_action_t node_action_t;
-            //typedef node_c_info_t node_info_t;
             struct node_list_t {
                 std::list<node_info_t> nodes;
             };
@@ -69,44 +44,46 @@ namespace atframe {
             };
 
             struct watcher_sender_list_t {
-                std::reference_wrapper<etcd_module>                                          atapp_module;
+                std::reference_wrapper<shapp_etcd_module>                                          atapp_module;
                 std::reference_wrapper<const ::atframe::component::etcd_response_header>     etcd_header;
                 std::reference_wrapper<const ::atframe::component::etcd_watcher::response_t> etcd_body;
                 std::reference_wrapper<const ::atframe::component::etcd_watcher::event_t>    event;
                 std::reference_wrapper<const node_info_t>                                    node;
 
-                inline watcher_sender_list_t(etcd_module &m, const ::atframe::component::etcd_response_header &h,
+                inline watcher_sender_list_t(shapp_etcd_module &m, const ::atframe::component::etcd_response_header &h,
                                              const ::atframe::component::etcd_watcher::response_t &b, const ::atframe::component::etcd_watcher::event_t &e,
                                              const node_info_t &n)
-                    : atapp_module(std::ref(m)), etcd_header(std::cref(h)), etcd_body(std::cref(b)), event(std::cref(e)), node(std::cref(n)) {}
+                        : atapp_module(std::ref(m)), etcd_header(std::cref(h)), etcd_body(std::cref(b)), event(std::cref(e)), node(std::cref(n)) {}
             };
 
             struct watcher_sender_one_t {
-                std::reference_wrapper<etcd_module>                                          atapp_module;
+                std::reference_wrapper<shapp_etcd_module>                                          atapp_module;
                 std::reference_wrapper<const ::atframe::component::etcd_response_header>     etcd_header;
                 std::reference_wrapper<const ::atframe::component::etcd_watcher::response_t> etcd_body;
                 std::reference_wrapper<const ::atframe::component::etcd_watcher::event_t>    event;
                 std::reference_wrapper<node_info_t>                                          node;
 
-                inline watcher_sender_one_t(etcd_module &m, const ::atframe::component::etcd_response_header &h,
+                inline watcher_sender_one_t(shapp_etcd_module &m, const ::atframe::component::etcd_response_header &h,
                                             const ::atframe::component::etcd_watcher::response_t &b, const ::atframe::component::etcd_watcher::event_t &e,
                                             node_info_t &n)
-                    : atapp_module(std::ref(m)), etcd_header(std::cref(h)), etcd_body(std::cref(b)), event(std::cref(e)), node(std::ref(n)) {}
+                        : atapp_module(std::ref(m)), etcd_header(std::cref(h)), etcd_body(std::cref(b)), event(std::cref(e)), node(std::ref(n)) {}
             };
 
             typedef std::function<void(watcher_sender_list_t &)> watcher_list_callback_t;
             typedef std::function<void(watcher_sender_one_t &)>  watcher_one_callback_t;
 
+
+
         public:
-            etcd_module();
-            virtual ~etcd_module();
+            shapp_etcd_module();
+            virtual ~shapp_etcd_module();
 
         public:
             void reset();
 
             virtual int init() UTIL_CONFIG_OVERRIDE;
 
-            virtual int reload() UTIL_CONFIG_OVERRIDE;
+            //virtual int reload() UTIL_CONFIG_OVERRIDE;
 
             virtual int stop() UTIL_CONFIG_OVERRIDE;
 
@@ -119,6 +96,27 @@ namespace atframe {
             /*int reg_custom_node(const node_info_t& node_info);*/
 
             /*int un_reg_custom_node(uint64_t id);*/
+
+            inline void set_conf_etcd_init_timeout(std::chrono::system_clock::duration v) { conf_.etcd_init_timeout = v; }
+            inline void set_conf_etcd_init_timeout_sec(time_t v) { set_conf_etcd_init_timeout(std::chrono::seconds(v)); }
+            inline const std::chrono::system_clock::duration &get_conf_etcd_init_timeout() const { return conf_.etcd_init_timeout; }
+
+            inline void set_conf_watcher_retry_interval(std::chrono::system_clock::duration v) { conf_.watcher_retry_interval = v; }
+            inline void set_conf_watcher_retry_interval_sec(time_t v) { set_conf_etcd_init_timeout(std::chrono::seconds(v)); }
+            inline const std::chrono::system_clock::duration &get_conf_watcher_retry_interval() const { return conf_.watcher_retry_interval; }
+
+            inline void set_conf_watcher_request_timeout(std::chrono::system_clock::duration v) { conf_.watcher_request_timeout = v; }
+            inline void set_conf_watcher_request_timeout_sec(time_t v) { set_conf_etcd_init_timeout(std::chrono::seconds(v)); }
+            inline const std::chrono::system_clock::duration &get_conf_watcher_request_timeout() const { return conf_.watcher_request_timeout; }
+
+            inline void               set_conf_path_prefix(const std::string &path_prefix) { conf_.path_prefix = path_prefix; }
+            inline const std::string &get_conf_path_prefix() const { return conf_.path_prefix; }
+
+            inline void               set_conf_report_alive_by_id(bool report_alive_by_id) { conf_.report_alive_by_id = report_alive_by_id; }
+            inline bool  get_conf_report_alive_by_id() const { return conf_.report_alive_by_id; }
+
+            inline void               set_conf_report_alive_by_type(bool report_alive_by_type) { conf_.report_alive_by_type = report_alive_by_type; }
+            inline bool  get_conf_report_alive_by_type() const { return conf_.report_alive_by_type; }
 
 
             std::string get_by_id_path() const;
@@ -141,7 +139,6 @@ namespace atframe {
             int add_watcher_by_type_name(const std::string &type_name, watcher_one_callback_t fn);
             int add_watcher_by_name(watcher_list_callback_t fn);
             int add_watcher_by_tag(const std::string &tag_name, watcher_one_callback_t fn);
-            int add_watcher_by_path(const std::string &path, watcher_one_callback_t fn);
 
 
             inline const ::atframe::component::etcd_cluster &get_raw_etcd_ctx() const { return etcd_ctx_; }
@@ -154,18 +151,18 @@ namespace atframe {
             static int http_callback_on_etcd_closed(util::network::http_request &req);
 
             struct watcher_callback_list_wrapper_t {
-                etcd_module *                       mod;
+                shapp_etcd_module *                       mod;
                 std::list<watcher_list_callback_t> *callbacks;
 
-                watcher_callback_list_wrapper_t(etcd_module &m, std::list<watcher_list_callback_t> &cbks);
+                watcher_callback_list_wrapper_t(shapp_etcd_module &m, std::list<watcher_list_callback_t> &cbks);
                 void operator()(const ::atframe::component::etcd_response_header &header, const ::atframe::component::etcd_watcher::response_t &evt_data);
             };
 
             struct watcher_callback_one_wrapper_t {
-                etcd_module *          mod;
+                shapp_etcd_module *          mod;
                 watcher_one_callback_t callback;
 
-                watcher_callback_one_wrapper_t(etcd_module &m, watcher_one_callback_t cbk);
+                watcher_callback_one_wrapper_t(shapp_etcd_module &m, watcher_one_callback_t cbk);
                 void operator()(const ::atframe::component::etcd_response_header &header, const ::atframe::component::etcd_watcher::response_t &evt_data);
             };
 
@@ -186,4 +183,4 @@ namespace atframe {
     } // namespace component
 } // namespace atframe
 
-#endif
+#endif //ATFRAME_SERVICE_COMPONENT_MODULES_

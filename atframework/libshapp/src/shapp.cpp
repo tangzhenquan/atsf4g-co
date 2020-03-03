@@ -815,6 +815,8 @@ namespace shapp {
 
     int app::bus_evt_callback_on_error(const atbus::node &n, const atbus::endpoint *ep, const atbus::connection *conn, int status, int errcode) {
 
+        const char *print_msg = uv_err_name(errcode);
+
         // meet eof or reset by peer is not a error
         if (UV_EOF == errcode || UV_ECONNRESET == errcode) {
             const char *msg = UV_EOF == errcode ? "got EOF" : "reset by peer";
@@ -842,8 +844,8 @@ namespace shapp {
                 WLOGERROR("bus node 0x%llx endpoint 0x%llx connection %s error, status: %d, error code: %d", static_cast<unsigned long long>(n.get_id()),
                           static_cast<unsigned long long>(ep->get_id()), conn->get_address().address.c_str(), status, errcode);
             } else {
-                WLOGERROR("bus node 0x%llx connection %s error, status: %d, error code: %d", static_cast<unsigned long long>(n.get_id()),
-                          conn->get_address().address.c_str(), status, errcode);
+                WLOGERROR("bus node 0x%llx connection %s error, status: %d, error code: %d print_msg:%s", static_cast<unsigned long long>(n.get_id()),
+                          conn->get_address().address.c_str(), status, errcode, print_msg);
             }
 
         } else {
@@ -943,8 +945,8 @@ namespace shapp {
     }
 
     const app_conf &app::get_conf() const {
-        //return std::cref(conf_);
-        return  conf_;
+        return std::cref(conf_);
+        //return  conf_;
     }
 
 
