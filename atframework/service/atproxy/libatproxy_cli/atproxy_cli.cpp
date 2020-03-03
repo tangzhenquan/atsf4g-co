@@ -87,7 +87,14 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_contex
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
-    return  SHAPP_CONTEXT(context)->get_bus_node()->send_data(bus_id, 0, buffer, sz, require_rsp);
+    shapp::app *app =  SHAPP_CONTEXT(context);
+
+    if (app->get_bus_node()){
+        app->get_bus_node()->send_data(bus_id, 0, buffer, sz, require_rsp);
+    }
+    return EN_ATBUS_ERR_NOT_INITED;
+
+
 }
 
 
@@ -96,19 +103,26 @@ static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*
         return EN_ATBUS_ERR_PARAMS;
     }
     shapp::app *app =  SHAPP_CONTEXT(context);
-    const atbus::endpoint* parent_ep =  app->get_bus_node()->get_parent_endpoint();
-    if (NULL != parent_ep){
-        std::shared_ptr<atbus::protocol::custom_route_data> custom_route_data = std::make_shared<atbus::protocol::custom_route_data>();
-        custom_route_data->type_name = type_name;
-        custom_route_data->src_type_name = app->get_conf().type_name;
-        if (broadcast){
-            custom_route_data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST;
-            require_rsp = 0;
+
+    if (app->get_bus_node()){
+        const atbus::endpoint* parent_ep =  app->get_bus_node()->get_parent_endpoint();
+        if (NULL != parent_ep){
+            std::shared_ptr<atbus::protocol::custom_route_data> custom_route_data = std::make_shared<atbus::protocol::custom_route_data>();
+            custom_route_data->type_name = type_name;
+            custom_route_data->src_type_name = app->get_conf().type_name;
+            if (broadcast){
+                custom_route_data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST;
+                require_rsp = 0;
+            }
+            return    app->get_bus_node()->send_data(0, 0, buffer, sz, require_rsp, custom_route_data);
+        } else{
+            return  shapp::EN_SHAPP_ERR_NO_PARENT;
         }
-        return    app->get_bus_node()->send_data(0, 0, buffer, sz, require_rsp, custom_route_data);
-    } else{
-        return  shapp::EN_SHAPP_ERR_NO_PARENT;
     }
+    return EN_ATBUS_ERR_NOT_INITED;
+
+
+
 }
 
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp){
@@ -247,6 +261,13 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run_noblock(libatproxy_cli_con
         return EN_ATBUS_ERR_PARAMS;
     }
     return SHAPP_CONTEXT(context)->run_noblock(max_event_count);
+}
+
+UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_tick(libatproxy_cli_context context){
+    if (SHAPP_CONTEXT_IS_NULL(context)) {
+        return EN_ATBUS_ERR_PARAMS;
+    }
+    return SHAPP_CONTEXT(context)->tick();
 }
 
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context context){
