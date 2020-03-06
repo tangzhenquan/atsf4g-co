@@ -37,6 +37,7 @@ namespace atframe {
 
             WLOGINFO("watch atproxy by_type path: %s", binded_etcd_mod_->get_by_type_name_watcher_path(get_app()->get_type_name()).c_str());
 
+
             return 0;
         }
 

@@ -29,8 +29,6 @@ namespace atframe {
                 }
             }
 
-
-
             return 0;
         }
 
@@ -140,13 +138,11 @@ namespace atframe {
         }
         int node_proxy::remove(::atapp::app::app_id_t id){
             node_set_t::iterator iter = node_set_.find(id);
-            if (iter != node_set_.end()) {
-                WLOGINFO("lost node %llx", static_cast<unsigned long long>(id));
-                node_set_.erase(iter);
-            }else{
+            if (iter == node_set_.end()) {
                 WLOGWARNING("remove node %llx can't find it", static_cast<unsigned long long>(id))
                 return 0;
             }
+            WLOGINFO("lost node %llx", static_cast<unsigned long long>(id));
 
             //remove from node_name_set
             node_name_set_t::iterator iter2 = node_name_set_.find(iter->second.type_name);
@@ -170,6 +166,8 @@ namespace atframe {
             } else{
                 node_name_tick_set_.erase(iter4);
             }
+
+            node_set_.erase(iter);
             return 0;
         }
 

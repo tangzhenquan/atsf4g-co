@@ -140,6 +140,7 @@ namespace shapp {
         const std::string &get_app_name() const;
 
         const app_conf& get_conf() const;
+        const std::string &get_region() const;
 
 
     private:

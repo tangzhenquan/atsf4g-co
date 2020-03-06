@@ -25,6 +25,7 @@ namespace shapp{
         std::string hash_code;
         std::vector<std::string> tags;
         std::string engine_version;
+        std::string region;
     };
 
     typedef enum {

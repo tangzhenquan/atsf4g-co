@@ -36,7 +36,7 @@ static  atframe::proxy::atproxy_cli_module *g_cli_module = NULL;
 namespace detail {
     struct app_handle_on_available {
         std::reference_wrapper<atframe::proxy::atproxy_cli_module> atproxy_cli_module;
-        app_handle_on_available(atframe::proxy::atproxy_cli_module &mod) : atproxy_cli_module(mod) {}
+        explicit  app_handle_on_available(atframe::proxy::atproxy_cli_module &mod) : atproxy_cli_module(mod) {}
 
         int operator()(shapp::app & app,  int ) {
             return atproxy_cli_module.get().on_available(app);
@@ -263,12 +263,6 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run_noblock(libatproxy_cli_con
     return SHAPP_CONTEXT(context)->run_noblock(max_event_count);
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_tick(libatproxy_cli_context context){
-    if (SHAPP_CONTEXT_IS_NULL(context)) {
-        return EN_ATBUS_ERR_PARAMS;
-    }
-    return SHAPP_CONTEXT(context)->tick();
-}
 
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context context){
     if (SHAPP_CONTEXT_IS_NULL(context)) {

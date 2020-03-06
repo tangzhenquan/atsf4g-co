@@ -33,12 +33,12 @@ int main(int , char *[]) {
     //conf
     cli_conf_t conf;
     libatproxy_cli_init_conf(conf);
-    //conf.bus_listen[0] = "ipv4://192.168.2.71:50501";
-    //conf.bus_listen[0] = "shm://0x1010150500";
-    //conf.bus_listen_count = 1;
+    conf.bus_listen[0] = "ipv4://0.0.0.0:50501";
+    //conf.bus_listen[1] = "shm://0x1010150501";
+    conf.bus_listen_count = 1;
     conf.engine_version = "1.2.3";
-    conf.father_address =  "ipv4://192.168.2.71:10101";
-    conf.id =  0x15050;
+    conf.father_address =  "ipv4://127.0.0.1:10101";
+    conf.id =  0x15051;
     conf.name = "name";
     conf.type_name = "game_server";
 
@@ -72,7 +72,12 @@ int main(int , char *[]) {
     libatproxy_cli_set_on_msg_fn(ctx, on_msg, NULL);
 
     //loop
-    libatproxy_cli_run(ctx);
+    while(1){
+       if (libatproxy_cli_run_noblock(ctx) < 0){
+           break;
+       }
+    }
+
 
     //destory
     libatproxy_cli_destroy(ctx);
