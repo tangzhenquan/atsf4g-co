@@ -163,11 +163,11 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
         return ret;
     }
 
-    LOGF_DEBUG("%d", IS_EMPTY( conf.father_address));
+    WLOGDEBUG("%d", IS_EMPTY( conf.father_address));
     if (conf.id == 0 || IS_EMPTY( conf.father_address) || IS_EMPTY(conf.type_name) || IS_EMPTY(conf.engine_version))  return  shapp::EN_SHAPP_ERR_CONFIG;
 
 
-    LOGF_INFO("id: 0x%llx engine_version:%s bus_listen_count:%d tags_count:%d father_address:%s", static_cast<unsigned  long long>(conf.id), conf.engine_version, conf.bus_listen_count, conf.tags_count
+    WLOGINFO("id: 0x%llx engine_version:%s bus_listen_count:%d tags_count:%d father_address:%s", static_cast<unsigned  long long>(conf.id), conf.engine_version, conf.bus_listen_count, conf.tags_count
     , conf.father_address);
 
     shapp::app_conf app_conf;
