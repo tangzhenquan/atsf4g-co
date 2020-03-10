@@ -98,7 +98,8 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_contex
 }
 
 
-static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp, bool broadcast){
+static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp,
+                                     atbus::protocol::custom_route_data::custom_route_type_t custom_route_type){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
@@ -110,11 +111,8 @@ static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*
             std::shared_ptr<atbus::protocol::custom_route_data> custom_route_data = std::make_shared<atbus::protocol::custom_route_data>();
             custom_route_data->type_name = type_name;
             custom_route_data->src_type_name = app->get_conf().type_name;
-            if (broadcast){
-                custom_route_data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST;
-                require_rsp = 0;
-            }
-            return    app->get_bus_node()->send_data(0, 0, buffer, sz, require_rsp, custom_route_data);
+            custom_route_data->custom_route_type = custom_route_type;
+            return    app->get_bus_node()->send_data(parent_ep->get_id(), 0, buffer, sz, require_rsp, custom_route_data);
         } else{
             return  shapp::EN_SHAPP_ERR_NO_PARENT;
         }
@@ -126,11 +124,11 @@ static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*
 }
 
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp){
-    return  send_msg_by_type_name(context, type_name ,buffer, sz, require_rsp,false);
+    return  send_msg_by_type_name(context, type_name ,buffer, sz, require_rsp, atbus::protocol::custom_route_data::CUSTOM_ROUTE_UNICAST);
 }
 
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_broadcast_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz){
-    return  send_msg_by_type_name(context, type_name ,buffer, sz,  0, true);
+    return  send_msg_by_type_name(context, type_name ,buffer, sz,  0, atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST);
 }
 
 
@@ -166,7 +164,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
     }
 
     LOGF_DEBUG("%d", IS_EMPTY( conf.father_address));
-    if (conf.id == 0 || IS_EMPTY( conf.father_address) || IS_EMPTY(conf.type_name) || IS_EMPTY(conf.name) || IS_EMPTY(conf.engine_version))  return  shapp::EN_SHAPP_ERR_CONFIG;
+    if (conf.id == 0 || IS_EMPTY( conf.father_address) || IS_EMPTY(conf.type_name) || IS_EMPTY(conf.engine_version))  return  shapp::EN_SHAPP_ERR_CONFIG;
 
 
     LOGF_INFO("id: 0x%llx engine_version:%s bus_listen_count:%d tags_count:%d father_address:%s", static_cast<unsigned  long long>(conf.id), conf.engine_version, conf.bus_listen_count, conf.tags_count
@@ -201,11 +199,16 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
 
 
 
+
+
     atbus::node::default_conf(&app_conf.bus_conf);
     app_conf.bus_conf.father_address = conf.father_address;
 
     app_conf.type_name = conf.type_name;
     app_conf.name = conf.name;
+    app_conf.bus_conf.type_name = conf.type_name;
+    app_conf.bus_conf.tags = app_conf.tags;
+
 
 
     if (conf.enable_local_discovery_cli > 0){

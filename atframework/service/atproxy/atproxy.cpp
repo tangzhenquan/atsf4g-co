@@ -24,24 +24,28 @@ static int app_handle_on_send_fail(atapp::app &, atapp::app::app_id_t src_pd, at
 
 struct app_handle_on_connected {
     std::reference_wrapper<atframe::proxy::atproxy_manager> atproxy_mgr_module;
-    app_handle_on_connected(atframe::proxy::atproxy_manager &mod) : atproxy_mgr_module(mod) {}
+    std::reference_wrapper<atframe::proxy::node_proxy> node_proxy_module;
+    app_handle_on_connected(atframe::proxy::atproxy_manager &mod, atframe::proxy::node_proxy &node_proxy_mod) : atproxy_mgr_module(mod), node_proxy_module(node_proxy_mod) {}
 
     int operator()(atapp::app &app, atbus::endpoint &ep, int status) {
         WLOGINFO("node 0x%llx connected, status: %d", static_cast<unsigned long long>(ep.get_id()), status);
 
         atproxy_mgr_module.get().on_connected(app, ep.get_id());
+        node_proxy_module.get().on_connected(app, ep);
         return 0;
     }
 };
 
 struct app_handle_on_disconnected {
     std::reference_wrapper<atframe::proxy::atproxy_manager> atproxy_mgr_module;
-    app_handle_on_disconnected(atframe::proxy::atproxy_manager &mod) : atproxy_mgr_module(mod) {}
+    std::reference_wrapper<atframe::proxy::node_proxy> node_proxy_module;
+    app_handle_on_disconnected(atframe::proxy::atproxy_manager &mod,  atframe::proxy::node_proxy &node_proxy_mod) : atproxy_mgr_module(mod), node_proxy_module(node_proxy_mod) {}
 
     int operator()(atapp::app &app, atbus::endpoint &ep, int status) {
         WLOGINFO("node 0x%llx disconnected, status: %d", static_cast<unsigned long long>(ep.get_id()), status);
 
         atproxy_mgr_module.get().on_disconnected(app, ep.get_id());
+        node_proxy_module.get().on_connected(app, ep);
         return 0;
     }
 };
@@ -61,11 +65,6 @@ struct app_handle_on_custom_route {
     std::reference_wrapper<atframe::proxy::node_proxy> node_proxy_module;
     app_handle_on_custom_route(atframe::proxy::node_proxy &node_proxy_mod) : node_proxy_module(node_proxy_mod) {}
     int operator()(atapp::app & app ,  atapp::app::app_id_t src_id , const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids ) {
-
-        /*std::stringstream ss ;
-        ss << data;
-        bus_ids.push_back(123);
-        WLOGINFO("receive a custom_route_data:%s ", ss.str().c_str());*/
         return node_proxy_module.get().on_custom_route(app,src_id,  data, bus_ids);
     }
 };
@@ -105,8 +104,8 @@ int main(int argc, char *argv[]) {
 
     // setup message handle
     app.set_evt_on_send_fail(app_handle_on_send_fail);
-    app.set_evt_on_app_connected(app_handle_on_connected(*proxy_mgr_mod));
-    app.set_evt_on_app_disconnected(app_handle_on_disconnected(*proxy_mgr_mod));
+    app.set_evt_on_app_connected(app_handle_on_connected(*proxy_mgr_mod, *node_proxy_mod));
+    app.set_evt_on_app_disconnected(app_handle_on_disconnected(*proxy_mgr_mod, *node_proxy_mod));
     app.set_evt_on_recv_msg(app_handle_on_msg(*proxy_mgr_mod, *node_proxy_mod));
     app.set_evt_on_on_custom_route(app_handle_on_custom_route(*node_proxy_mod));
 

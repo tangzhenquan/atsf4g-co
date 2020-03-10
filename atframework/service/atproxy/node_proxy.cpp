@@ -55,11 +55,18 @@ namespace atframe {
 
         const char *node_proxy::name() const { return "node_proxy"; }
 
-        int node_proxy::on_connected(const ::atapp::app &, ::atapp::app::app_id_t ) {
+        int node_proxy::on_connected(const ::atapp::app &, const atbus::endpoint &ep) {
+
+            if (!ep.get_type_name().empty()){
+                set_tag(ep.get_type_name(),ep.get_id());
+            }
             return 0;
         }
 
-        int node_proxy::on_disconnected(const ::atapp::app &, ::atapp::app::app_id_t ) {
+        int node_proxy::on_disconnected(const ::atapp::app &, const atbus::endpoint & ep) {
+            if (!ep.get_type_name().empty()){
+                remove_tag(ep.get_type_name(),ep.get_id());
+            }
             return 0;
         }
 
@@ -73,6 +80,8 @@ namespace atframe {
                 }
             } else if (custom_route_data.custom_route_type == atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST){
                 get_svs_by_type_name_all(custom_route_data.type_name, custom_route_data.src_type_name, src_id, bus_ids);
+            } else if  (custom_route_data.custom_route_type == atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST2){
+                get_svs_by_type_name_all2(custom_route_data.type_name, custom_route_data.src_type_name, src_id, bus_ids);
             }
 
             return 0;
@@ -90,7 +99,14 @@ namespace atframe {
             if (obj.is_nil()) {
                 return 0;
             }
-            obj.convert(msg);
+            try {
+                obj.convert(msg);
+            }catch (...){
+                WLOGERROR("from server 0x%llx: convert fail", static_cast<unsigned long long>(recv_msg.body.forward->from));
+            }
+
+
+
 
             switch (msg.head.cmd) {
                 case ATFRAME_PROXY_CMD_REG:{
@@ -110,9 +126,9 @@ namespace atframe {
                     node_info.type_name = reg->type_name;
                     node_info.version = reg->engine_version;
 
-                   // int res1 = binded_etcd_mod_->reg_custom_node(node_info);
-                   // WLOGINFO("reg_custom_node res:%d", res1);
                     break;
+                }
+                case ATFRAME_PROXY_CMD_BROADCAST:{
                 }
                 default:{
                     WLOGERROR("from server 0x%llx:  recv invalid cmd %d", static_cast<unsigned long long>(recv_msg.body.forward->from), static_cast<int>(msg.head.cmd));
@@ -268,5 +284,33 @@ namespace atframe {
             }
             return ret;
         }
+
+
+        void node_proxy::remove_tag(const std::string &tag, ::atapp::app::app_id_t id) {
+            std::set<::atapp::app::app_id_t> &sids = tags_id_set_[tag];
+            sids.erase(id);
+        }
+
+        void node_proxy::set_tag(const std::string &tag, ::atapp::app::app_id_t id) {
+            std::set<::atapp::app::app_id_t> &sids = tags_id_set_[tag];
+            sids.insert(id);
+        }
+
+        int node_proxy::get_svs_by_type_name_all2( const std::string& type_name, const std::string& , ::atapp::app::app_id_t src_id, std::vector<uint64_t>& bus_ids){
+            tags_id_set_t::iterator iter = tags_id_set_.find(type_name);
+            if(tags_id_set_.end() == iter){
+                WLOGWARNING("can not get all SV , tags_id_set_ item not found type_name %s", type_name.c_str() )
+                return -1;
+            }
+            int ret = 0;
+            for(std::set<::atapp::app::app_id_t>::iterator sidit = iter->second.begin(); sidit != iter->second.end(); ++sidit){
+                if(*sidit != src_id){
+                    bus_ids.push_back(*sidit);
+                    ret++;
+                }
+            }
+            return ret;
+        }
+
     }
 }

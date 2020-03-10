@@ -127,7 +127,7 @@ struct app_command_handler_transfer3 {
         std::shared_ptr<atbus::protocol::custom_route_data> data = std::make_shared<atbus::protocol::custom_route_data>();
         data->type_name = params[0]->to_cpp_string().c_str();
         data->tags = {"ssss", "tsss"};
-        data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST;
+        data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST2;
         app_->get_bus_node()->send_data(0, type, params[1]->to_cpp_string().c_str(), params[1]->to_cpp_string().size(), false, data);
         return 0;
     }
