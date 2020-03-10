@@ -13,7 +13,7 @@ namespace atframe {
 
         int atproxy_cli_module::init() {
 
-            LOGF_INFO("atproxy_cli_module init")
+            WLOGINFO("atproxy_cli_module init")
 
             /*const atbus::endpoint* parent_ep =  get_app()->get_bus_node()->get_parent_endpoint();
             if (NULL != parent_ep){
@@ -33,12 +33,12 @@ namespace atframe {
         }
 
         int atproxy_cli_module::stop() {
-            LOGF_INFO("atproxy_cli_module stop")
+            WLOGINFO("atproxy_cli_module stop")
             return 0;
         }
 
         int atproxy_cli_module::timeout() {
-            LOGF_INFO("atproxy_cli_module timeout")
+            WLOGINFO("atproxy_cli_module timeout")
             return 0;
         }
 
@@ -53,18 +53,18 @@ namespace atframe {
         }
 
         int atproxy_cli_module::on_connected( ::shapp::app & , atbus::endpoint & ep  , int status) {
-            LOGF_INFO("node 0x%llx connected, status: %d", static_cast<unsigned long long>(ep.get_id()), status);
+            WLOGINFO("node 0x%llx connected, status: %d", static_cast<unsigned long long>(ep.get_id()), status);
             return 0;
         }
 
         int atproxy_cli_module::on_disconnected( ::shapp::app &, atbus::endpoint & , int ) {
-            LOGF_INFO("atproxy_cli_module on_disconnected")
+            WLOGINFO("atproxy_cli_module on_disconnected")
             return 0;
         }
 
         int atproxy_cli_module::on_msg( shapp::app & app, const shapp::app::msg_t & msg, const void * data,
                                        size_t len ) {
-            LOGF_INFO("receive a message(from 0x%llx, type=%d) ", static_cast<unsigned long long>(msg.head.src_bus_id), msg.head.type);
+            WLOGINFO("receive a message(from 0x%llx, type=%d) ", static_cast<unsigned long long>(msg.head.src_bus_id), msg.head.type);
             if (on_msg_ != NULL){
 
                 libatproxy_cli_context ctx;
@@ -77,7 +77,7 @@ namespace atframe {
         }
 
         int atproxy_cli_module::on_available(::shapp::app &) {
-            LOGF_INFO("atproxy_cli_module on_available")
+            WLOGINFO("atproxy_cli_module on_available")
             return  0;
         }
 
@@ -93,7 +93,7 @@ namespace atframe {
 
         int atproxy_cli_module::on_send_fail(::shapp::app &app, ::shapp::app::app_id_t src_pd,
                                              ::shapp::app::app_id_t dst_pd, const shapp::app::msg_t &msg) {
-            LOGF_INFO("on_send_fail(src_pd 0x%llx, dst_pd=0x%llx) ", static_cast<unsigned long long>(src_pd), static_cast<unsigned long long>(dst_pd));
+            WLOGINFO("on_send_fail(src_pd 0x%llx, dst_pd=0x%llx) ", static_cast<unsigned long long>(src_pd), static_cast<unsigned long long>(dst_pd));
             if (on_send_fail_ != NULL){
 
                 libatproxy_cli_context ctx;

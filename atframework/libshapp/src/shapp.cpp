@@ -600,7 +600,7 @@ namespace shapp {
         va_start (args, fmt);
         char output[4097] = {0};
         std::vsnprintf(output, 4096, fmt, args);
-        LOGF_INFO("file_path=%s:%zu %s",file_path, line, output);
+        WLOGDEBUG("file_path=%s:%zu %s",file_path, line, output);
         va_end (args);
     }
 
@@ -613,7 +613,7 @@ namespace shapp {
 
         std::shared_ptr<atbus::node> connection_node = atbus::node::create();
         if (!connection_node) {
-            LOGF_ERROR("create bus node failed.");
+            WLOGERROR("create bus node failed.");
             return EN_SHAPP_ERR_SETUP_ATBUS;
         }
 
