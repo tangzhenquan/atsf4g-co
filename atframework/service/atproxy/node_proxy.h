@@ -39,9 +39,9 @@ namespace atframe {
 
             virtual int reload() UTIL_CONFIG_OVERRIDE;
 
-            int on_connected(const ::atapp::app &app, ::atapp::app::app_id_t id);
+            int on_connected(const ::atapp::app &app,  const atbus::endpoint &ep);
 
-            int on_disconnected(const ::atapp::app &app, ::atapp::app::app_id_t id);
+            int on_disconnected(const ::atapp::app &app, const atbus::endpoint &ep);
 
             int on_custom_route(const atapp::app &app,::atapp::app::app_id_t src_id, const atbus::protocol::custom_route_data &data,  std::vector<uint64_t >& bus_ids );
 
@@ -63,9 +63,17 @@ namespace atframe {
             typedef std::map< std::string, size_t>  node_name_tick_set_t;
             node_name_tick_set_t node_name_tick_set_;
 
+            typedef std::map< std::string, std::set<::atapp::app::app_id_t> >  tags_id_set_t;
+            tags_id_set_t tags_id_set_;
+
             int get_sv_by_type_name_random( const std::string& type_name, const std::string& src_type_name, ::atapp::app::app_id_t src_id,  ::atapp::app::app_id_t *id);
             int get_sv_by_type_name_roundrobin( const std::string& type_name, const std::string& src_type_name, ::atapp::app::app_id_t src_id, ::atapp::app::app_id_t *id);
             int get_svs_by_type_name_all( const std::string& type_name, const std::string& src_type_name, ::atapp::app::app_id_t src_id, std::vector<uint64_t>& bus_ids);
+
+            void set_tag(const std::string& tag, ::atapp::app::app_id_t);
+            void remove_tag(const std::string& tag, ::atapp::app::app_id_t);
+            int get_svs_by_type_name_all2( const std::string& type_name, const std::string& src_type_name, ::atapp::app::app_id_t src_id, std::vector<uint64_t>& bus_ids);
+
 
         private:
             etcd_mod_ptr                                           binded_etcd_mod_;

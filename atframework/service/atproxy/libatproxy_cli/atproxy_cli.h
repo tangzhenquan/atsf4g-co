@@ -56,7 +56,6 @@ UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_destroy(libatproxy_cli_context co
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context context, const cli_conf_t& conf );
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run(libatproxy_cli_context context);
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run_noblock(libatproxy_cli_context context, uint64_t max_event_count = 20000);
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_tick(libatproxy_cli_context context);
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context context);
 
 // =========================== message ===========================

@@ -129,7 +129,6 @@ namespace atframe {
 
             std::string get_by_custom_type_name_path() const ;
 
-
             std::string get_by_id_watcher_path() const;
             std::string get_by_type_id_watcher_path(uint64_t type_id) const;
             std::string get_by_type_name_watcher_path(const std::string &type_name) const;

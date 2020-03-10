@@ -69,7 +69,7 @@ struct app_command_handler_transfer {
     app_command_handler_transfer(atapp::app &a) : app_(&a) {}
 
     int operator()(util::cli::callback_param params) {
-        WLOGINFO("app_command_handler_transfer xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        WLOGINFO("app_command_handler_transfer ");
         if (params.get_params_number() < 2) {
             WLOGERROR("transfer command require at least 2 parameters");
             return 0;
@@ -91,7 +91,7 @@ struct app_command_handler_transfer2 {
     app_command_handler_transfer2(atapp::app &a) : app_(&a) {}
 
     int operator()(util::cli::callback_param params) {
-        WLOGINFO("app_command_handler_transfer2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        WLOGINFO("app_command_handler_transfer2 ");
         if (params.get_params_number() < 2) {
             WLOGERROR("transfer command require at least 2 parameters");
             return 0;
@@ -114,7 +114,7 @@ struct app_command_handler_transfer3 {
     app_command_handler_transfer3(atapp::app &a) : app_(&a) {}
 
     int operator()(util::cli::callback_param params) {
-        WLOGINFO("app_command_handler_transfer3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        WLOGINFO("app_command_handler_transfer3 ");
         if (params.get_params_number() < 2) {
             WLOGERROR("transfer command require at least 2 parameters");
             return 0;
@@ -127,7 +127,7 @@ struct app_command_handler_transfer3 {
         std::shared_ptr<atbus::protocol::custom_route_data> data = std::make_shared<atbus::protocol::custom_route_data>();
         data->type_name = params[0]->to_cpp_string().c_str();
         data->tags = {"ssss", "tsss"};
-        data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST;
+        data->custom_route_type = atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST2;
         app_->get_bus_node()->send_data(0, type, params[1]->to_cpp_string().c_str(), params[1]->to_cpp_string().size(), false, data);
         return 0;
     }
@@ -176,11 +176,13 @@ static int app_handle_on_msg(atapp::app &app, const atapp::app::msg_t &msg, cons
     std::string data;
     data.assign(reinterpret_cast<const char *>(buffer), len);
     WLOGINFO("receive a message(from 0x%llx, type=%d) %s", static_cast<unsigned long long>(msg.head.src_bus_id), msg.head.type, data.c_str());
-
-    if (NULL != msg.body.forward && 0 != msg.body.forward->from) {
-        return app.get_bus_node()->send_data(msg.body.forward->from, msg.head.type, buffer, len);
+    if (msg.head.type == 1){
+        return 0;
+    }else{
+        if (NULL != msg.body.forward && 0 != msg.body.forward->from) {
+            return app.get_bus_node()->send_data(msg.body.forward->from, 1, buffer, len);
+        }
     }
-
     return 0;
 }
 

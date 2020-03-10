@@ -7,13 +7,14 @@
 #include <cstddef>
 #include <ostream>
 #include <stdint.h>
-
+#include <libatbus_protocol.h>
 #include <msgpack.hpp>
 
 enum ATFRAME_PROXY_PROTOCOL_CMD {
     ATFRAME_PROXY_CMD_INVALID = 0,
 
     ATFRAME_PROXY_CMD_REG = 1,
+    ATFRAME_PROXY_CMD_BROADCAST = 2,
 
 
     ATFRAME_PROXY_CMD_MAX
@@ -74,17 +75,47 @@ namespace atframe {
             }
         };
 
+        struct ss_broadcast {
+            std::string type_name;
+            std::vector<std::string> tags;
+            std::string src_type_name;
+            atbus::protocol::bin_data_block content;
+            MSGPACK_DEFINE(type_name, tags, src_type_name, content);
+
+            template <typename CharT, typename Traits>
+            friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, const ss_broadcast &mh) {
+                os << "{" << std::endl << "    type_name: " << mh.type_name << std::endl << "    src_type_name: " << mh.src_type_name << std::endl ;
+
+                if (!mh.tags.empty()) {
+                    os << "      tags: ";
+                    for (size_t i = 0; i < mh.tags.size(); ++i) {
+                        if (0 != i) {
+                            os << ", ";
+                        }
+                        os << mh.tags[i];
+                    }
+                    os << std::endl;
+                }
+                os << "      content: " << mh.content << std::endl;
+                os << "    }";
+                return os;
+            }
+        };
 
         class ss_msg_body {
         public:
             ss_reg *reg;
+            ss_broadcast *broadcast;
 
 
-            ss_msg_body(): reg(NULL) {
+            ss_msg_body(): reg(NULL),broadcast(NULL) {
             }
             ~ss_msg_body() {
                 if (NULL != reg) {
                     delete reg;
+                }
+                if (NULL != broadcast){
+                    delete broadcast;
                 }
             }
 
@@ -103,6 +134,14 @@ namespace atframe {
                     return ret;
                 }
 
+                return ret;
+            }
+
+            ss_broadcast *make_broadcast() {
+                ss_broadcast *ret = make_body(broadcast);
+                if (NULL == ret) {
+                    return ret;
+                }
                 return ret;
             }
 
@@ -202,6 +241,14 @@ namespace msgpack {
                             }
                             break;
                         }
+                        case ATFRAME_PROXY_CMD_BROADCAST:{
+                            if (NULL == v.body.broadcast) {
+                                o.pack_nil();
+                            } else {
+                                o.pack(*v.body.broadcast);
+                            }
+                            break;
+                        }
 
                         default: { // just cmd, body is nil
                             o.pack_nil();
@@ -232,6 +279,13 @@ namespace msgpack {
                                 o.via.map.ptr[1].val = msgpack::object();
                             } else {
                                 v.body.reg->msgpack_object(&o.via.map.ptr[1].val, o.zone);
+                            }
+                            break;
+                        } case ATFRAME_PROXY_CMD_BROADCAST: {
+                            if (NULL == v.body.broadcast) {
+                                o.via.map.ptr[1].val = msgpack::object();
+                            } else {
+                                v.body.broadcast->msgpack_object(&o.via.map.ptr[1].val, o.zone);
                             }
                             break;
                         }

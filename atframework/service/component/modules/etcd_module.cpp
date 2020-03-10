@@ -512,31 +512,52 @@ namespace atframe {
 
         std::string etcd_module::get_by_id_path() const {
             std::stringstream ss;
-            ss << conf_.path_prefix << ETCD_MODULE_BY_ID_DIR << "/" << get_app()->get_id();
+            ss << conf_.path_prefix << ETCD_MODULE_BY_ID_DIR ;
+            if (!get_app()->get_region().empty()){
+                ss << "/" << get_app()->get_region();
+            }
+            ss << "/" << get_app()->get_id();
             return ss.str();
         }
 
         std::string etcd_module::get_by_type_id_path() const {
             std::stringstream ss;
-            ss << conf_.path_prefix << ETCD_MODULE_BY_TYPE_ID_DIR << "/" << get_app()->get_type_id() << "/" << get_app()->get_id();
+            ss << conf_.path_prefix << ETCD_MODULE_BY_TYPE_ID_DIR << "/" << get_app()->get_type_id()  ;
+            if (!get_app()->get_region().empty()){
+                ss << "/" << get_app()->get_region();
+            }
+
+            ss << "/" << get_app()->get_id();
             return ss.str();
         }
 
         std::string etcd_module::get_by_type_name_path() const {
             std::stringstream ss;
-            ss << conf_.path_prefix << ETCD_MODULE_BY_TYPE_NAME_DIR << "/" << get_app()->get_type_name() << "/" << get_app()->get_id();
+            ss << conf_.path_prefix << ETCD_MODULE_BY_TYPE_NAME_DIR << "/" << get_app()->get_type_name() ;
+            if (!get_app()->get_region().empty()){
+                ss << "/" << get_app()->get_region();
+            }
+            ss << "/" << get_app()->get_id();
             return ss.str();
         }
 
         std::string etcd_module::get_by_name_path() const {
             std::stringstream ss;
-            ss << conf_.path_prefix << ETCD_MODULE_BY_NAME_DIR << "/" << get_app()->get_app_name();
+            ss << conf_.path_prefix << ETCD_MODULE_BY_NAME_DIR ;
+            if (!get_app()->get_region().empty()){
+                ss << "/" << get_app()->get_region();
+            }
+            ss << "/" << get_app()->get_app_name();
             return ss.str();
         }
 
         std::string etcd_module::get_by_tag_path(const std::string &tag_name) const {
             std::stringstream ss;
-            ss << conf_.path_prefix << ETCD_MODULE_BY_TAG << "/" << tag_name << "/" << get_app()->get_id();
+            ss << conf_.path_prefix << ETCD_MODULE_BY_TAG << "/" << tag_name;
+            if (!get_app()->get_region().empty()){
+                ss << "/" << get_app()->get_region();
+            }
+            ss << "/" << get_app()->get_id();
             return ss.str();
         }
 
@@ -937,7 +958,7 @@ namespace atframe {
                 ni.id        = get_app()->get_id();
                 ni.name      = get_app()->get_app_name();
                 ni.hostname  = ::atbus::node::get_hostname();
-                ni.listens   = get_app()->get_bus_node()->get_listen_list();
+                ni.listens   = get_app()->get_bus_node()->get_channels();
                 ni.hash_code = get_app()->get_hash_code();
                 ni.type_id   = static_cast<uint64_t>(get_app()->get_type_id());
                 ni.type_name = get_app()->get_type_name();

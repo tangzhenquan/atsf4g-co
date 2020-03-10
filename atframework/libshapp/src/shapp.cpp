@@ -948,6 +948,7 @@ namespace shapp {
         return std::cref(conf_);
         //return  conf_;
     }
+    const std::string &app::get_region() const { return conf_.region; }
 
 
 }

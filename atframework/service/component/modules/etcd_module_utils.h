@@ -29,6 +29,7 @@ namespace atframe {
             std::vector<std::string> tags;
             node_action_t::type action;
             std::string String();
+
         };
 
         class etcd_module_utils {

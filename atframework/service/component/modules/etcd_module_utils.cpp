@@ -127,6 +127,7 @@ namespace atframe {
                     }
                 }
 
+
                 if (val.MemberEnd() != (atproxy_iter = val.FindMember("version"))) {
                     if (atproxy_iter->value.IsString()) {
                         out.version = atproxy_iter->value.GetString();
@@ -158,7 +159,6 @@ namespace atframe {
                 listens.PushBack(rapidjson::StringRef((*iter).c_str(), (*iter).size()), doc.GetAllocator());
             }
 
-
             doc.AddMember("listen", listens, doc.GetAllocator());
 
             rapidjson::Value tags;
@@ -171,6 +171,7 @@ namespace atframe {
             doc.AddMember("type_id", src.type_id, doc.GetAllocator());
             doc.AddMember("type_name", rapidjson::StringRef(src.type_name.c_str(), src.type_name.size()), doc.GetAllocator());
             doc.AddMember("version", rapidjson::StringRef(src.version.c_str(), src.version.size()), doc.GetAllocator());
+
 
             // Stringify the DOM
             rapidjson::StringBuffer                    buffer;
