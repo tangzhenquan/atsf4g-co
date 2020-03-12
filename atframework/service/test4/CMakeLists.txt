@@ -10,7 +10,6 @@ ${CMAKE_CURRENT_LIST_DIR}/*.h
 ${CMAKE_CURRENT_LIST_DIR}/*.hpp
 )
 
-include_directories(${ATFRAMEWORK_BASE_DIR}/service/atproxy/libatproxy_cli)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_INSTALL_BAS_DIR}/atframe/${ATSF4G_APP_NAME}/bin")
 
@@ -18,12 +17,9 @@ if (NOT EXISTS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
 
-add_executable(${ATSF4G_APP_NAME} 
-	${ATSF4G_APP_SRC_LIST}
-)
+add_executable(${ATSF4G_APP_NAME} ${ATSF4G_APP_SRC_LIST} )
 target_link_libraries("${ATSF4G_APP_NAME}"
-        atproxy_cli
-	    ${COMPILER_OPTION_EXTERN_CXX_LIBS}
+        ${ATPROXY_CLI_LINK_NAME}
 
 )
 

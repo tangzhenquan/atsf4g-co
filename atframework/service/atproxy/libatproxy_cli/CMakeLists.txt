@@ -1,4 +1,4 @@
-﻿set(PROJECT_LIB_LINK "atproxy_cli")
+﻿set(PROJECT_LIB_LINK ${ATPROXY_CLI_LINK_NAME})
 EchoWithColor(COLOR GREEN "-- Configure ${CMAKE_CURRENT_LIST_DIR}")
 
 # ============ c binding ============
@@ -40,16 +40,22 @@ target_link_libraries(${PROJECT_LIB_LINK}
 		${G3LOG_LINK_NAME}
 )
 
+
+set_target_properties(${PROJECT_LIB_LINK} PROPERTIES PREFIX "")
+set_target_properties(${PROJECT_LIB_LINK} PROPERTIES SUFFIX "${LIB_STATIC_SUFFIX}")
+set_target_properties(${PROJECT_LIB_LINK} PROPERTIES DEBUG_OUTPUT_NAME "${PROJECT_LIB_LINK}_d.lib")
+set_target_properties(${PROJECT_LIB_LINK} PROPERTIES RELEASE_OUTPUT_NAME "${PROJECT_LIB_LINK}.lib")
+
 install(TARGETS ${PROJECT_LIB_LINK}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-#install(FILES ${CMAKE_CURRENT_LIST_DIR}/atframe/libatapp_c.h
-#    DESTINATION include/atframe
-#)
+install(FILES ${CMAKE_CURRENT_LIST_DIR}/atproxy_cli.h
+    DESTINATION include/atframe/libatproxycli/
+)
 
-#install(FILES "${3RD_PARTY_ATFRAME_UTILS_INC_DIR}/config/compile_optimize.h"
-#    DESTINATION include/atframe/config
-#)
+install(FILES "${3RD_PARTY_ATFRAME_UTILS_INC_DIR}/config/compile_optimize.h"
+    DESTINATION include/atframe/libatproxycli/config
+)

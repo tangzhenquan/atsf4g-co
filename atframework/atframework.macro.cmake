@@ -13,6 +13,9 @@ include("${ATFRAMEWORK_BASE_DIR}/libshapp/libshapp.cmake")
 # import libshapp
 include("${ATFRAMEWORK_BASE_DIR}/g3log/g3log.cmake")
 
+# import libshapp
+include("${ATFRAMEWORK_BASE_DIR}/service/atproxy/libatproxy_cli/atproxy.cmake")
+
 set(ATFRAMEWORK_SERVICE_COMPONENT_DIR "${ATFRAMEWORK_BASE_DIR}/service/component")
 set(ATFRAMEWORK_SERVICE_COMPONENT_LINK_NAME atservice_component)
 
