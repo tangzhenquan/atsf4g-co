@@ -1,17 +1,12 @@
-#define WIN32_LEAN_AND_MEAN
+
 #include <libatbus.h>
 #include <libatbus_protocol.h>
 #include <shapp.h>
 #include <shapp_log.h>
 
-#include <modules/shapp_etcd_module.h>
+//#include <modules/shapp_etcd_module.h>
 #include "atproxy_cli.h"
 #include "atproxy_cli_module.h"
-
-
-
-
-
 
 
 #define  DEFAULT_STOP_TIMEOUT 10000
@@ -46,8 +41,6 @@ namespace detail {
 }
 
 
-
-
 UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf ){
     conf.father_address = NULL;
     conf.tags_count = 0;
@@ -59,6 +52,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf ){
     conf.enable_local_discovery_cli = 0;
     conf.etcd_host_count = 0;
     conf.etcd_authorization = NULL;
+    conf.log_level                  = LOG_MAX;
 
 
 }
@@ -90,9 +84,9 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_contex
     shapp::app *app =  SHAPP_CONTEXT(context);
 
     if (app->get_bus_node()){
-        app->get_bus_node()->send_data(bus_id, 0, buffer, sz, require_rsp);
+        app->get_bus_node()->send_data(bus_id, 0, buffer, static_cast<size_t>(sz), require_rsp);
     }
-    return EN_ATBUS_ERR_NOT_INITED;
+    return EN_ATBUS_ERR_SUCCESS;
 
 
 }
@@ -112,12 +106,12 @@ static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*
             custom_route_data->type_name = type_name;
             custom_route_data->src_type_name = app->get_conf().type_name;
             custom_route_data->custom_route_type = custom_route_type;
-            return    app->get_bus_node()->send_data(parent_ep->get_id(), 0, buffer, sz, require_rsp, custom_route_data);
+            return    app->get_bus_node()->send_data(parent_ep->get_id(), 0, buffer, static_cast<size_t>(sz), require_rsp, custom_route_data);
         } else{
             return  shapp::EN_SHAPP_ERR_NO_PARENT;
         }
     }
-    return EN_ATBUS_ERR_NOT_INITED;
+    return EN_ATBUS_ERR_SUCCESS;
 
 
 
@@ -128,7 +122,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_c
 }
 
 UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_broadcast_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz){
-    return  send_msg_by_type_name(context, type_name ,buffer, sz,  0, atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST);
+    return  send_msg_by_type_name(context, type_name ,buffer, sz,  0, atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST2);
 }
 
 
@@ -158,12 +152,11 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
     }
     shapp::app *app =  SHAPP_CONTEXT(context);
 
-    int ret =   util::log::init_log();
+    int ret =   util::log::log_adaptor::get_instance().init_log();
     if (ret != shapp::EN_SHAPP_ERR_SUCCESS){
         return ret;
     }
-
-    WLOGDEBUG("%d", IS_EMPTY( conf.father_address));
+    util::log::log_adaptor::get_instance().set_log_level(static_cast<util::log::log_type_t>(conf.log_level));
     if (conf.id == 0 || IS_EMPTY( conf.father_address) || IS_EMPTY(conf.type_name) || IS_EMPTY(conf.engine_version))  return  shapp::EN_SHAPP_ERR_CONFIG;
 
 
@@ -215,7 +208,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
         if (conf.etcd_host_count == 0||conf.etcd_host_count > CONFIG_ETCD_HOST_MAX){
             return  shapp::EN_SHAPP_ERR_CONFIG;
         }
-        std::shared_ptr<atframe::component::shapp_etcd_module> shapp_etcd_mod =  std::make_shared<atframe::component::shapp_etcd_module>();
+        /*std::shared_ptr<atframe::component::shapp_etcd_module> shapp_etcd_mod =  std::make_shared<atframe::component::shapp_etcd_module>();
 
         std::vector<std::string> etcd_host(conf.etcd_host_count);
         for(int i = 0 ; i< conf.etcd_host_count; i++){
@@ -233,7 +226,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
         shapp_etcd_mod->get_raw_etcd_ctx().set_conf_http_timeout(std::chrono::seconds(DEFAULT_ETCD_REQEST_TIMEOUT_SECS));
         shapp_etcd_mod->get_raw_etcd_ctx().set_conf_keepalive_timeout(std::chrono::seconds(DEFAULT_ETCD_KEEPALIVE_TIMEOUT_SECS));
         shapp_etcd_mod->get_raw_etcd_ctx().set_conf_keepalive_interval(std::chrono::seconds(DEFAULT_ETCD_KEEPALIVE_TTL_SECS));
-        app->add_module(shapp_etcd_mod);
+        app->add_module(shapp_etcd_mod);*/
     }
 
 
@@ -249,8 +242,6 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
     app->set_evt_on_send_fail(std::bind<int>(&atframe::proxy::atproxy_cli_module::on_send_fail, g_cli_module,
                                              std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     app->set_evt_on_available(::detail::app_handle_on_available(*cli_mod));
-
-
 
 
     return  app->init(uv_default_loop(), app_conf);
@@ -306,5 +297,14 @@ UTIL_SYMBOL_EXPORT uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_c
     if (SHAPP_MESSAGE_IS_NULL(msg)) {
         return 0;
     }
-    return SHAPP_MESSAGE(msg)->head.sequence;
+    return static_cast<uint32_t>(SHAPP_MESSAGE(msg)->head.sequence);
+}
+
+
+UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_set_log_level(libatproxy_cli_context context, log_type level) {
+    if (SHAPP_CONTEXT_IS_NULL(context)) {
+        return EN_ATBUS_ERR_PARAMS;
+    }
+    util::log::log_adaptor::get_instance().set_log_level(static_cast<util::log::log_type_t>(level));
+    return EN_ATBUS_ERR_SUCCESS;
 }

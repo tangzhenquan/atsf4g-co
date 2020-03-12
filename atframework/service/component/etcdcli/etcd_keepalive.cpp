@@ -1,9 +1,8 @@
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-
+#endif
 #include <algorithm/base64.h>
-
 #include <log/log_wrapper.h>
-
 #include "etcd_cluster.h"
 #include "etcd_keepalive.h"
 

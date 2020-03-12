@@ -1,19 +1,16 @@
 //
 // Created by tom on 2020/1/9.
 //
-#include <stdarg.h>
-#include "std/foreach.h"
-#include <libatbus_protocol.h>
-
 #include "shapp.h"
 #include "shapp_log.h"
+#include "std/foreach.h"
+#include <cli/shell_font.h>
 #include <common/file_system.h>
 #include <common/string_oprs.h>
-
+#include <libatbus_protocol.h>
+#include <stdarg.h>
 
 namespace shapp {
-
-
 
 
     app::flag_guard_t::flag_guard_t(app &owner, flag_t::type f) : owner_(&owner), flag_(f) {
@@ -67,16 +64,16 @@ namespace shapp {
     }
 
 
-    app::app():setup_result_(0),last_proc_event_count_(0) {
-        conf_.id = 0;
-        conf_.stop_timeout = 30000; // 30s
-        conf_.tick_interval = 32;   // 32ms
+    app::app() : setup_result_(0), last_proc_event_count_(0) {
+        conf_.id            = 0;
+        conf_.stop_timeout  = 30000; // 30s
+        conf_.tick_interval = 32;    // 32ms
 
         tick_timer_.sec_update = util::time::time_utility::raw_time_t::min();
-        tick_timer_.sec = 0;
-        tick_timer_.usec = 0;
+        tick_timer_.sec        = 0;
+        tick_timer_.usec       = 0;
 
-        tick_timer_.tick_timer.is_activited = false;
+        tick_timer_.tick_timer.is_activited    = false;
         tick_timer_.timeout_timer.is_activited = false;
 
         stat_.last_checkpoint_min = 0;
@@ -100,7 +97,7 @@ namespace shapp {
         assert(!tick_timer_.tick_timer.is_activited);
         assert(!tick_timer_.timeout_timer.is_activited);
     }
-    int app::run(uv_loop_t *ev_loop, const app_conf & conf) {
+    int app::run(uv_loop_t *ev_loop, const app_conf &conf) {
         if (0 != setup_result_) {
             return setup_result_;
         }
@@ -145,7 +142,7 @@ namespace shapp {
         return ret;
     }
 
-    int app::init(uv_loop_t *ev_loop, const app_conf & conf) {
+    int app::init(uv_loop_t *ev_loop, const app_conf &conf) {
         if (check_flag(flag_t::INITIALIZED)) {
             return EN_SHAPP_ERR_ALREADY_INITED;
         }
@@ -176,20 +173,20 @@ namespace shapp {
             return setup_result_ = ret;
         }
 
-       /* // step 7. all modules reload
-        owent_foreach(module_ptr_t & mod, modules_) {
-            if (mod->is_enabled()) {
-                ret = mod->reload();
-                if (ret < 0) {
-                    ss() << util::cli::shell_font_style::SHELL_FONT_COLOR_RED << "load configure of " << mod->name() << " failed" << std::endl;
-                    return setup_result_ = ret;
-                }
-            }
-        }*/
+        /* // step 7. all modules reload
+         owent_foreach(module_ptr_t & mod, modules_) {
+             if (mod->is_enabled()) {
+                 ret = mod->reload();
+                 if (ret < 0) {
+                     ss() << util::cli::shell_font_style::SHELL_FONT_COLOR_RED << "load configure of " << mod->name() << " failed" << std::endl;
+                     return setup_result_ = ret;
+                 }
+             }
+         }*/
 
         // step 8. all modules init
         size_t inited_mod_idx = 0;
-        int mod_init_res = 0;
+        int    mod_init_res   = 0;
         for (; mod_init_res >= 0 && inited_mod_idx < modules_.size(); ++inited_mod_idx) {
             if (modules_[inited_mod_idx]->is_enabled()) {
                 mod_init_res = modules_[inited_mod_idx]->init();
@@ -215,7 +212,6 @@ namespace shapp {
         }
 
 
-
         // callback of all modules inited
         if (evt_on_all_module_inited_) {
             evt_on_all_module_inited_(*this);
@@ -238,12 +234,11 @@ namespace shapp {
         set_flag(flag_t::RUNNING, true);
 
         return EN_SHAPP_ERR_SUCCESS;
-
     }
 
     int app::run_noblock(uint64_t max_event_count) {
         uint64_t evt_count = 0;
-        int ret = 0;
+        int      ret       = 0;
         do {
             ret = run_inner(UV_RUN_NOWAIT);
             if (ret < 0) {
@@ -285,15 +280,15 @@ namespace shapp {
         util::time::time_utility::update();
         // record start time point
         util::time::time_utility::raw_time_t start_tp = util::time::time_utility::now();
-        util::time::time_utility::raw_time_t end_tp = start_tp;
+        util::time::time_utility::raw_time_t end_tp   = start_tp;
         do {
             if (tick_timer_.sec != util::time::time_utility::get_now()) {
-                tick_timer_.sec = util::time::time_utility::get_now();
-                tick_timer_.usec = 0;
+                tick_timer_.sec        = util::time::time_utility::get_now();
+                tick_timer_.usec       = 0;
                 tick_timer_.sec_update = util::time::time_utility::now();
             } else {
                 tick_timer_.usec = static_cast<time_t>(
-                        std::chrono::duration_cast<std::chrono::microseconds>(util::time::time_utility::now() - tick_timer_.sec_update).count());
+                    std::chrono::duration_cast<std::chrono::microseconds>(util::time::time_utility::now() - tick_timer_.sec_update).count());
             }
 
             active_count = 0;
@@ -338,7 +333,7 @@ namespace shapp {
         do {
             time_t now_min = util::time::time_utility::get_now() / util::time::time_utility::MINITE_SECONDS;
             if (now_min != stat_.last_checkpoint_min) {
-                time_t last_min = stat_.last_checkpoint_min;
+                time_t last_min           = stat_.last_checkpoint_min;
                 stat_.last_checkpoint_min = now_min;
                 if (last_min + 1 == now_min) {
                     uv_rusage_t last_usage;
@@ -393,18 +388,13 @@ namespace shapp {
 
         module->owner_ = this;
         modules_.push_back(module);
-
     }
 
-    const std::shared_ptr<atbus::node> app::get_bus_node() const {
-        return bus_node_;
-    }
+    const std::shared_ptr<atbus::node> app::get_bus_node() const { return bus_node_; }
 
-    std::shared_ptr<atbus::node> app::get_bus_node() {
-        return bus_node_;
-    }
+    std::shared_ptr<atbus::node> app::get_bus_node() { return bus_node_; }
 
-    bool app::is_remote_address_available(const std::string & , const std::string & address) const {
+    bool app::is_remote_address_available(const std::string &, const std::string &address) const {
         if (0 == UTIL_STRFUNC_STRNCASE_CMP("mem:", address.c_str(), 4)) {
             return false;
         }
@@ -445,26 +435,22 @@ namespace shapp {
     }
 
 
-
     void app::set_evt_on_recv_msg(callback_fn_on_msg_t fn) { evt_on_recv_msg_ = fn; }
     void app::set_evt_on_send_fail(callback_fn_on_send_fail_t fn) { evt_on_send_fail_ = fn; }
     void app::set_evt_on_app_connected(callback_fn_on_connected_t fn) { evt_on_app_connected_ = fn; }
     void app::set_evt_on_app_disconnected(callback_fn_on_disconnected_t fn) { evt_on_app_disconnected_ = fn; }
     void app::set_evt_on_all_module_inited(callback_fn_on_all_module_inited_t fn) { evt_on_all_module_inited_ = fn; }
-    void app::set_evt_on_available(app::callback_fn_on_available_t fn) {evt_on_available_ = fn;}
+    void app::set_evt_on_available(app::callback_fn_on_available_t fn) { evt_on_available_ = fn; }
 
-    const app::callback_fn_on_msg_t &app::get_evt_on_recv_msg() const { return evt_on_recv_msg_; }
-    const app::callback_fn_on_send_fail_t &app::get_evt_on_send_fail() const { return evt_on_send_fail_; }
-    const app::callback_fn_on_connected_t &app::get_evt_on_app_connected() const { return evt_on_app_connected_; }
-    const app::callback_fn_on_disconnected_t &app::get_evt_on_app_disconnected() const { return evt_on_app_disconnected_; }
+    const app::callback_fn_on_msg_t &              app::get_evt_on_recv_msg() const { return evt_on_recv_msg_; }
+    const app::callback_fn_on_send_fail_t &        app::get_evt_on_send_fail() const { return evt_on_send_fail_; }
+    const app::callback_fn_on_connected_t &        app::get_evt_on_app_connected() const { return evt_on_app_connected_; }
+    const app::callback_fn_on_disconnected_t &     app::get_evt_on_app_disconnected() const { return evt_on_app_disconnected_; }
     const app::callback_fn_on_all_module_inited_t &app::get_evt_on_all_module_inited() const { return evt_on_all_module_inited_; }
-    const app::callback_fn_on_available_t &app::get_callback_fn_on_available() const { return  evt_on_available_; }
+    const app::callback_fn_on_available_t &        app::get_callback_fn_on_available() const { return evt_on_available_; }
 
 
-
-    app::app_id_t app::get_id() const {
-        return conf_.id;
-    }
+    app::app_id_t app::get_id() const { return conf_.id; }
 
     const std::string &app::get_app_name() const { return conf_.name; }
 
@@ -472,12 +458,12 @@ namespace shapp {
         int ret = 0;
 
 
-        do{
+        do {
             if (0 == conf.id) {
                 ret = -1;
                 break;
             }
-        }while (0);
+        } while (0);
 
         conf_ = conf;
         return ret;
@@ -594,14 +580,14 @@ namespace shapp {
         }
     }
 
-    static void ondebug(const char *file_path, size_t line, const atbus::node &, const atbus::endpoint *, const atbus::connection *, const atbus::protocol::msg *,
-                        const char *fmt, ...){
+    static void ondebug(const char *file_path, size_t  line, const atbus::node &, const atbus::endpoint *, const atbus::connection *,
+                        const atbus::protocol::msg *, const char *fmt, ...) {
         va_list args;
-        va_start (args, fmt);
+        va_start(args, fmt);
         char output[4097] = {0};
-        std::vsnprintf(output, 4096, fmt, args);
-        WLOGDEBUG("file_path=%s:%zu %s",file_path, line, output);
-        va_end (args);
+        size_t size = std::vsnprintf(output, 4096, fmt, args);
+        util::log::log_adaptor::get_instance().on_log(util::log::LOG_DEBUG, file_path, line, "", output, size);
+        va_end(args);
     }
 
     int app::setup_atbus() {
@@ -628,29 +614,28 @@ namespace shapp {
                                                       std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
 
         connection_node->set_on_send_data_failed_handle(
-                std::bind(&app::bus_evt_callback_on_send_failed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+            std::bind(&app::bus_evt_callback_on_send_failed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
         connection_node->set_on_error_handle(std::bind(&app::bus_evt_callback_on_error, this, std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
         connection_node->set_on_register_handle(
-                std::bind(&app::bus_evt_callback_on_reg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+            std::bind(&app::bus_evt_callback_on_reg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
         connection_node->set_on_shutdown_handle(std::bind(&app::bus_evt_callback_on_shutdown, this, std::placeholders::_1, std::placeholders::_2));
 
         connection_node->set_on_available_handle(std::bind(&app::bus_evt_callback_on_available, this, std::placeholders::_1, std::placeholders::_2));
 
         connection_node->set_on_invalid_connection_handle(
-                std::bind(&app::bus_evt_callback_on_invalid_connection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+            std::bind(&app::bus_evt_callback_on_invalid_connection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
         connection_node->set_on_add_endpoint_handle(
-                std::bind(&app::bus_evt_callback_on_add_endpoint, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+            std::bind(&app::bus_evt_callback_on_add_endpoint, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
         connection_node->set_on_remove_endpoint_handle(
-                std::bind(&app::bus_evt_callback_on_remove_endpoint, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+            std::bind(&app::bus_evt_callback_on_remove_endpoint, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
         connection_node->on_debug = ondebug;
-
 
 
         // init listen
@@ -669,16 +654,16 @@ namespace shapp {
                     // res = 0; // Value stored to 'res' is never read
                 } else {
 #endif
-                WLOGERROR("bus node listen %s failed. res: %d", conf_.bus_listen[i].c_str(), res);
-                if (EN_ATBUS_ERR_PIPE_ADDR_TOO_LONG == res) {
-                    atbus::channel::channel_address_t address;
-                    atbus::channel::make_address(conf_.bus_listen[i].c_str(), address);
-                    std::string abs_path = util::file_system::get_abs_path(address.host.c_str());
-                    WLOGERROR("listen pipe socket %s, but the length (%llu) exceed the limit %llu", abs_path.c_str(),
-                              static_cast<unsigned long long>(abs_path.size()),
-                              static_cast<unsigned long long>(atbus::channel::io_stream_get_max_unix_socket_length()));
-                }
-                ret = res;
+                    WLOGERROR("bus node listen %s failed. res: %d", conf_.bus_listen[i].c_str(), res);
+                    if (EN_ATBUS_ERR_PIPE_ADDR_TOO_LONG == res) {
+                        atbus::channel::channel_address_t address;
+                        atbus::channel::make_address(conf_.bus_listen[i].c_str(), address);
+                        std::string abs_path = util::file_system::get_abs_path(address.host.c_str());
+                        WLOGERROR("listen pipe socket %s, but the length (%llu) exceed the limit %llu", abs_path.c_str(),
+                                  static_cast<unsigned long long>(abs_path.size()),
+                                  static_cast<unsigned long long>(atbus::channel::io_stream_get_max_unix_socket_length()));
+                    }
+                    ret = res;
 #ifdef _WIN32
                 }
 #endif
@@ -697,7 +682,7 @@ namespace shapp {
             return ret;
         }
 
-        //edit by tom
+        // edit by tom
 
         // if has father node, block and connect to father node
         if (atbus::node::state_t::CONNECTING_PARENT == connection_node->get_state() || atbus::node::state_t::LOST_PARENT == connection_node->get_state()) {
@@ -769,7 +754,6 @@ namespace shapp {
     }
 
 
-
     void app::close_timer(app::timer_info_t &t) {
         if (t.is_activited) {
             uv_timer_stop(&t.timer);
@@ -777,7 +761,6 @@ namespace shapp {
             t.is_activited = false;
         }
     }
-
 
 
     int app::bus_evt_callback_on_recv_msg(const atbus::node &, const atbus::endpoint *, const atbus::connection *, const msg_t &msg, const void *buffer,
@@ -806,7 +789,7 @@ namespace shapp {
 
         if ((ATBUS_CMD_DATA_TRANSFORM_REQ == m->head.cmd || ATBUS_CMD_DATA_TRANSFORM_RSP == m->head.cmd) && evt_on_send_fail_) {
             app_id_t origin_from = m->body.forward->to;
-            app_id_t origin_to = m->body.forward->from;
+            app_id_t origin_to   = m->body.forward->from;
             return evt_on_send_fail_(std::ref(*this), origin_from, origin_to, std::cref(*m));
         }
 
@@ -891,7 +874,7 @@ namespace shapp {
 
     int app::bus_evt_callback_on_available(const atbus::node &n, int res) {
         WLOGINFO("bus node 0x%llx initialze done, res: %d", static_cast<unsigned long long>(n.get_id()), res);
-        if (evt_on_available_){
+        if (evt_on_available_) {
             return evt_on_available_(std::ref(*this), res);
         }
         return res;
@@ -946,9 +929,9 @@ namespace shapp {
 
     const app_conf &app::get_conf() const {
         return std::cref(conf_);
-        //return  conf_;
+        // return  conf_;
     }
     const std::string &app::get_region() const { return conf_.region; }
 
 
-}
+} // namespace shapp

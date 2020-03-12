@@ -1,5 +1,6 @@
-
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <shapp_log.h>
 #include <shapp.h>
@@ -104,7 +105,6 @@ namespace atframe {
             }
             return 0;
         }
-
 
     }
 }

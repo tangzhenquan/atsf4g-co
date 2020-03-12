@@ -6,6 +6,27 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string>
+#include <iostream>
+#include <g3log/logworker.hpp>
+
+std::unique_ptr<g3::LogWorker> worker;
+
+std::string path_to_log_file = "/";
+std::string log_file         = "g3log_file_server.log";
+
+class CustomSink {
+public:
+    void forwardLogToStdout(g3::LogMessageMover logEntry) { std::cout << logEntry.get().message() << std::endl; }
+};
+
+void log_init() {
+    worker          = g3::LogWorker::createLogWorker();
+    auto handle     = worker->addDefaultLogger(log_file, path_to_log_file);
+    auto sinkHandle = worker->addSink(std::make_unique<CustomSink>(), &CustomSink::forwardLogToStdout);
+    g3::initializeLogging(worker.get());
+}
+
+void log_shutdown() { g3::internal::shutDownLogging(); }
 
 
 libatproxy_cli_context  g_ctx = NULL;
@@ -31,17 +52,18 @@ int main(int , char *[]) {
     //cli_conf_t *ss = NULL;
     //ss->name = "sdsadas";
     //conf
+    log_init();
     cli_conf_t conf;
     libatproxy_cli_init_conf(conf);
-    conf.bus_listen[0] = "ipv4://0.0.0.0:10501";
+    conf.bus_listen[0] = "ipv4://0.0.0.0:20502";
     //conf.bus_listen[1] = "shm://0x1010150501";
     conf.bus_listen_count = 1;
     conf.engine_version = "1.2.3";
-    conf.father_address =  "ipv4://192.168.2.71:7777";
-    conf.id =  0x100100010002;
+    conf.father_address =  "ipv4://127.0.0.1:20101";
+    conf.id               = 0x20109;
     conf.name = "name";
     conf.type_name = "game_server";
-
+    conf.log_level = LOG_TRACE;
     conf.tags[0] = "sss";
     conf.tags[1] = "22222";
     conf.tags_count = 2;
@@ -54,20 +76,8 @@ int main(int , char *[]) {
     libatproxy_cli_context  ctx =  libatproxy_cli_create();
     g_ctx = ctx;
     libatproxy_cli_init(ctx, conf);
+    printf("fuck1");
 
-
-    signal(SIGTERM, stop_context);
-    signal(SIGINT, stop_context);
-
-#ifndef WIN32
-    signal(SIGSTOP, stop_context);
-    signal(SIGQUIT, SIG_IGN);
-    signal(SIGHUP, SIG_IGN);  // lost parent process
-    signal(SIGPIPE, SIG_IGN); // close stdin, stdout or stderr
-    signal(SIGTSTP, SIG_IGN); // close tty
-    signal(SIGTTIN, SIG_IGN); // tty input
-    signal(SIGTTOU, SIG_IGN); // tty output
-#endif
 
     libatproxy_cli_set_on_msg_fn(ctx, on_msg, NULL);
 
@@ -76,5 +86,7 @@ int main(int , char *[]) {
 
     //destory
     libatproxy_cli_destroy(ctx);
+    log_shutdown();
+    return 0;
 
 }

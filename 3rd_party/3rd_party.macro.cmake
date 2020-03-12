@@ -65,7 +65,7 @@ include("${PROJECT_3RD_PARTY_ROOT_DIR}/rapidjson/rapidjson.cmake")
 include("${PROJECT_3RD_PARTY_ROOT_DIR}/flatbuffers/flatbuffers.cmake")
 
 # =========== 3rd_party - protobuf ===========
-include("${PROJECT_3RD_PARTY_ROOT_DIR}/protobuf/protobuf.cmake")
+#include("${PROJECT_3RD_PARTY_ROOT_DIR}/protobuf/protobuf.cmake")
 
 # =========== 3rd_party - jemalloc ===========
 if(NOT MSVC OR PROJECT_ENABLE_JEMALLOC)

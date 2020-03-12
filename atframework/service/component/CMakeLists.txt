@@ -19,7 +19,6 @@ file(GLOB_RECURSE ATSF4G_APP_SRC_LIST
     *.hpp
 )
 source_group_by_dir(ATSF4G_APP_SRC_LIST)
-
 add_library(${ATSF4G_APP_NAME} STATIC ${ATSF4G_APP_SRC_LIST})
 
 if (MSVC)

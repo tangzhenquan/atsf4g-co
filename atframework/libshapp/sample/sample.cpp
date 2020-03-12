@@ -82,7 +82,7 @@ static int app_handle_on_disconnected(shapp::app &, atbus::endpoint &ep, int sta
 
 
 int main(int , char *[]) {
-    util::log::init_log();
+    util::log::log_adaptor::get_instance().init_log();
 
     shapp::app app;
 
@@ -101,13 +101,13 @@ int main(int , char *[]) {
     conf.tags = {"hh", "tt"};
     conf.name = "name";
     conf.type_name = "hhh";
-    conf.id = 0x13401;
+    conf.id = 0x23401;
     conf.engine_version = "1.1.5";
-    conf.bus_listen = {"ipv4://192.168.2.71:40401"};
+    conf.bus_listen = {"ipv4://192.168.2.88:40401"};
     conf.stop_timeout = 10000;
     conf.tick_interval = 12;
     atbus::node::default_conf(&conf.bus_conf);
-    conf.bus_conf.father_address = "ipv4://192.168.2.71:10101";
+    conf.bus_conf.father_address = "ipv4://192.168.2.88:20101";
 
 
     // run

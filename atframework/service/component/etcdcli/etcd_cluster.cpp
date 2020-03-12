@@ -1,20 +1,19 @@
-﻿#define WIN32_LEAN_AND_MEAN
-
-#include <assert.h>
-
-#include <std/explicit_declare.h>
-
-#include <common/string_oprs.h>
-
-#include <log/log_wrapper.h>
-
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-
-#include "etcd_keepalive.h"
-#include "etcd_watcher.h"
+﻿
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#endif
 
 #include "etcd_cluster.h"
+#include "etcd_keepalive.h"
+#include "etcd_watcher.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+#include <assert.h>
+#include <common/string_oprs.h>
+#include <log/log_wrapper.h>
+#include <std/explicit_declare.h>
+
+#include "config/atframe_service_types.h"
 
 namespace atframe {
     namespace component {
@@ -429,8 +428,7 @@ namespace atframe {
                     iter->get()->close();
                     iter = keepalive_actors_.erase(iter);
                     break;
-                }
-                else {
+                } else {
                     ++iter;
                 }
             }
@@ -441,8 +439,7 @@ namespace atframe {
                     iter1->get()->close();
                     iter1 = keepalive_retry_actors_.erase(iter1);
                     break;
-                }
-                else {
+                } else {
                     ++iter1;
                 }
             }
@@ -485,8 +482,7 @@ namespace atframe {
                     iter->get()->close();
                     iter = watcher_actors_.erase(iter);
                     break;
-                }
-                else {
+                } else {
                     ++iter;
                 }
             }
@@ -1252,7 +1248,6 @@ namespace atframe {
             req->post_data().assign(buffer.GetString(), buffer.GetSize());
             WLOGTRACE("Etcd cluster setup request %p to %s, post data: %s", req.get(), req->get_url().c_str(), req->post_data().c_str());
         }
-
 
 
     } // namespace component

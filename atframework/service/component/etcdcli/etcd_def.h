@@ -11,7 +11,6 @@
 #define ATFRAME_SERVICE_COMPONENT_ETCDCLI_ETCD_DEF_H
 
 #pragma once
-#define WIN32_LEAN_AND_MEAN
 
 #include <stdint.h>
 #include <string>

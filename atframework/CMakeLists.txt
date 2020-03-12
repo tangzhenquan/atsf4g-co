@@ -4,6 +4,7 @@ add_subdirectory(${ATFRAME_UTILS_ROOT})
 add_subdirectory(${LIBATBUS_ROOT})
 add_subdirectory(${LIBATAPP_ROOT})
 add_subdirectory(${ATFRAMEWORK_BASE_DIR}/libshapp)
+add_subdirectory(${ATFRAMEWORK_BASE_DIR}/g3log)
 
 # 基础服务
 add_subdirectory("${ATFRAMEWORK_BASE_DIR}/service")

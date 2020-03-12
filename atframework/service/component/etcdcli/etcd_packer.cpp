@@ -1,13 +1,13 @@
-﻿#define WIN32_LEAN_AND_MEAN
-
+﻿#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <cstring>
 #include <sstream>
 
 #include <algorithm/base64.h>
 #include <common/string_oprs.h>
-
-
 #include "etcd_packer.h"
+
 
 namespace atframe {
     namespace component {

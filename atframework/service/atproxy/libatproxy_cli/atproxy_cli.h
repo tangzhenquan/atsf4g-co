@@ -17,7 +17,21 @@
 extern "C" {
 #endif
 
-typedef struct cli_conf{
+enum log_type {
+    LOG_DISABLE = 0,
+    LOG_FATAL,
+    LOG_ERROR,
+    LOG_WARNING,
+    LOG_INFO,
+    LOG_NOTICE,
+    LOG_DEBUG,
+    LOG_TRACE,
+
+
+    LOG_MAX = 10000,
+};
+
+typedef struct UTIL_SYMBOL_EXPORT cli_conf {
     uint64_t id;
     const char* bus_listen[CONFIG_BUS_LISTEN_MAX];
     int32_t bus_listen_count;
@@ -28,11 +42,12 @@ typedef struct cli_conf{
     int32_t tags_count;
     const char* father_address;
     int32_t enable_local_discovery_cli;
-    struct  {
-        const char* etcd_host[CONFIG_ETCD_HOST_MAX];
-        int32_t etcd_host_count;
-        const char* etcd_authorization;
-    };
+
+    const char* etcd_host[CONFIG_ETCD_HOST_MAX];
+    int32_t etcd_host_count;
+    const char* etcd_authorization;
+    log_type log_level;
+
 
 } cli_conf_t;
 
@@ -63,6 +78,10 @@ UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_src_bus_id(libatproxy
 UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_from(libatproxy_cli_message msg);
 UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_to(libatproxy_cli_message msg);
 UTIL_SYMBOL_EXPORT uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_cli_message msg);
+
+// ===========================log ===========================
+UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_set_log_level(libatproxy_cli_context context, log_type level);
+
 
 #ifdef __cplusplus
 }
