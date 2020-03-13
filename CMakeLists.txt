@@ -14,6 +14,11 @@ include("${CMAKE_SOURCE_DIR}/atframework/atframework.prepare.cmake")
 set (PROJECT_CMAKE_MODULE_DIR "${ATFRAME_UTILS_ROOT}/project/cmake")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_CMAKE_MODULE_DIR}/modules")
 
+if (MSVC)
+    set(LIB_STATIC_SUFFIX .lib)
+else()
+    set(LIB_STATIC_SUFFIX .a)
+endif(MSVC)
 
 include("${PROJECT_CMAKE_MODULE_DIR}/modules/IncludeDirectoryRecurse.cmake")
 include("${PROJECT_CMAKE_MODULE_DIR}/modules/EchoWithColor.cmake")
@@ -144,3 +149,4 @@ install(
     USE_SOURCE_PERMISSIONS
     PATTERN ".svn" EXCLUDE
 )
+
