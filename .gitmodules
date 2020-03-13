@@ -3,7 +3,8 @@
 	url = https://github.com/owt5008137/libiniloader.git
 [submodule "atframework/libatframe_utils/repo"]
 	path = atframework/libatframe_utils/repo
-	url = https://github.com/tangzhenquan/atframe_utils.git	branch = master
+	url = https://github.com/tangzhenquan/atframe_utils.git
+	branch = master
 [submodule "atframework/libatbus/repo"]
 	path = atframework/libatbus/repo
 	url = https://github.com/tangzhenquan/libatbus.git
