@@ -60,8 +60,9 @@ namespace util{
             WLOG_GETCAT(log_wrapper::categorize_t::DEFAULT)->set_level(log_formatter::level_t::LOG_LW_DEBUG);
             return 0;
         }
-        void log_adaptor::on_log(log_type_t log_level, const char *file_path, size_t line, const char *function, const char *content, size_t content_size) {
-            WLOGDEBUG("file_path=%s:%zu %s", file_path, line, content);
+        void log_adaptor::on_log(log_type_t log_level, const char *file_path, size_t line, const char *function, const char *content, size_t ) {
+            util::log::log_wrapper::caller_info_t caller = util::log::log_wrapper::caller_info_t(static_cast<util::log::log_formatter::level_t::type>(log_level), NULL ,file_path, line, function);
+            WDTLOGGETCAT(util::log::log_wrapper::categorize_t::DEFAULT)->log(caller, "%s", content);
         }
 
         void log_adaptor::set_log_level(log_type level) {

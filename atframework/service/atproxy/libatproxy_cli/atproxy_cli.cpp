@@ -41,7 +41,7 @@ namespace detail {
 }
 
 
-UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf ){
+AT_PROXY_API void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf ){
     conf.father_address = NULL;
     conf.tags_count = 0;
     conf.engine_version = NULL;
@@ -57,7 +57,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_init_conf(cli_conf_t & conf ){
 
 }
 
-UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_msg_fn(libatproxy_cli_context context, libatproxy_cli_on_msg_fn_t fn, void *priv_data){
+AT_PROXY_API void __cdecl libatproxy_cli_set_on_msg_fn(libatproxy_cli_context context, libatproxy_cli_on_msg_fn_t fn, void *priv_data){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return;
     }
@@ -67,7 +67,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_msg_fn(libatproxy_cli_cont
     }
 }
 
-UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_send_fail_fn(libatproxy_cli_context context, libatproxy_cli_on_send_fail_fn_t fn, void *priv_data){
+AT_PROXY_API void __cdecl libatproxy_cli_set_on_send_fail_fn(libatproxy_cli_context context, libatproxy_cli_on_send_fail_fn_t fn, void *priv_data){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return;
     }
@@ -77,7 +77,7 @@ UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_set_on_send_fail_fn(libatproxy_cl
     }
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_context context, uint64_t  bus_id, const void *buffer, uint64_t sz, int32_t require_rsp ){
+AT_PROXY_API int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_context context, uint64_t  bus_id, const void *buffer, uint64_t sz, int32_t require_rsp ){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
@@ -93,7 +93,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_send_msg(libatproxy_cli_contex
 
 
 static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp,
-                                     atbus::protocol::custom_route_data::custom_route_type_t custom_route_type){
+                                     atbus::protocol::custom_route_data::custom_route_type_t custom_route_type, int32_t cross_group=0){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
@@ -106,6 +106,7 @@ static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*
             custom_route_data->type_name = type_name;
             custom_route_data->src_type_name = app->get_conf().type_name;
             custom_route_data->custom_route_type = custom_route_type;
+            custom_route_data->broadcast_cross_group = cross_group > 0;
             return    app->get_bus_node()->send_data(parent_ep->get_id(), 0, buffer, static_cast<size_t>(sz), require_rsp, custom_route_data);
         } else{
             return  shapp::EN_SHAPP_ERR_NO_PARENT;
@@ -117,17 +118,17 @@ static int32_t send_msg_by_type_name(libatproxy_cli_context context, const char*
 
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp){
+AT_PROXY_API int32_t __cdecl libatapp_c_send_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t require_rsp){
     return  send_msg_by_type_name(context, type_name ,buffer, sz, require_rsp, atbus::protocol::custom_route_data::CUSTOM_ROUTE_UNICAST);
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatapp_c_broadcast_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz){
-    return  send_msg_by_type_name(context, type_name ,buffer, sz,  0, atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST2);
+AT_PROXY_API int32_t __cdecl libatapp_c_broadcast_msg_by_type_name(libatproxy_cli_context context, const char*  type_name , const void *buffer, uint64_t sz, int32_t cross_group){
+    return  send_msg_by_type_name(context, type_name ,buffer, sz,  0, atbus::protocol::custom_route_data::CUSTOM_ROUTE_BROADCAST2, cross_group);
 }
 
 
 
-UTIL_SYMBOL_EXPORT libatproxy_cli_context __cdecl libatproxy_cli_create() {
+AT_PROXY_API libatproxy_cli_context __cdecl libatproxy_cli_create() {
     libatproxy_cli_context ret;
     assert(sizeof(void *) == sizeof(libatproxy_cli_context));
     shapp::app *res = new (std::nothrow) shapp::app();
@@ -138,15 +139,15 @@ UTIL_SYMBOL_EXPORT libatproxy_cli_context __cdecl libatproxy_cli_create() {
 
 
 
-UTIL_SYMBOL_EXPORT void __cdecl libatproxy_cli_destroy(libatproxy_cli_context context){
+AT_PROXY_API void __cdecl libatproxy_cli_destroy(libatproxy_cli_context context){
     delete SHAPP_CONTEXT(context);
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run(libatproxy_cli_context context){
+AT_PROXY_API int32_t __cdecl libatproxy_cli_run(libatproxy_cli_context context){
     return SHAPP_CONTEXT(context)->run();
 }
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context context, const cli_conf_t& conf ){
+AT_PROXY_API int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context context, const cli_conf_t& conf ){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
@@ -250,7 +251,7 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_init(libatproxy_cli_context co
 
 
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run_noblock(libatproxy_cli_context context, uint64_t max_event_count){
+AT_PROXY_API int32_t __cdecl libatproxy_cli_run_noblock(libatproxy_cli_context context, uint64_t max_event_count){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
@@ -258,21 +259,21 @@ UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_run_noblock(libatproxy_cli_con
 }
 
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context context){
+AT_PROXY_API int32_t __cdecl libatproxy_cli_stop(libatproxy_cli_context context){
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }
     return SHAPP_CONTEXT(context)->stop();
 }
 
-UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_src_bus_id(libatproxy_cli_message msg) {
+AT_PROXY_API uint64_t __cdecl libatproxy_cli_msg_get_src_bus_id(libatproxy_cli_message msg) {
     if (SHAPP_MESSAGE_IS_NULL(msg)) {
         return 0;
     }
     return SHAPP_MESSAGE(msg)->head.src_bus_id;
 }
 
-UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_from(libatproxy_cli_message msg){
+AT_PROXY_API uint64_t __cdecl libatproxy_cli_msg_get_forward_from(libatproxy_cli_message msg){
     if (SHAPP_MESSAGE_IS_NULL(msg)) {
         return 0;
     }
@@ -283,7 +284,7 @@ UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_from(libatpro
     return SHAPP_MESSAGE(msg)->body.forward->from;
 }
 
-UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_to(libatproxy_cli_message msg){
+AT_PROXY_API uint64_t __cdecl libatproxy_cli_msg_get_forward_to(libatproxy_cli_message msg){
     if (SHAPP_MESSAGE_IS_NULL(msg)) {
         return 0;
     }
@@ -293,7 +294,7 @@ UTIL_SYMBOL_EXPORT uint64_t __cdecl libatproxy_cli_msg_get_forward_to(libatproxy
     return SHAPP_MESSAGE(msg)->body.forward->to;
 }
 
-UTIL_SYMBOL_EXPORT uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_cli_message msg){
+AT_PROXY_API uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_cli_message msg){
     if (SHAPP_MESSAGE_IS_NULL(msg)) {
         return 0;
     }
@@ -301,7 +302,7 @@ UTIL_SYMBOL_EXPORT uint32_t __cdecl libatproxy_cli_msg_get_sequence(libatproxy_c
 }
 
 
-UTIL_SYMBOL_EXPORT int32_t __cdecl libatproxy_cli_set_log_level(libatproxy_cli_context context, log_type level) {
+AT_PROXY_API int32_t __cdecl libatproxy_cli_set_log_level(libatproxy_cli_context context, log_type level) {
     if (SHAPP_CONTEXT_IS_NULL(context)) {
         return EN_ATBUS_ERR_PARAMS;
     }

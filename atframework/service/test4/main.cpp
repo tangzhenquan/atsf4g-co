@@ -59,8 +59,8 @@ int main(int , char *[]) {
     //conf.bus_listen[1] = "shm://0x1010150501";
     conf.bus_listen_count = 1;
     conf.engine_version = "1.2.3";
-    conf.father_address =  "ipv4://127.0.0.1:20101";
-    conf.id               = 0x20109;
+    conf.father_address =  "ipv4://192.168.2.71:8888";
+    conf.id               = 0x100100020001;
     conf.name = "name";
     conf.type_name = "game_server";
     conf.log_level = LOG_TRACE;
@@ -76,7 +76,7 @@ int main(int , char *[]) {
     libatproxy_cli_context  ctx =  libatproxy_cli_create();
     g_ctx = ctx;
     libatproxy_cli_init(ctx, conf);
-    printf("fuck1");
+
 
 
     libatproxy_cli_set_on_msg_fn(ctx, on_msg, NULL);

@@ -586,8 +586,9 @@ namespace shapp {
         va_start(args, fmt);
         char output[4097] = {0};
         size_t size = std::vsnprintf(output, 4096, fmt, args);
-        util::log::log_adaptor::get_instance().on_log(util::log::LOG_DEBUG, file_path, line, "", output, size);
         va_end(args);
+        util::log::log_adaptor::get_instance().on_log(util::log::LOG_DEBUG, file_path, line, "", output, size);
+
     }
 
     int app::setup_atbus() {

@@ -1661,7 +1661,7 @@ namespace atframe {
 
             DUMP_INFO("read", crypt_read_);
             DUMP_INFO("write", crypt_write_);
-            DUMP_INFO("handshake", crypt_handshake_);
+            //DUMP_INFO("handshake", crypt_handshake_);
 
 #undef DUMP_INFO
 
