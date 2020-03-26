@@ -94,8 +94,8 @@ namespace shapp {
             bus_node_.reset();
         }
 
-        assert(!tick_timer_.tick_timer.is_activited);
-        assert(!tick_timer_.timeout_timer.is_activited);
+        //assert(!tick_timer_.tick_timer.is_activited);
+        //assert(!tick_timer_.timeout_timer.is_activited);
     }
     int app::run(uv_loop_t *ev_loop, const app_conf &conf) {
         if (0 != setup_result_) {
